@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
-import { DataStorageService } from "@/services/data-storage-service"
 import CareFormLayout from "@/components/care-form-layout"
 
 interface PositioningFormData {
@@ -49,25 +48,11 @@ export function PositioningForm({ selectedUser, onSubmit, onCancel }: Positionin
     e.preventDefault()
 
     const careEvent = {
-      id: Date.now().toString(),
-      userId: selectedUser,
-      type: "positioning" as const,
+      ...formData,
       timestamp: new Date(formData.time).toISOString(),
-      details: {
-        currentPosition: formData.currentPosition,
-        positionDuration: formData.positionDuration,
-        nextPosition: formData.nextPosition,
-        supportDevices: formData.supportDevices,
-        skinCondition: formData.skinCondition,
-        comfortLevel: formData.comfortLevel,
-        respiratoryStatus: formData.respiratoryStatus,
-        observedIssues: formData.observedIssues,
-        preventiveMeasures: formData.preventiveMeasures,
-        notes: formData.notes,
-      },
+      eventType: "positioning",
     }
 
-    DataStorageService.saveCareEvent(careEvent)
     onSubmit(careEvent)
   }
 

@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
-import { DataStorageService } from "@/services/data-storage-service"
 import { CareFormLayout } from "@/components/care-form-layout"
+import { Label } from "@/components/ui/label" // Import Label component
 
 interface CommunicationFormData {
   time: string
@@ -53,27 +53,11 @@ export function CommunicationForm({ selectedUser, onSubmit, onCancel }: Communic
     e.preventDefault()
 
     const careEvent = {
-      id: Date.now().toString(),
-      userId: selectedUser,
-      type: "communication" as const,
+      ...formData,
       timestamp: new Date(formData.time).toISOString(),
-      details: {
-        communicationMethod: formData.communicationMethod,
-        responseLevel: formData.responseLevel,
-        understandingLevel: formData.understandingLevel,
-        assistiveDevice: formData.assistiveDevice,
-        emotionalExpression: formData.emotionalExpression,
-        socialInteraction: formData.socialInteraction,
-        communicationGoal: formData.communicationGoal,
-        effectiveness: formData.effectiveness,
-        challenges: formData.challenges,
-        supportStrategies: formData.supportStrategies,
-        familyInteraction: formData.familyInteraction,
-        notes: formData.notes,
-      },
+      eventType: "communication",
     }
 
-    DataStorageService.saveCareEvent(careEvent)
     onSubmit(careEvent)
   }
 
@@ -206,156 +190,175 @@ export function CommunicationForm({ selectedUser, onSubmit, onCancel }: Communic
 
   return (
     <CareFormLayout title="💬 コミュニケーション支援" onSubmit={handleSubmit} onCancel={onCancel}>
-      {/* 記録時刻 */}
-      <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-pink-600 mb-3">🕐 記録時刻</h3>
-        <div className="flex gap-2">
-          <Input
-            type="datetime-local"
-            value={formData.time}
-            onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
-            className="flex-1"
-          />
-          <Button type="button" onClick={setCurrentTime} variant="outline" size="sm">
-            今すぐ
-          </Button>
+      <div className="space-y-6">
+        {/* 記録時刻 */}
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+          <Label className="text-pink-600 font-medium mb-3 block">🕐 記録時刻</Label>
+          <div className="flex gap-2">
+            <Input
+              type="datetime-local"
+              value={formData.time}
+              onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
+              className="flex-1 text-lg"
+            />
+            <Button
+              type="button"
+              onClick={setCurrentTime}
+              variant="outline"
+              className="px-4 py-2 bg-pink-100 hover:bg-pink-200 border-pink-300 text-pink-700 font-medium"
+            >
+              今すぐ
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* コミュニケーション方法 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-600 mb-3">🗣️ コミュニケーション方法</h3>
-        <ClickableDropdown
-          options={communicationMethodOptions}
-          value={formData.communicationMethod}
-          onChange={(value) => setFormData((prev) => ({ ...prev, communicationMethod: value }))}
-          placeholder="使用したコミュニケーション方法を選択してください"
-        />
-      </div>
+        {/* コミュニケーション方法 */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <Label className="text-blue-600 font-medium mb-3 block">🗣️ コミュニケーション方法</Label>
+          <ClickableDropdown
+            options={communicationMethodOptions}
+            value={formData.communicationMethod}
+            onChange={(value) => setFormData((prev) => ({ ...prev, communicationMethod: value }))}
+            placeholder="使用したコミュニケーション方法を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 反応レベル */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-green-600 mb-3">📊 反応レベル</h3>
-        <ClickableDropdown
-          options={responseLevelOptions}
-          value={formData.responseLevel}
-          onChange={(value) => setFormData((prev) => ({ ...prev, responseLevel: value }))}
-          placeholder="反応レベルを選択してください"
-        />
-      </div>
+        {/* 反応レベル */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <Label className="text-green-600 font-medium mb-3 block">📊 反応レベル</Label>
+          <ClickableDropdown
+            options={responseLevelOptions}
+            value={formData.responseLevel}
+            onChange={(value) => setFormData((prev) => ({ ...prev, responseLevel: value }))}
+            placeholder="反応レベルを選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 理解度 */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-purple-600 mb-3">🧠 理解度（%）</h3>
-        <NumberSelector
-          value={formData.understandingLevel}
-          onChange={(value) => setFormData((prev) => ({ ...prev, understandingLevel: value }))}
-          min={0}
-          max={100}
-          step={10}
-          unit="%"
-        />
-      </div>
+        {/* 理解度 */}
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <Label className="text-purple-600 font-medium mb-3 block">🧠 理解度（%）</Label>
+          <NumberSelector
+            value={formData.understandingLevel}
+            onChange={(value) => setFormData((prev) => ({ ...prev, understandingLevel: value }))}
+            min={0}
+            max={100}
+            step={10}
+            unit="%"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 支援機器 */}
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-orange-600 mb-3">🔧 支援機器</h3>
-        <ClickableDropdown
-          options={assistiveDeviceOptions}
-          value={formData.assistiveDevice}
-          onChange={(value) => setFormData((prev) => ({ ...prev, assistiveDevice: value }))}
-          placeholder="使用した支援機器を選択してください"
-        />
-      </div>
+        {/* 支援機器 */}
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <Label className="text-orange-600 font-medium mb-3 block">🔧 支援機器</Label>
+          <ClickableDropdown
+            options={assistiveDeviceOptions}
+            value={formData.assistiveDevice}
+            onChange={(value) => setFormData((prev) => ({ ...prev, assistiveDevice: value }))}
+            placeholder="使用した支援機器を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 感情表現 */}
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-red-600 mb-3">😊 感情表現</h3>
-        <ClickableDropdown
-          options={emotionalExpressionOptions}
-          value={formData.emotionalExpression}
-          onChange={(value) => setFormData((prev) => ({ ...prev, emotionalExpression: value }))}
-          placeholder="観察された感情表現を選択してください"
-        />
-      </div>
+        {/* 感情表現 */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <Label className="text-red-600 font-medium mb-3 block">😊 感情表現</Label>
+          <ClickableDropdown
+            options={emotionalExpressionOptions}
+            value={formData.emotionalExpression}
+            onChange={(value) => setFormData((prev) => ({ ...prev, emotionalExpression: value }))}
+            placeholder="観察された感情表現を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 社会的相互作用 */}
-      <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-teal-600 mb-3">👥 社会的相互作用</h3>
-        <ClickableDropdown
-          options={socialInteractionOptions}
-          value={formData.socialInteraction}
-          onChange={(value) => setFormData((prev) => ({ ...prev, socialInteraction: value }))}
-          placeholder="社会的相互作用を選択してください"
-        />
-      </div>
+        {/* 社会的相互作用 */}
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+          <Label className="text-teal-600 font-medium mb-3 block">👥 社会的相互作用</Label>
+          <ClickableDropdown
+            options={socialInteractionOptions}
+            value={formData.socialInteraction}
+            onChange={(value) => setFormData((prev) => ({ ...prev, socialInteraction: value }))}
+            placeholder="社会的相互作用を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* コミュニケーション目標 */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-indigo-600 mb-3">🎯 コミュニケーション目標</h3>
-        <ClickableDropdown
-          options={communicationGoalOptions}
-          value={formData.communicationGoal}
-          onChange={(value) => setFormData((prev) => ({ ...prev, communicationGoal: value }))}
-          placeholder="コミュニケーション目標を選択してください"
-        />
-      </div>
+        {/* コミュニケーション目標 */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+          <Label className="text-indigo-600 font-medium mb-3 block">🎯 コミュニケーション目標</Label>
+          <ClickableDropdown
+            options={communicationGoalOptions}
+            value={formData.communicationGoal}
+            onChange={(value) => setFormData((prev) => ({ ...prev, communicationGoal: value }))}
+            placeholder="コミュニケーション目標を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 効果度 */}
-      <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-cyan-600 mb-3">✨ 効果度（%）</h3>
-        <NumberSelector
-          value={formData.effectiveness}
-          onChange={(value) => setFormData((prev) => ({ ...prev, effectiveness: value }))}
-          min={0}
-          max={100}
-          step={10}
-          unit="%"
-        />
-      </div>
+        {/* 効果度 */}
+        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+          <Label className="text-cyan-600 font-medium mb-3 block">✨ 効果度（%）</Label>
+          <NumberSelector
+            value={formData.effectiveness}
+            onChange={(value) => setFormData((prev) => ({ ...prev, effectiveness: value }))}
+            min={0}
+            max={100}
+            step={10}
+            unit="%"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 課題・困難 */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-600 mb-3">⚠️ 課題・困難</h3>
-        <ClickableDropdown
-          options={challengesOptions}
-          value={formData.challenges}
-          onChange={(value) => setFormData((prev) => ({ ...prev, challenges: value }))}
-          placeholder="観察された課題・困難を選択してください"
-        />
-      </div>
+        {/* 課題・困難 */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <Label className="text-yellow-600 font-medium mb-3 block">⚠️ 課題・困難</Label>
+          <ClickableDropdown
+            options={challengesOptions}
+            value={formData.challenges}
+            onChange={(value) => setFormData((prev) => ({ ...prev, challenges: value }))}
+            placeholder="観察された課題・困難を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 支援方略 */}
-      <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-violet-600 mb-3">🛠️ 支援方略</h3>
-        <ClickableDropdown
-          options={supportStrategiesOptions}
-          value={formData.supportStrategies}
-          onChange={(value) => setFormData((prev) => ({ ...prev, supportStrategies: value }))}
-          placeholder="実施した支援方略を選択してください"
-        />
-      </div>
+        {/* 支援方略 */}
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+          <Label className="text-violet-600 font-medium mb-3 block">🛠️ 支援方略</Label>
+          <ClickableDropdown
+            options={supportStrategiesOptions}
+            value={formData.supportStrategies}
+            onChange={(value) => setFormData((prev) => ({ ...prev, supportStrategies: value }))}
+            placeholder="実施した支援方略を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 家族との相互作用 */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-emerald-600 mb-3">👨‍👩‍👧‍👦 家族との相互作用</h3>
-        <ClickableDropdown
-          options={familyInteractionOptions}
-          value={formData.familyInteraction}
-          onChange={(value) => setFormData((prev) => ({ ...prev, familyInteraction: value }))}
-          placeholder="家族との相互作用を選択してください"
-        />
-      </div>
+        {/* 家族との相互作用 */}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+          <Label className="text-emerald-600 font-medium mb-3 block">👨‍👩‍👧‍👦 家族との相互作用</Label>
+          <ClickableDropdown
+            options={familyInteractionOptions}
+            value={formData.familyInteraction}
+            onChange={(value) => setFormData((prev) => ({ ...prev, familyInteraction: value }))}
+            placeholder="家族との相互作用を選択してください"
+            className="text-lg"
+          />
+        </div>
 
-      {/* 備考 */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-3">📝 備考</h3>
-        <Textarea
-          value={formData.notes}
-          onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-          placeholder="特記事項があれば記入してください"
-          rows={3}
-        />
+        {/* 備考 */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <Label className="text-gray-600 font-medium mb-3 block">📝 備考</Label>
+          <Textarea
+            value={formData.notes}
+            onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+            placeholder="特記事項があれば記入してください"
+            rows={3}
+            className="text-lg"
+          />
+        </div>
       </div>
     </CareFormLayout>
   )

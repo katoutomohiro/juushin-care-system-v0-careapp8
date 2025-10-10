@@ -55,21 +55,9 @@ export function RespiratoryForm({ selectedUser, onSubmit, onCancel }: Respirator
     e.preventDefault()
 
     const careEvent = {
+      ...formData,
+      timestamp: new Date(formData.time).toISOString(),
       eventType: "respiratory",
-      time: formData.time,
-      airwayManagement: formData.airwayManagement,
-      ventilatorSettings: formData.ventilatorSettings,
-      oxygenTherapy: formData.oxygenTherapy,
-      oxygenFlow: formData.oxygenFlow,
-      respiratoryStatus: formData.respiratoryStatus,
-      secretionManagement: formData.secretionManagement,
-      breathingPattern: formData.breathingPattern,
-      oxygenSaturation: formData.oxygenSaturation,
-      respiratoryRate: formData.respiratoryRate,
-      chestMovement: formData.chestMovement,
-      breathingSounds: formData.breathingSounds,
-      interventions: formData.interventions,
-      notes: formData.notes,
     }
 
     onSubmit(careEvent)

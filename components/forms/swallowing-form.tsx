@@ -2,12 +2,13 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
+import { Label } from "@/components/ui/label"
+import CareFormLayout from "@/components/care-form-layout"
 import { DataStorageService } from "@/services/data-storage-service"
 
 interface SwallowingFormData {
@@ -55,29 +56,13 @@ export function SwallowingForm({ selectedUser, onSubmit, onCancel }: SwallowingF
     e.preventDefault()
 
     const careEvent = {
-      id: Date.now().toString(),
-      userId: selectedUser,
-      type: "swallowing" as const,
+      ...formData,
       timestamp: new Date(formData.time).toISOString(),
-      details: {
-        mealType: formData.mealType,
-        foodTexture: formData.foodTexture,
-        liquidConsistency: formData.liquidConsistency,
-        feedingMethod: formData.feedingMethod,
-        feedingPosition: formData.feedingPosition,
-        swallowingFunction: formData.swallowingFunction,
-        aspirationRisk: formData.aspirationRisk,
-        droolingManagement: formData.droolingManagement,
-        intakeAmount: formData.intakeAmount,
-        feedingDuration: formData.feedingDuration,
-        observedSymptoms: formData.observedSymptoms,
-        interventions: formData.interventions,
-        notes: formData.notes,
-      },
+      eventType: "swallowing",
     }
 
-    DataStorageService.saveCareEvent(careEvent)
     onSubmit(careEvent)
+    DataStorageService.saveCareEvent(careEvent)
   }
 
   const setCurrentTime = () => {
@@ -218,153 +203,128 @@ export function SwallowingForm({ selectedUser, onSubmit, onCancel }: SwallowingF
   ])
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 記録時刻 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-pink-600">🕐 記録時刻</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
+    <CareFormLayout title="🍽️ 嚥下・摂食記録" onSubmit={handleSubmit} onCancel={onCancel}>
+      <div className="space-y-6">
+        {/* 記録時刻 */}
+        <div className="border-pink-200 bg-pink-50/30 border rounded-lg p-4">
+          <Label className="text-pink-600 font-medium">🕐 記録時刻</Label>
+          <div className="flex gap-2 mt-2">
             <Input
               type="datetime-local"
               value={formData.time}
               onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
-              className="flex-1"
+              className="flex-1 text-lg"
             />
-            <Button type="button" onClick={setCurrentTime} variant="outline" size="sm">
+            <Button
+              type="button"
+              onClick={setCurrentTime}
+              variant="outline"
+              className="px-4 py-2 bg-pink-100 hover:bg-pink-200 border-pink-300 text-pink-700 font-medium"
+            >
               今すぐ
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 食事種類 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-blue-600">🍽️ 食事種類</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 食事種類 */}
+        <div className="border-blue-200 bg-blue-50/30 border rounded-lg p-4">
+          <Label className="text-blue-600 font-medium mb-3 block">🍽️ 食事種類</Label>
           <ClickableDropdown
             options={mealTypeOptions}
             value={formData.mealType}
             onChange={(value) => setFormData((prev) => ({ ...prev, mealType: value }))}
             placeholder="食事種類を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 食事形態 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-green-600">🥄 食事形態</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 食事形態 */}
+        <div className="border-green-200 bg-green-50/30 border rounded-lg p-4">
+          <Label className="text-green-600 font-medium mb-3 block">🥄 食事形態</Label>
           <ClickableDropdown
             options={foodTextureOptions}
             value={formData.foodTexture}
             onChange={(value) => setFormData((prev) => ({ ...prev, foodTexture: value }))}
             placeholder="食事形態を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 水分とろみ */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-cyan-600">💧 水分とろみ</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 水分とろみ */}
+        <div className="border-cyan-200 bg-cyan-50/30 border rounded-lg p-4">
+          <Label className="text-cyan-600 font-medium mb-3 block">💧 水分とろみ</Label>
           <ClickableDropdown
             options={liquidConsistencyOptions}
             value={formData.liquidConsistency}
             onChange={(value) => setFormData((prev) => ({ ...prev, liquidConsistency: value }))}
             placeholder="水分のとろみを選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 摂取方法 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-purple-600">🤲 摂取方法</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 摂取方法 */}
+        <div className="border-purple-200 bg-purple-50/30 border rounded-lg p-4">
+          <Label className="text-purple-600 font-medium mb-3 block">🤲 摂取方法</Label>
           <ClickableDropdown
             options={feedingMethodOptions}
             value={formData.feedingMethod}
             onChange={(value) => setFormData((prev) => ({ ...prev, feedingMethod: value }))}
             placeholder="摂取方法を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 摂取姿勢 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-orange-600">🪑 摂取姿勢</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 摂取姿勢 */}
+        <div className="border-orange-200 bg-orange-50/30 border rounded-lg p-4">
+          <Label className="text-orange-600 font-medium mb-3 block">🪑 摂取姿勢</Label>
           <ClickableDropdown
             options={feedingPositionOptions}
             value={formData.feedingPosition}
             onChange={(value) => setFormData((prev) => ({ ...prev, feedingPosition: value }))}
             placeholder="摂取姿勢を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 嚥下機能 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-red-600">🫗 嚥下機能</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 嚥下機能 */}
+        <div className="border-red-200 bg-red-50/30 border rounded-lg p-4">
+          <Label className="text-red-600 font-medium mb-3 block">🫗 嚥下機能</Label>
           <ClickableDropdown
             options={swallowingFunctionOptions}
             value={formData.swallowingFunction}
             onChange={(value) => setFormData((prev) => ({ ...prev, swallowingFunction: value }))}
             placeholder="嚥下機能を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 誤嚥リスク */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-yellow-600">⚠️ 誤嚥リスク</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 誤嚥リスク */}
+        <div className="border-yellow-200 bg-yellow-50/30 border rounded-lg p-4">
+          <Label className="text-yellow-600 font-medium mb-3 block">⚠️ 誤嚥リスク</Label>
           <ClickableDropdown
             options={aspirationRiskOptions}
             value={formData.aspirationRisk}
             onChange={(value) => setFormData((prev) => ({ ...prev, aspirationRisk: value }))}
             placeholder="誤嚥リスクを選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 流涎管理 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-teal-600">💧 流涎管理</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 流涎管理 */}
+        <div className="border-teal-200 bg-teal-50/30 border rounded-lg p-4">
+          <Label className="text-teal-600 font-medium mb-3 block">💧 流涎管理</Label>
           <ClickableDropdown
             options={droolingManagementOptions}
             value={formData.droolingManagement}
             onChange={(value) => setFormData((prev) => ({ ...prev, droolingManagement: value }))}
             placeholder="流涎管理を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 摂取量 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-indigo-600">📊 摂取量（%）</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 摂取量 */}
+        <div className="border-indigo-200 bg-indigo-50/30 border rounded-lg p-4">
+          <Label className="text-indigo-600 font-medium mb-3 block">📊 摂取量（%）</Label>
           <NumberSelector
             value={formData.intakeAmount}
             onChange={(value) => setFormData((prev) => ({ ...prev, intakeAmount: value }))}
@@ -372,16 +332,13 @@ export function SwallowingForm({ selectedUser, onSubmit, onCancel }: SwallowingF
             max={100}
             step={10}
             unit="%"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 摂取時間 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-violet-600">⏱️ 摂取時間（分）</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 摂取時間 */}
+        <div className="border-violet-200 bg-violet-50/30 border rounded-lg p-4">
+          <Label className="text-violet-600 font-medium mb-3 block">⏱️ 摂取時間（分）</Label>
           <NumberSelector
             value={formData.feedingDuration}
             onChange={(value) => setFormData((prev) => ({ ...prev, feedingDuration: value }))}
@@ -389,64 +346,46 @@ export function SwallowingForm({ selectedUser, onSubmit, onCancel }: SwallowingF
             max={120}
             step={5}
             unit="分"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 観察された症状 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-rose-600">👁️ 観察された症状</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 観察された症状 */}
+        <div className="border-rose-200 bg-rose-50/30 border rounded-lg p-4">
+          <Label className="text-rose-600 font-medium mb-3 block">👁️ 観察された症状</Label>
           <ClickableDropdown
             options={observedSymptomsOptions}
             value={formData.observedSymptoms}
             onChange={(value) => setFormData((prev) => ({ ...prev, observedSymptoms: value }))}
             placeholder="観察された症状を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 実施した対応 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-emerald-600">🛠️ 実施した対応</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 実施した対応 */}
+        <div className="border-emerald-200 bg-emerald-50/30 border rounded-lg p-4">
+          <Label className="text-emerald-600 font-medium mb-3 block">🛠️ 実施した対応</Label>
           <ClickableDropdown
             options={interventionsOptions}
             value={formData.interventions}
             onChange={(value) => setFormData((prev) => ({ ...prev, interventions: value }))}
             placeholder="実施した対応を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 備考 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-gray-600">📝 備考</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 備考 */}
+        <div className="border-gray-200 bg-gray-50/30 border rounded-lg p-4">
+          <Label className="text-gray-600 font-medium mb-3 block">📝 備考</Label>
           <Textarea
             value={formData.notes}
             onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="特記事項があれば記入してください"
             rows={3}
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
-
-      {/* 送信ボタン */}
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-          記録する
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent">
-          キャンセル
-        </Button>
+        </div>
       </div>
-    </form>
+    </CareFormLayout>
   )
 }

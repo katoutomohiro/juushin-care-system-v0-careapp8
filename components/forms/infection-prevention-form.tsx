@@ -2,12 +2,13 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
+import { Label } from "@/components/ui/label"
+import CareFormLayout from "@/components/care-form-layout"
 import { DataStorageService } from "@/services/data-storage-service"
 
 interface InfectionPreventionFormData {
@@ -51,27 +52,13 @@ export function InfectionPreventionForm({ selectedUser, onSubmit, onCancel }: In
     e.preventDefault()
 
     const careEvent = {
-      id: Date.now().toString(),
-      userId: selectedUser,
-      type: "infection-prevention" as const,
+      ...formData,
       timestamp: new Date(formData.time).toISOString(),
-      details: {
-        bodyTemperature: formData.bodyTemperature,
-        infectionSigns: formData.infectionSigns,
-        handHygiene: formData.handHygiene,
-        environmentalCleaning: formData.environmentalCleaning,
-        personalProtectiveEquipment: formData.personalProtectiveEquipment,
-        immunizationStatus: formData.immunizationStatus,
-        preventiveMeasures: formData.preventiveMeasures,
-        riskFactors: formData.riskFactors,
-        interventions: formData.interventions,
-        followUpRequired: formData.followUpRequired,
-        notes: formData.notes,
-      },
+      eventType: "infection_prevention",
     }
 
-    DataStorageService.saveCareEvent(careEvent)
     onSubmit(careEvent)
+    DataStorageService.saveCareEvent(careEvent)
   }
 
   const setCurrentTime = () => {
@@ -204,33 +191,32 @@ export function InfectionPreventionForm({ selectedUser, onSubmit, onCancel }: In
   ])
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 記録時刻 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-pink-600">🕐 記録時刻</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
+    <CareFormLayout title="🦠 感染予防記録" onSubmit={handleSubmit} onCancel={onCancel}>
+      <div className="space-y-6">
+        {/* 記録時刻 */}
+        <div className="border-pink-200 bg-pink-50/30 border rounded-lg p-4">
+          <Label className="text-pink-600 font-medium">🕐 記録時刻</Label>
+          <div className="flex gap-2 mt-2">
             <Input
               type="datetime-local"
               value={formData.time}
               onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
-              className="flex-1"
+              className="flex-1 text-lg"
             />
-            <Button type="button" onClick={setCurrentTime} variant="outline" size="sm">
+            <Button
+              type="button"
+              onClick={setCurrentTime}
+              variant="outline"
+              className="px-4 py-2 bg-pink-100 hover:bg-pink-200 border-pink-300 text-pink-700 font-medium"
+            >
               今すぐ
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 体温 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-red-600">🌡️ 体温（℃）</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 体温 */}
+        <div className="border-red-200 bg-red-50/30 border rounded-lg p-4">
+          <Label className="text-red-600 font-medium mb-3 block">🌡️ 体温（℃）</Label>
           <NumberSelector
             value={formData.bodyTemperature}
             onChange={(value) => setFormData((prev) => ({ ...prev, bodyTemperature: value }))}
@@ -238,169 +224,130 @@ export function InfectionPreventionForm({ selectedUser, onSubmit, onCancel }: In
             max={42.0}
             step={0.1}
             unit="℃"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 感染兆候 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-orange-600">🔍 感染兆候</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 感染兆候 */}
+        <div className="border-orange-200 bg-orange-50/30 border rounded-lg p-4">
+          <Label className="text-orange-600 font-medium mb-3 block">🔍 感染兆候</Label>
           <ClickableDropdown
             options={infectionSignsOptions}
             value={formData.infectionSigns}
             onChange={(value) => setFormData((prev) => ({ ...prev, infectionSigns: value }))}
             placeholder="感染兆候を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 手指衛生 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-blue-600">🧼 手指衛生</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 手指衛生 */}
+        <div className="border-blue-200 bg-blue-50/30 border rounded-lg p-4">
+          <Label className="text-blue-600 font-medium mb-3 block">🧼 手指衛生</Label>
           <ClickableDropdown
             options={handHygieneOptions}
             value={formData.handHygiene}
             onChange={(value) => setFormData((prev) => ({ ...prev, handHygiene: value }))}
             placeholder="手指衛生の実施状況を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 環境整備 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-green-600">🧽 環境整備</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 環境整備 */}
+        <div className="border-green-200 bg-green-50/30 border rounded-lg p-4">
+          <Label className="text-green-600 font-medium mb-3 block">🧽 環境整備</Label>
           <ClickableDropdown
             options={environmentalCleaningOptions}
             value={formData.environmentalCleaning}
             onChange={(value) => setFormData((prev) => ({ ...prev, environmentalCleaning: value }))}
             placeholder="環境整備の実施状況を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 個人防護具 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-purple-600">🥽 個人防護具</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 個人防護具 */}
+        <div className="border-purple-200 bg-purple-50/30 border rounded-lg p-4">
+          <Label className="text-purple-600 font-medium mb-3 block">🥽 個人防護具</Label>
           <ClickableDropdown
             options={ppeOptions}
             value={formData.personalProtectiveEquipment}
             onChange={(value) => setFormData((prev) => ({ ...prev, personalProtectiveEquipment: value }))}
             placeholder="個人防護具の使用状況を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 予防接種状況 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-cyan-600">💉 予防接種状況</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 予防接種状況 */}
+        <div className="border-cyan-200 bg-cyan-50/30 border rounded-lg p-4">
+          <Label className="text-cyan-600 font-medium mb-3 block">💉 予防接種状況</Label>
           <ClickableDropdown
             options={immunizationStatusOptions}
             value={formData.immunizationStatus}
             onChange={(value) => setFormData((prev) => ({ ...prev, immunizationStatus: value }))}
             placeholder="予防接種状況を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 予防策 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-teal-600">🛡️ 実施した予防策</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 予防策 */}
+        <div className="border-teal-200 bg-teal-50/30 border rounded-lg p-4">
+          <Label className="text-teal-600 font-medium mb-3 block">🛡️ 実施した予防策</Label>
           <ClickableDropdown
             options={preventiveMeasuresOptions}
             value={formData.preventiveMeasures}
             onChange={(value) => setFormData((prev) => ({ ...prev, preventiveMeasures: value }))}
             placeholder="実施した予防策を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* リスク要因 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-yellow-600">⚠️ リスク要因</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* リスク要因 */}
+        <div className="border-yellow-200 bg-yellow-50/30 border rounded-lg p-4">
+          <Label className="text-yellow-600 font-medium mb-3 block">⚠️ リスク要因</Label>
           <ClickableDropdown
             options={riskFactorsOptions}
             value={formData.riskFactors}
             onChange={(value) => setFormData((prev) => ({ ...prev, riskFactors: value }))}
             placeholder="感染リスク要因を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 実施した対応 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-indigo-600">🛠️ 実施した対応</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 実施した対応 */}
+        <div className="border-indigo-200 bg-indigo-50/30 border rounded-lg p-4">
+          <Label className="text-indigo-600 font-medium mb-3 block">🛠️ 実施した対応</Label>
           <ClickableDropdown
             options={interventionsOptions}
             value={formData.interventions}
             onChange={(value) => setFormData((prev) => ({ ...prev, interventions: value }))}
             placeholder="実施した対応を選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* フォローアップ */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-violet-600">📋 フォローアップ</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* フォローアップ */}
+        <div className="border-violet-200 bg-violet-50/30 border rounded-lg p-4">
+          <Label className="text-violet-600 font-medium mb-3 block">📋 フォローアップ</Label>
           <ClickableDropdown
             options={followUpRequiredOptions}
             value={formData.followUpRequired}
             onChange={(value) => setFormData((prev) => ({ ...prev, followUpRequired: value }))}
             placeholder="必要なフォローアップを選択してください"
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 備考 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-gray-600">📝 備考</CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* 備考 */}
+        <div className="border-gray-200 bg-gray-50/30 border rounded-lg p-4">
+          <Label className="text-gray-600 font-medium mb-3 block">📝 備考</Label>
           <Textarea
             value={formData.notes}
             onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="特記事項があれば記入してください"
             rows={3}
+            className="text-lg"
           />
-        </CardContent>
-      </Card>
-
-      {/* 送信ボタン */}
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-          記録する
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent">
-          キャンセル
-        </Button>
+        </div>
       </div>
-    </form>
+    </CareFormLayout>
   )
 }
