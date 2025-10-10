@@ -41,6 +41,8 @@
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
     "@react-pdf/renderer": "latest",
+    "@storybook/react": "latest",
+    "@storybook/test": "latest",
     "@testing-library/dom": "latest",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
