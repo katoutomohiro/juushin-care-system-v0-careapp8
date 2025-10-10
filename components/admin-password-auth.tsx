@@ -53,7 +53,7 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
   const handleLogout = () => {
     setIsAuthenticated(false)
     addToast({
-      type: "info",
+      type: "default",
       title: "ログアウト",
       description: "管理者機能からログアウトしました",
     })
