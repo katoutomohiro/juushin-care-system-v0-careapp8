@@ -29,7 +29,7 @@ const userDetails: {
     service: string[]
   }
 } = {
-  "A・T": {
+  A・T: {
     age: 36,
     gender: "男性",
     careLevel: "全介助",
@@ -37,7 +37,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "I・K": {
+  I・K: {
     age: 47,
     gender: "女性",
     careLevel: "全介助",
@@ -45,7 +45,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・S": {
+  O・S: {
     age: 40,
     gender: "女性",
     careLevel: "全介助",
@@ -53,7 +53,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・M": {
+  S・M: {
     age: 43,
     gender: "男性",
     careLevel: "全介助",
@@ -61,7 +61,7 @@ const userDetails: {
     medicalCare: "吸引、腸瘻",
     service: ["life-care"],
   },
-  "N・M": {
+  N・M: {
     age: 32,
     gender: "男性",
     careLevel: "全介助",
@@ -69,7 +69,7 @@ const userDetails: {
     medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
     service: ["life-care"],
   },
-  "W・M": {
+  W・M: {
     age: 32,
     gender: "女性",
     careLevel: "全介助",
@@ -77,7 +77,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・Y": {
+  S・Y: {
     age: 41,
     gender: "女性",
     careLevel: "全介助",
@@ -85,7 +85,7 @@ const userDetails: {
     medicalCare: "鼻腔栄養注入",
     service: ["life-care"],
   },
-  "Y・K": {
+  Y・K: {
     age: 22,
     gender: "男性",
     careLevel: "全介助",
@@ -94,7 +94,7 @@ const userDetails: {
     medicalCare: "鼻腔チューブ使用、導尿",
     service: ["life-care"],
   },
-  "I・K2": {
+  I・K2: {
     age: 40,
     gender: "男性",
     careLevel: "全介助",
@@ -102,7 +102,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・M": {
+  O・M: {
     age: 23,
     gender: "男性",
     careLevel: "全介助",
@@ -110,7 +110,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "U・S": {
+  U・S: {
     age: 19,
     gender: "男性",
     careLevel: "全介助",
@@ -118,7 +118,7 @@ const userDetails: {
     medicalCare: "気管切開、気管内吸引、吸入、浣腸",
     service: ["life-care"],
   },
-  "I・T": {
+  I・T: {
     age: 24,
     gender: "男性",
     careLevel: "全介助",
@@ -126,7 +126,7 @@ const userDetails: {
     medicalCare: "胃ろう注入",
     service: ["life-care"],
   },
-  "M・S": {
+  M・S: {
     age: 18,
     gender: "男性",
     careLevel: "全介助",
@@ -134,7 +134,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "M・O": {
+  M・O: {
     age: 18,
     gender: "女性",
     careLevel: "全介助",
@@ -142,7 +142,7 @@ const userDetails: {
     medicalCare: "胃ろう注入、吸引、IVH埋め込み",
     service: ["life-care"],
   },
-  "M・I": {
+  M・I: {
     age: 17,
     gender: "男児",
     careLevel: "全介助",
@@ -150,7 +150,7 @@ const userDetails: {
     medicalCare: "鼻腔注入",
     service: ["life-care"],
   },
-  "T・Y": {
+  T・Y: {
     age: 17,
     gender: "男児",
     careLevel: "全介助",
@@ -158,7 +158,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "K・M": {
+  K・M: {
     age: 16,
     gender: "男児",
     careLevel: "全介助",
@@ -166,7 +166,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・H": {
+  S・H: {
     age: 16,
     gender: "男児",
     careLevel: "全介助",
@@ -174,7 +174,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "R・N": {
+  R・N: {
     age: 15,
     gender: "男児",
     careLevel: "全介助",
@@ -182,7 +182,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "Y・T": {
+  Y・T: {
     age: 14,
     gender: "男児",
     careLevel: "全介助",
@@ -190,7 +190,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "H・K": {
+  H・K: {
     age: 13,
     gender: "男児",
     careLevel: "全介助",
@@ -198,7 +198,7 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "N・S": {
+  N・S: {
     age: 12,
     gender: "男児",
     careLevel: "全介助",
