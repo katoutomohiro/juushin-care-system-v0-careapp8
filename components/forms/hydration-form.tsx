@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import CareFormLayout from "@/components/care-form-layout"
 
 interface HydrationFormProps {
+  selectedUser: string // Added selectedUser prop to match SeizureForm pattern
   onSubmit: (data: any) => void
   onCancel: () => void
 }
@@ -127,7 +128,7 @@ const NumberSelector = ({
   )
 }
 
-export function HydrationForm({ onSubmit, onCancel }: HydrationFormProps) {
+export function HydrationForm({ selectedUser, onSubmit, onCancel }: HydrationFormProps) {
   const [formData, setFormData] = useState({
     amount: "200", // Changed default value from "100" to "200"
     fluidType: "",
@@ -148,6 +149,7 @@ export function HydrationForm({ onSubmit, onCancel }: HydrationFormProps) {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "hydration",
+      user: selectedUser, // Added selectedUser to form data
     })
   }
 

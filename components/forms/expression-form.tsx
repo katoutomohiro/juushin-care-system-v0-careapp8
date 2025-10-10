@@ -28,6 +28,7 @@ interface ExpressionFormData {
 }
 
 interface ExpressionFormProps {
+  selectedUser: string // Added selectedUser prop to match SeizureForm pattern
   onSubmit: (data: ExpressionFormData) => void
   onCancel: () => void
 }
@@ -97,7 +98,7 @@ const defaultExpressionBehaviors = [
   { value: "筋緊張の変化", label: "筋緊張の変化" },
 ]
 
-export function ExpressionForm({ onSubmit, onCancel }: ExpressionFormProps) {
+export function ExpressionForm({ selectedUser, onSubmit, onCancel }: ExpressionFormProps) {
   const [formData, setFormData] = useState<ExpressionFormData>({
     timestamp: new Date().toISOString().slice(0, 16),
     expressionType: "",

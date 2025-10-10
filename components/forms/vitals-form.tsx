@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import CareFormLayout from "@/components/care-form-layout"
 
 interface VitalsFormProps {
+  selectedUser: string // Added selectedUser prop to match SeizureForm pattern
   onSubmit: (data: any) => void
   onCancel: () => void
 }
@@ -123,7 +124,7 @@ const NumberSelector = ({
   )
 }
 
-export function VitalsForm({ onSubmit, onCancel }: VitalsFormProps) {
+export function VitalsForm({ selectedUser, onSubmit, onCancel }: VitalsFormProps) {
   const [formData, setFormData] = useState({
     temperature: "36.5",
     temperaturePosition: "",
@@ -150,6 +151,7 @@ export function VitalsForm({ onSubmit, onCancel }: VitalsFormProps) {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "vitals",
+      selectedUser: selectedUser, // Added selectedUser to form data
     })
   }
 

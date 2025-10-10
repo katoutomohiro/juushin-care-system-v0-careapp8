@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 interface TubeFeedingFormProps {
+  selectedUser: string // Added selectedUser prop to match SeizureForm pattern
   onSubmit: (data: any) => void
   onCancel: () => void
 }
@@ -126,7 +127,7 @@ const NumberSelector = ({
   )
 }
 
-export function TubeFeedingForm({ onSubmit, onCancel }: TubeFeedingFormProps) {
+export function TubeFeedingForm({ selectedUser, onSubmit, onCancel }: TubeFeedingFormProps) {
   const [formData, setFormData] = useState({
     amount: "200", // Changed default value from empty to "200"
     nutritionBrand: "",
@@ -159,6 +160,7 @@ export function TubeFeedingForm({ onSubmit, onCancel }: TubeFeedingFormProps) {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "tube_feeding",
+      user: selectedUser, // Added user field to match SeizureForm pattern
     })
   }
 
@@ -289,62 +291,45 @@ export function TubeFeedingForm({ onSubmit, onCancel }: TubeFeedingFormProps) {
           </div>
         </div>
 
-        <div className="border-amber-200 bg-amber-50/30 border rounded-lg p-4">
-          <Label className="text-amber-700 font-medium mb-3 block">🛏️ 患者体位</Label>
-          <ClickableDropdown
-            label="患者体位"
-            value={formData.patientPosition}
-            onValueChange={(value) => setFormData({ ...formData, patientPosition: value })}
-            options={[
-              { value: "semi-fowler", label: "半座位" },
-              { value: "fowler", label: "座位" },
-              { value: "right-side", label: "右側臥位" },
-              { value: "left-side", label: "左側臥位" },
-              { value: "supine", label: "仰臥位" },
-              { value: "prone", label: "腹臥位" },
-            ]}
-            placeholder="患者体位を選択してください"
-          />
-        </div>
-
-        <div className="border-cyan-200 bg-cyan-50/30 border rounded-lg p-4">
-          <Label className="text-cyan-700 font-medium mb-3 block">🔍 前処置</Label>
-          <ClickableDropdown
-            label="前処置"
-            value={formData.preCare}
-            onValueChange={(value) => setFormData({ ...formData, preCare: value })}
-            options={[
-              { value: "position-check", label: "体位確認" },
-              { value: "tube-check", label: "チューブ確認" },
-              { value: "gastric-content-check", label: "胃内容確認" },
-              { value: "temperature-check", label: "温度確認" },
-              { value: "hand-hygiene", label: "手指衛生" },
-              { value: "tube-flush", label: "チューブ洗浄" },
-              { value: "residual-volume", label: "残胃量測定" },
-              { value: "vital-signs", label: "バイタル測定" },
-            ]}
-            placeholder="前処置を選択してください"
-          />
-        </div>
-
-        <div className="border-teal-200 bg-teal-50/30 border rounded-lg p-4">
-          <Label className="text-teal-700 font-medium mb-3 block">✅ 後処置</Label>
-          <ClickableDropdown
-            label="後処置"
-            value={formData.postCare}
-            onValueChange={(value) => setFormData({ ...formData, postCare: value })}
-            options={[
-              { value: "flush", label: "フラッシュ" },
-              { value: "position-maintain", label: "体位保持" },
-              { value: "tube-clamp", label: "チューブクランプ" },
-              { value: "observation-record", label: "観察記録" },
-              { value: "tube-fixation-check", label: "チューブ固定確認" },
-              { value: "oral-care", label: "口腔ケア" },
-              { value: "vital-measurement", label: "バイタル測定" },
-              { value: "safety-check", label: "安全確認" },
-            ]}
-            placeholder="後処置を選択してください"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="border-teal-200 bg-teal-50/30 border rounded-lg p-4">
+            <Label className="text-teal-700 font-medium mb-3 block">🔍 前処置</Label>
+            <ClickableDropdown
+              label="前処置"
+              value={formData.preCare}
+              onValueChange={(value) => setFormData({ ...formData, preCare: value })}
+              options={[
+                { value: "position-check", label: "体位確認" },
+                { value: "tube-check", label: "チューブ確認" },
+                { value: "gastric-content-check", label: "胃内容確認" },
+                { value: "temperature-check", label: "温度確認" },
+                { value: "hand-hygiene", label: "手指衛生" },
+                { value: "tube-flush", label: "チューブ洗浄" },
+                { value: "residual-volume", label: "残胃量測定" },
+                { value: "vital-signs", label: "バイタル測定" },
+              ]}
+              placeholder="前処置を選択してください"
+            />
+          </div>
+          <div className="border-cyan-200 bg-cyan-50/30 border rounded-lg p-4">
+            <Label className="text-cyan-700 font-medium mb-3 block">✅ 後処置</Label>
+            <ClickableDropdown
+              label="後処置"
+              value={formData.postCare}
+              onValueChange={(value) => setFormData({ ...formData, postCare: value })}
+              options={[
+                { value: "flush", label: "フラッシュ" },
+                { value: "position-maintain", label: "体位保持" },
+                { value: "tube-clamp", label: "チューブクランプ" },
+                { value: "observation-record", label: "観察記録" },
+                { value: "tube-fixation-check", label: "チューブ固定確認" },
+                { value: "oral-care", label: "口腔ケア" },
+                { value: "vital-measurement", label: "バイタル測定" },
+                { value: "safety-check", label: "安全確認" },
+              ]}
+              placeholder="後処置を選択してください"
+            />
+          </div>
         </div>
 
         <div className="border-emerald-200 bg-emerald-50/30 border rounded-lg p-4">
