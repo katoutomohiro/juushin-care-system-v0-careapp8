@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Updated color palette to emerald-based design for care app */
+  --background: oklch(1 0 0); /* #ffffff */
+  --foreground: oklch(0.35 0.02 252); /* #475569 slate-600 */
+  --card: oklch(0.97 0.01 252); /* #f1f5f9 slate-100 */
+  --card-foreground: oklch(0.45 0.15 162); /* #059669 emerald-600 */
+  --popover: oklch(1 0 0); /* #ffffff */
+  --popover-foreground: oklch(0.35 0.02 252); /* #475569 */
+  --primary: oklch(0.45 0.15 162); /* #059669 emerald-600 */
+  --primary-foreground: oklch(1 0 0); /* #ffffff */
+  --secondary: oklch(0.55 0.15 162); /* #10b981 emerald-500 */
+  --secondary-foreground: oklch(1 0 0); /* #ffffff */
+  --muted: oklch(0.97 0.01 252); /* #f1f5f9 slate-100 */
+  --muted-foreground: oklch(0.35 0.02 252); /* #475569 */
+  --accent: oklch(0.55 0.15 162); /* #10b981 emerald-500 */
+  --accent-foreground: oklch(1 0 0); /* #ffffff */
+  --destructive: oklch(0.55 0.25 25); /* #dc2626 red-600 */
+  --destructive-foreground: oklch(1 0 0); /* #ffffff */
+  --border: oklch(0.9 0.01 252); /* #e5e7eb gray-200 */
+  --input: oklch(0.97 0.01 252); /* #f1f5f9 slate-100 */
+  --ring: oklch(0.45 0.15 162 / 0.5); /* emerald-600 with opacity */
+  --chart-1: oklch(0.45 0.15 162); /* #059669 emerald-600 */
+  --chart-2: oklch(0.55 0.15 162); /* #10b981 emerald-500 */
+  --chart-3: oklch(0.45 0.02 252); /* #6b7280 gray-500 */
+  --chart-4: oklch(0.55 0.25 25); /* #dc2626 red-600 */
+  --chart-5: oklch(0.65 0.15 70); /* #f59e0b amber-500 */
+  --radius: 0.75rem; /* Increased for softer appearance */
+  --sidebar: oklch(0.97 0.01 252); /* #f1f5f9 slate-100 */
+  --sidebar-foreground: oklch(0.35 0.02 252); /* #475569 */
+  --sidebar-primary: oklch(0.45 0.15 162); /* #059669 emerald-600 */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff */
+  --sidebar-accent: oklch(0.55 0.15 162); /* #10b981 emerald-500 */
+  --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff */
+  --sidebar-border: oklch(0.9 0.01 252); /* #e5e7eb */
+  --sidebar-ring: oklch(0.45 0.15 162 / 0.5); /* emerald focus ring */
+}
+
+.dark {
+  --background: oklch(0.08 0.01 252); /* Dark slate background */
+  --foreground: oklch(0.95 0 0); /* Light text */
+  --card: oklch(0.12 0.01 252); /* Dark card */
+  --card-foreground: oklch(0.6 0.15 162); /* Lighter emerald for dark mode */
+  --popover: oklch(0.08 0.01 252); /* Dark popover */
+  --popover-foreground: oklch(0.95 0 0); /* Light popover text */
+  --primary: oklch(0.6 0.15 162); /* Lighter emerald for dark mode */
+  --primary-foreground: oklch(0.08 0.01 252); /* Dark text on primary */
+  --secondary: oklch(0.2 0.01 252); /* Dark secondary */
+  --secondary-foreground: oklch(0.95 0 0); /* Light secondary text */
+  --muted: oklch(0.2 0.01 252); /* Dark muted */
+  --muted-foreground: oklch(0.7 0.01 252); /* Muted text */
+  --accent: oklch(0.2 0.01 252); /* Dark accent */
+  --accent-foreground: oklch(0.95 0 0); /* Light accent text */
+  --destructive: oklch(0.5 0.2 25); /* Darker destructive */
+  --destructive-foreground: oklch(0.95 0 0); /* Light destructive text */
+  --border: oklch(0.2 0.01 252); /* Dark border */
+  --input: oklch(0.2 0.01 252); /* Dark input */
+  --ring: oklch(0.6 0.15 162 / 0.5); /* Emerald ring for dark mode */
+  --chart-1: oklch(0.6 0.15 162); /* Lighter chart colors for dark mode */
+  --chart-2: oklch(0.7 0.15 162);
+  --chart-3: oklch(0.65 0.02 252);
+  --chart-4: oklch(0.65 0.25 25);
+  --chart-5: oklch(0.75 0.15 70);
+  --sidebar: oklch(0.12 0.01 252); /* Dark sidebar */
+  --sidebar-foreground: oklch(0.95 0 0); /* Light sidebar text */
+  --sidebar-primary: oklch(0.6 0.15 162); /* Lighter sidebar primary */
+  --sidebar-primary-foreground: oklch(0.08 0.01 252); /* Dark sidebar primary text */
+  --sidebar-accent: oklch(0.2 0.01 252); /* Dark sidebar accent */
+  --sidebar-accent-foreground: oklch(0.95 0 0); /* Light sidebar accent text */
+  --sidebar-border: oklch(0.2 0.01 252); /* Dark sidebar border */
+  --sidebar-ring: oklch(0.6 0.15 162 / 0.5); /* Emerald sidebar ring */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Added typography hierarchy for better readability */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif font-bold;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+}
