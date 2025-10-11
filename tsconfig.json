@@ -19,10 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@vitejs/plugin-react": ["./types/vite-plugin-react"]
+      "@/*": ["./*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "tests", "**/*.stories.tsx", "**/*.stories.ts"]
+  "exclude": ["node_modules"]
 }

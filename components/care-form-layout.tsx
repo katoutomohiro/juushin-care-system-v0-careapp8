@@ -4,31 +4,19 @@ import type React from "react"
 
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
-type CareFormLayoutProps = Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "children" | "className"> & {
+type CareFormLayoutProps = {
   title: string
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  onSubmit: (e: React.FormEvent) => void
   onCancel: () => void
   children: React.ReactNode
   isSubmitting?: boolean
-  className?: string
-  formClassName?: string
 }
 
-export function CareFormLayout({
-  title,
-  onSubmit,
-  onCancel,
-  children,
-  isSubmitting = false,
-  className,
-  formClassName,
-  ...formProps
-}: CareFormLayoutProps) {
+export function CareFormLayout({ title, onSubmit, onCancel, children, isSubmitting = false }: CareFormLayoutProps) {
   return (
-    <form onSubmit={onSubmit} className={cn("h-full", formClassName)} {...formProps}>
-      <Card className={cn("flex flex-col h-[95vh] w-full", className)}>
+    <form onSubmit={onSubmit} className="h-full">
+      <Card className="flex flex-col h-[95vh] w-full">
         <CardHeader className="shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
         </CardHeader>

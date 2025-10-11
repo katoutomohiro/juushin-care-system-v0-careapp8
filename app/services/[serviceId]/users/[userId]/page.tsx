@@ -151,17 +151,16 @@ const dailyLogCategories = [
   },
 ]
 
-type UserDetail = {
-  age: number
-  gender: string
-  careLevel: string
-  condition: string
-  medicalCare: string
-  service: string[]
-  name?: string
-}
-
-const userDetails: Record<string, UserDetail> = {
+const userDetails: {
+  [key: string]: {
+    age: number
+    gender: string
+    careLevel: string
+    condition: string
+    medicalCare: string
+    service: string[]
+  }
+} = {
   "A・T": {
     age: 36,
     gender: "男性",
@@ -270,22 +269,7 @@ export default function UserDetailPage() {
 
   const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editedUser, setEditedUser] = useState<UserDetail>(() => {
-    const details = userDetails[userId]
-    if (details) {
-      return { ...details }
-    }
-
-    return {
-      age: 0,
-      gender: "不明",
-      careLevel: "不明",
-      condition: "情報なし",
-      medicalCare: "情報なし",
-      service: [serviceId],
-      name: userId,
-    }
-  })
+  const [editedUser, setEditedUser] = useState(userDetails[userId] || {})
 
   if (!service) {
     return (
@@ -305,9 +289,6 @@ export default function UserDetailPage() {
   }
 
   const handleSaveUser = () => {
-    if (editedUser.name && editedUser.name !== userId) {
-      alert("氏名の変更は現在サポートされていません。将来のバージョンで対応予定です。")
-    }
     userDetails[userId] = editedUser
     setIsEditDialogOpen(false)
   }
@@ -357,11 +338,7 @@ export default function UserDetailPage() {
                 </CardTitle>
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditedUser({ ...currentUserDetails, name: userId })}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setEditedUser(currentUserDetails)}>
                       ✏️ 編集
                     </Button>
                   </DialogTrigger>
@@ -370,19 +347,6 @@ export default function UserDetailPage() {
                       <DialogTitle>利用者情報を編集</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                          氏名 *
-                        </Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="bg-white border-gray-300"
-                          value={editedUser.name || userId}
-                          onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
-                          placeholder="氏名を入力してください"
-                        />
-                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="age" className="text-sm font-medium text-gray-700">
                           年齢
