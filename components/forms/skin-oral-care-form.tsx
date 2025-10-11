@@ -33,8 +33,14 @@ interface SkinOralCareFormData {
   time: string
 }
 
+interface SkinOralCareFormSubmitData extends SkinOralCareFormData {
+  eventType: "skin_oral_care"
+  selectedUser: string
+}
+
 interface SkinOralCareFormProps {
-  onSubmit: (data: SkinOralCareFormData) => void
+  selectedUser: string
+  onSubmit: (data: SkinOralCareFormSubmitData) => void
   onCancel: () => void
 }
 
@@ -89,7 +95,7 @@ const ClickableDropdown = ({
   )
 }
 
-export function SkinOralCareForm({ onSubmit, onCancel }: SkinOralCareFormProps) {
+export function SkinOralCareForm({ selectedUser, onSubmit, onCancel }: SkinOralCareFormProps) {
   const [formData, setFormData] = useState<SkinOralCareFormData>({
     timestamp: new Date().toISOString().slice(0, 16),
     careType: "",
@@ -115,11 +121,14 @@ export function SkinOralCareForm({ onSubmit, onCancel }: SkinOralCareFormProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit({
+    const submitData: SkinOralCareFormSubmitData = {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "skin_oral_care",
-    })
+      selectedUser,
+    }
+
+    onSubmit(submitData)
   }
 
   const setCurrentTime = () => {

@@ -31,8 +31,14 @@ interface ExcretionFormData {
   time: string
 }
 
+interface ExcretionFormSubmitData extends ExcretionFormData {
+  eventType: "excretion"
+  selectedUser: string
+}
+
 interface ExcretionFormProps {
-  onSubmit: (data: ExcretionFormData) => void
+  selectedUser: string
+  onSubmit: (data: ExcretionFormSubmitData) => void
   onCancel: () => void
 }
 
@@ -87,7 +93,7 @@ const ClickableDropdown = ({
   )
 }
 
-export function ExcretionForm({ onSubmit, onCancel }: ExcretionFormProps) {
+export function ExcretionForm({ selectedUser, onSubmit, onCancel }: ExcretionFormProps) {
   const [formData, setFormData] = useState<ExcretionFormData>({
     timestamp: new Date().toISOString().slice(0, 16),
     excretionType: "",
@@ -112,10 +118,11 @@ export function ExcretionForm({ onSubmit, onCancel }: ExcretionFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("[v0] Excretion form submitted with data:", formData)
-    const submitData = {
+    const submitData: ExcretionFormSubmitData = {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "excretion",
+      selectedUser,
     }
     console.log("[v0] Final submit data:", submitData)
     onSubmit(submitData)
