@@ -163,7 +163,7 @@ type UserDetail = {
 }
 
 const userDetails: Record<string, UserDetail> = {
-  "A・T": {
+  A・T: {
     name: "A・T",
     age: 36,
     gender: "男性",
@@ -172,7 +172,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "I・K": {
+  I・K: {
     name: "I・K",
     age: 47,
     gender: "女性",
@@ -181,7 +181,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・S": {
+  O・S: {
     name: "O・S",
     age: 40,
     gender: "女性",
@@ -190,7 +190,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・M": {
+  S・M: {
     name: "S・M",
     age: 43,
     gender: "男性",
@@ -199,7 +199,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
     service: ["life-care"],
   },
-  "N・M": {
+  N・M: {
     name: "N・M",
     age: 32,
     gender: "男性",
@@ -208,7 +208,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
     service: ["life-care"],
   },
-  "W・M": {
+  W・M: {
     name: "W・M",
     age: 32,
     gender: "女性",
@@ -217,7 +217,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・Y": {
+  S・Y: {
     name: "S・Y",
     age: 41,
     gender: "女性",
@@ -226,7 +226,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "鼻腔栄養注入",
     service: ["life-care"],
   },
-  "Y・K": {
+  Y・K: {
     name: "Y・K",
     age: 22,
     gender: "男性",
@@ -236,7 +236,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "鼻腔チューブ使用、導尿",
     service: ["life-care"],
   },
-  "I・K2": {
+  I・K2: {
     name: "I・K2",
     age: 40,
     gender: "男性",
@@ -245,7 +245,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・M": {
+  O・M: {
     name: "O・M",
     age: 23,
     gender: "男性",
@@ -254,7 +254,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "U・S": {
+  U・S: {
     name: "U・S",
     age: 19,
     gender: "男性",
@@ -263,7 +263,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "気管切開、気管内吸引、吸入、浣腸",
     service: ["life-care"],
   },
-  "I・T": {
+  I・T: {
     name: "I・T",
     age: 24,
     gender: "男性",
