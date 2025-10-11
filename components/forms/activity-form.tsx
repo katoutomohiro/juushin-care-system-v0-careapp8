@@ -32,8 +32,14 @@ interface ActivityFormData {
   time: string
 }
 
+interface ActivityFormSubmitData extends ActivityFormData {
+  eventType: "activity"
+  selectedUser: string
+}
+
 interface ActivityFormProps {
-  onSubmit: (data: ActivityFormData) => void
+  selectedUser: string
+  onSubmit: (data: ActivityFormSubmitData) => void
   onCancel: () => void
 }
 
@@ -88,7 +94,7 @@ const ClickableDropdown = ({
   )
 }
 
-export function ActivityForm({ onSubmit, onCancel }: ActivityFormProps) {
+export function ActivityForm({ selectedUser, onSubmit, onCancel }: ActivityFormProps) {
   const [formData, setFormData] = useState<ActivityFormData>({
     timestamp: new Date().toISOString().slice(0, 16),
     activityType: "",
@@ -113,11 +119,14 @@ export function ActivityForm({ onSubmit, onCancel }: ActivityFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit({
+    const submitData: ActivityFormSubmitData = {
       ...formData,
       timestamp: new Date().toISOString(),
       eventType: "activity",
-    })
+      selectedUser,
+    }
+
+    onSubmit(submitData)
   }
 
   const setCurrentTime = () => {
