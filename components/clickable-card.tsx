@@ -31,7 +31,7 @@ export default function ClickableCard({
   const [particles, setParticles] = useState<Particle[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | null>(null)
 
   const createParticles = (x: number, y: number) => {
     const newParticles: Particle[] = []
@@ -98,7 +98,7 @@ export default function ClickableCard({
     animate()
 
     return () => {
-      if (animationFrameRef.current) {
+  if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }

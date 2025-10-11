@@ -1,8 +1,8 @@
-import { getAllUsers } from "./user-utils" // Assuming user-utils is the file where getAllUsers is declared
+import { DataStorageService } from "@/services/data-storage-service"
 
 export async function initializeSampleData() {
   try {
-    const existingUsers = await getAllUsers()
+  const existingUsers = DataStorageService.getAllUserProfiles()
     if (existingUsers.length > 0) {
       return
     }

@@ -36,10 +36,10 @@ export class DataStorageService {
   static saveCareEvent(event: Omit<CareEvent, "id">): CareEvent {
     try {
       const events = this.getAllCareEvents()
-      const newEvent: CareEvent = {
+      const newEvent = {
         ...event,
         id: this.generateId(),
-      }
+      } as CareEvent
 
       events.push(newEvent)
       localStorage.setItem(this.CARE_EVENTS_KEY, JSON.stringify(events))
