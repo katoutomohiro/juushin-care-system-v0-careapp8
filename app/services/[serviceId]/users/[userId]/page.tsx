@@ -4,13 +4,14 @@ import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ClickableCard from "@/components/clickable-card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DataStorageService } from "@/services/data-storage-service"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -158,11 +159,16 @@ type UserDetail = {
   condition: string
   medicalCare: string
   service: string[]
+<<<<<<< HEAD
   name?: string
+=======
+  name: string
+>>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
 }
 
 const userDetails: Record<string, UserDetail> = {
   "A・T": {
+    name: "A・T",
     age: 36,
     gender: "男性",
     careLevel: "全介助",
@@ -171,6 +177,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "I・K": {
+    name: "I・K",
     age: 47,
     gender: "女性",
     careLevel: "全介助",
@@ -179,6 +186,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "O・S": {
+    name: "O・S",
     age: 40,
     gender: "女性",
     careLevel: "全介助",
@@ -187,6 +195,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "S・M": {
+    name: "S・M",
     age: 43,
     gender: "男性",
     careLevel: "全介助",
@@ -195,6 +204,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "N・M": {
+    name: "N・M",
     age: 32,
     gender: "男性",
     careLevel: "全介助",
@@ -203,6 +213,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "W・M": {
+    name: "W・M",
     age: 32,
     gender: "女性",
     careLevel: "全介助",
@@ -211,6 +222,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "S・Y": {
+    name: "S・Y",
     age: 41,
     gender: "女性",
     careLevel: "全介助",
@@ -219,6 +231,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "Y・K": {
+    name: "Y・K",
     age: 22,
     gender: "男性",
     careLevel: "全介助",
@@ -228,6 +241,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "I・K2": {
+    name: "I・K2",
     age: 40,
     gender: "男性",
     careLevel: "全介助",
@@ -236,6 +250,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "O・M": {
+    name: "O・M",
     age: 23,
     gender: "男性",
     careLevel: "全介助",
@@ -244,6 +259,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "U・S": {
+    name: "U・S",
     age: 19,
     gender: "男性",
     careLevel: "全介助",
@@ -252,6 +268,7 @@ const userDetails: Record<string, UserDetail> = {
     service: ["life-care"],
   },
   "I・T": {
+    name: "I・T",
     age: 24,
     gender: "男性",
     careLevel: "全介助",
@@ -286,6 +303,17 @@ export default function UserDetailPage() {
       name: userId,
     }
   })
+<<<<<<< HEAD
+=======
+  const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
+
+  useEffect(() => {
+    const profile = DataStorageService.getUserProfile(userId)
+    if (profile?.name) {
+      setDisplayName(profile.name)
+    }
+  }, [userId])
+>>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
 
   if (!service) {
     return (
@@ -295,20 +323,53 @@ export default function UserDetailPage() {
     )
   }
 
-  const currentUserDetails = userDetails[userId] || {
-    age: 0,
-    gender: "不明",
-    careLevel: "不明",
-    condition: "情報なし",
-    medicalCare: "情報なし",
-    service: [serviceId],
-  }
+  const storedUserDetails = userDetails[userId]
+  const currentUserDetails: UserDetail = storedUserDetails
+    ? { ...storedUserDetails, name: displayName }
+    : {
+        age: 0,
+        gender: "不明",
+        careLevel: "不明",
+        condition: "情報なし",
+        medicalCare: "情報なし",
+        service: [serviceId],
+        name: displayName,
+      }
 
   const handleSaveUser = () => {
+<<<<<<< HEAD
     if (editedUser.name && editedUser.name !== userId) {
       alert("氏名の変更は現在サポートされていません。将来のバージョンで対応予定です。")
     }
     userDetails[userId] = editedUser
+=======
+    const oldName = displayName
+    const newName = editedUser.name.trim() || userId
+
+    if (newName !== oldName) {
+      try {
+        DataStorageService.updateUserNameInProfiles(oldName, newName)
+        DataStorageService.updateUserNameInEvents(oldName, newName)
+
+        const customNames = DataStorageService.getCustomUserNames()
+        const updatedNames = new Set(customNames)
+        if (updatedNames.has(oldName)) {
+          updatedNames.delete(oldName)
+        }
+        updatedNames.add(newName)
+        DataStorageService.saveCustomUserNames(Array.from(updatedNames))
+
+        alert(`氏名を「${oldName}」から「${newName}」に変更しました。`)
+      } catch (error) {
+        console.error("Failed to update user name:", error)
+        alert("氏名の変更に失敗しました。もう一度お試しください。")
+        return
+      }
+    }
+
+    userDetails[userId] = { ...editedUser, name: newName }
+    setDisplayName(newName)
+>>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
     setIsEditDialogOpen(false)
   }
 
@@ -330,7 +391,7 @@ export default function UserDetailPage() {
                       : "👤"}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{userId}</h1>
+                  <h1 className="text-2xl font-bold">{displayName}</h1>
                   <p className="text-sm text-muted-foreground">{service.name}</p>
                 </div>
               </div>
@@ -360,7 +421,11 @@ export default function UserDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
+<<<<<<< HEAD
                       onClick={() => setEditedUser({ ...currentUserDetails, name: userId })}
+=======
+                      onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
+>>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
                     >
                       ✏️ 編集
                     </Button>
@@ -372,6 +437,7 @@ export default function UserDetailPage() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+<<<<<<< HEAD
                           氏名 *
                         </Label>
                         <Input
@@ -379,6 +445,14 @@ export default function UserDetailPage() {
                           type="text"
                           className="bg-white border-gray-300"
                           value={editedUser.name || userId}
+=======
+                          氏名
+                        </Label>
+                        <Input
+                          id="name"
+                          className="bg-white border-gray-300"
+                          value={editedUser.name}
+>>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
                           onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
                           placeholder="氏名を入力してください"
                         />
@@ -489,7 +563,7 @@ export default function UserDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">氏名</p>
-                    <p className="text-lg font-semibold">{userId}</p>
+                    <p className="text-lg font-semibold">{displayName}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">ステータス</p>
@@ -580,7 +654,7 @@ export default function UserDetailPage() {
         {currentView === "daily-logs" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">日誌記録 - {userId}</h2>
+              <h2 className="text-2xl font-bold">日誌記録 - {displayName}</h2>
               <Button variant="outline" onClick={() => setCurrentView("overview")}>
                 ← 戻る
               </Button>
