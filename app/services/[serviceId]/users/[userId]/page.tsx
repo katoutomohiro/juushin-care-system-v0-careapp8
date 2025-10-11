@@ -186,7 +186,7 @@ const userDetails: Record<string, UserDetail> = {
     age: 40,
     gender: "女性",
     careLevel: "全介助",
-    condition: "脳性麻痺、体幹四肢機能障害",
+    condition: "脳性麻痺、側湾症、体幹四肢機能障害",
     medicalCare: "なし",
     service: ["life-care"],
   },
