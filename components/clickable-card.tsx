@@ -98,7 +98,7 @@ export default function ClickableCard({
     animate()
 
     return () => {
-  if (animationFrameRef.current !== null) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
