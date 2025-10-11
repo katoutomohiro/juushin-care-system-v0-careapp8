@@ -159,15 +159,11 @@ type UserDetail = {
   condition: string
   medicalCare: string
   service: string[]
-<<<<<<< HEAD
-  name?: string
-=======
   name: string
->>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
 }
 
 const userDetails: Record<string, UserDetail> = {
-  "A・T": {
+  A・T: {
     name: "A・T",
     age: 36,
     gender: "男性",
@@ -176,7 +172,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "I・K": {
+  I・K: {
     name: "I・K",
     age: 47,
     gender: "女性",
@@ -185,7 +181,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・S": {
+  O・S: {
     name: "O・S",
     age: 40,
     gender: "女性",
@@ -194,7 +190,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・M": {
+  S・M: {
     name: "S・M",
     age: 43,
     gender: "男性",
@@ -203,7 +199,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
     service: ["life-care"],
   },
-  "N・M": {
+  N・M: {
     name: "N・M",
     age: 32,
     gender: "男性",
@@ -212,7 +208,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
     service: ["life-care"],
   },
-  "W・M": {
+  W・M: {
     name: "W・M",
     age: 32,
     gender: "女性",
@@ -221,7 +217,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "S・Y": {
+  S・Y: {
     name: "S・Y",
     age: 41,
     gender: "女性",
@@ -230,7 +226,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "鼻腔栄養注入",
     service: ["life-care"],
   },
-  "Y・K": {
+  Y・K: {
     name: "Y・K",
     age: 22,
     gender: "男性",
@@ -240,7 +236,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "鼻腔チューブ使用、導尿",
     service: ["life-care"],
   },
-  "I・K2": {
+  I・K2: {
     name: "I・K2",
     age: 40,
     gender: "男性",
@@ -249,7 +245,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "O・M": {
+  O・M: {
     name: "O・M",
     age: 23,
     gender: "男性",
@@ -258,7 +254,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  "U・S": {
+  U・S: {
     name: "U・S",
     age: 19,
     gender: "男性",
@@ -267,7 +263,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "気管切開、気管内吸引、吸入、浣腸",
     service: ["life-care"],
   },
-  "I・T": {
+  I・T: {
     name: "I・T",
     age: 24,
     gender: "男性",
@@ -303,8 +299,6 @@ export default function UserDetailPage() {
       name: userId,
     }
   })
-<<<<<<< HEAD
-=======
   const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
 
   useEffect(() => {
@@ -313,7 +307,6 @@ export default function UserDetailPage() {
       setDisplayName(profile.name)
     }
   }, [userId])
->>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
 
   if (!service) {
     return (
@@ -337,12 +330,6 @@ export default function UserDetailPage() {
       }
 
   const handleSaveUser = () => {
-<<<<<<< HEAD
-    if (editedUser.name && editedUser.name !== userId) {
-      alert("氏名の変更は現在サポートされていません。将来のバージョンで対応予定です。")
-    }
-    userDetails[userId] = editedUser
-=======
     const oldName = displayName
     const newName = editedUser.name.trim() || userId
 
@@ -369,7 +356,6 @@ export default function UserDetailPage() {
 
     userDetails[userId] = { ...editedUser, name: newName }
     setDisplayName(newName)
->>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
     setIsEditDialogOpen(false)
   }
 
@@ -421,11 +407,7 @@ export default function UserDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-<<<<<<< HEAD
-                      onClick={() => setEditedUser({ ...currentUserDetails, name: userId })}
-=======
                       onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
->>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
                     >
                       ✏️ 編集
                     </Button>
@@ -437,22 +419,12 @@ export default function UserDetailPage() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-<<<<<<< HEAD
-                          氏名 *
-                        </Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="bg-white border-gray-300"
-                          value={editedUser.name || userId}
-=======
                           氏名
                         </Label>
                         <Input
                           id="name"
                           className="bg-white border-gray-300"
                           value={editedUser.name}
->>>>>>> 28a4b0c (feat: 利用者氏名変更の完全サポート - データベース永続化)
                           onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
                           placeholder="氏名を入力してください"
                         />
