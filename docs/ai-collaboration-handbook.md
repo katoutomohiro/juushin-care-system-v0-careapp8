@@ -24,7 +24,7 @@
 
 作業開始時は以下を実行し、実際の状態を確認してから計画を立ててください。
 
-```bash
+\`\`\`bash
 # オープンなPRとIssueの確認
 gh pr list --state open --json number,title,headRefName,mergeStateStatus,statusCheckRollup
 gh issue list --state open --json number,title,labels
@@ -33,7 +33,7 @@ gh issue list --state open --json number,title,labels
 git fetch origin
 git checkout main
 git pull origin main
-```
+\`\`\`
 
 - PR/Issue の件数や内容が本ハンドブックの記載と異なる場合は、差分を記録しオーナーへ報告してください。
 - `gh` コマンドを実行できないエージェント（例: v0）は、GitHub Web UI のダッシュボードやオーナー/ChatGPT が共有するサマリーで同等の確認を行ってください。
@@ -134,41 +134,41 @@ git pull origin main
 ## 9. コミュニケーションテンプレート
 
 ### オーナー → ChatGPT
-```
+\`\`\`
 目的:
 背景:
 要件:
 制約:
 完了の定義:
 確認方法:
-```
+\`\`\`
 
 ### ChatGPT → オーナー (成果報告)
-```
+\`\`\`
 対応内容:
 変更ファイル:
 テスト結果:
 追加の確認事項:
 次の提案ステップ:
-```
+\`\`\`
 
 ### ChatGPT → GitHub Copilot / v0 (サブタスク指示)
-```
+\`\`\`
 目的:
 対象ファイル:
 期待する成果物:
 検証ポイント:
 タイムライン/優先度:
-```
+\`\`\`
 
 ### v0 → オーナー / ChatGPT (成果報告・質問)
-```
+\`\`\`
 対応中のタスク:
 進捗状況:
 確認した要件:
 不明点・追加で必要な情報:
 次のアクション案:
-```
+\`\`\`
 
 ## 10. 更新履歴
 
