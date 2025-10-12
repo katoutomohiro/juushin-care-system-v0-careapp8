@@ -163,7 +163,7 @@ type UserDetail = {
 }
 
 const userDetails: Record<string, UserDetail> = {
-  A・T: {
+  "A・T": {
     name: "A・T",
     age: 36,
     gender: "男性",
@@ -172,7 +172,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  I・K: {
+  "I・K": {
     name: "I・K",
     age: 47,
     gender: "女性",
@@ -181,7 +181,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  O・S: {
+  "O・S": {
     name: "O・S",
     age: 42,
     gender: "男性",
@@ -190,7 +190,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  S・M: {
+  "S・M": {
     name: "S・M",
     age: 38,
     gender: "女性",
@@ -199,7 +199,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  N・M: {
+  "N・M": {
     name: "N・M",
     age: 45,
     gender: "男性",
@@ -208,7 +208,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  W・M: {
+  "W・M": {
     name: "W・M",
     age: 51,
     gender: "男性",
@@ -217,7 +217,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  S・Y: {
+  "S・Y": {
     name: "S・Y",
     age: 39,
     gender: "女性",
@@ -226,7 +226,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  Y・K: {
+  "Y・K": {
     name: "Y・K",
     age: 44,
     gender: "男性",
@@ -235,7 +235,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  I・K2: {
+  "I・K2": {
     name: "I・K",
     age: 35,
     gender: "女性",
@@ -244,7 +244,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  O・M: {
+  "O・M": {
     name: "O・M",
     age: 48,
     gender: "男性",
@@ -253,7 +253,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  U・S: {
+  "U・S": {
     name: "U・S",
     age: 41,
     gender: "女性",
@@ -262,7 +262,7 @@ const userDetails: Record<string, UserDetail> = {
     medicalCare: "なし",
     service: ["life-care"],
   },
-  I・T: {
+  "I・T": {
     name: "I・T",
     age: 37,
     gender: "男性",
