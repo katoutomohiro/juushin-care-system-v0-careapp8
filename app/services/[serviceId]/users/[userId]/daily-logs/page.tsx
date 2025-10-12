@@ -143,6 +143,22 @@ const dailyLogCategories = [
     iconBg: "bg-pink-100 text-pink-600",
     description: "家族との情報共有・相談・支援計画の調整",
   },
+  {
+    id: "transportation",
+    name: "送迎",
+    icon: "🚌",
+    color: "bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100",
+    iconBg: "bg-lime-100 text-lime-600",
+    description: "送迎ルート・時刻・状態を記録",
+  },
+  {
+    id: "meal-tube-feeding",
+    name: "食事・経管",
+    icon: "🍱",
+    color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
+    iconBg: "bg-amber-100 text-amber-600",
+    description: "食事内容・摂取量・むせの有無を記録",
+  },
 ]
 
 export default function DailyLogsPage() {
