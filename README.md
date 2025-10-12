@@ -10,6 +10,10 @@
 This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
 
+## Collaboration handbook
+
+All contributors (オーナー、ChatGPT、GitHub Copilot、v0) must review and follow the consolidated workflow described in [`docs/ai-collaboration-handbook.md`](docs/ai-collaboration-handbook.md) before starting any task. Confirm "ハンドブック確認済み" in your activity logs at the beginning of each cycle, and revisit the handbook whenever the update log indicates new guidance.
+
 ## Deployment
 
 Your project is live at:
