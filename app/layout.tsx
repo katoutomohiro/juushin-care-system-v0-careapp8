@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
-import { ToastProvider } from "@/components/ui/toast"
+import { ToastProvider as AppToastProvider } from "@/components/ui/use-toast"
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -24,10 +24,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <ToastProvider>
+        <AppToastProvider>
           {children}
           <Toaster />
-        </ToastProvider>
+        </AppToastProvider>
       </body>
     </html>
   );

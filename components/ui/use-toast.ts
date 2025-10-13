@@ -189,3 +189,10 @@ function useToast() {
 }
 
 export { useToast, toast }
+
+// Minimal provider export to allow layout to wrap the app.
+// The internal useToast implementation uses a shared memory/listener model
+// and does not strictly require a React Provider, so this is a no-op wrapper.
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  return children as React.ReactNode
+}
