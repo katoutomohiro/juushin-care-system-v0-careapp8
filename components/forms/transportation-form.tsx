@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { NowButton } from "@/components/NowButton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -71,6 +72,7 @@ export function TransportationForm({ selectedUser, onSubmit, onCancel }: Transpo
     route: "",
     departureTime: new Date().toTimeString().slice(0, 5),
     arrivalTime: "",
+    timestamp: new Date().toISOString(),
     vehicle: "",
     driver: "",
     companion: "",
@@ -84,10 +86,14 @@ export function TransportationForm({ selectedUser, onSubmit, onCancel }: Transpo
     e.preventDefault()
     onSubmit({
       ...formData,
-      timestamp: new Date().toISOString(),
+      timestamp: formData.timestamp || new Date().toISOString(),
       eventType: "transportation",
       user: selectedUser,
     })
+  }
+
+  const handleNow = (iso: string) => {
+    setFormData({ ...formData, timestamp: iso })
   }
 
   const setCurrentTime = (field: "departureTime" | "arrivalTime") => {
@@ -114,6 +120,11 @@ export function TransportationForm({ selectedUser, onSubmit, onCancel }: Transpo
             ]}
             placeholder="ルートを選択してください"
           />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-muted-foreground">記録時刻: {new Date(formData.timestamp).toLocaleString()}</div>
+          <NowButton onNow={handleNow} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

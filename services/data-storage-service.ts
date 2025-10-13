@@ -32,6 +32,36 @@ export class DataStorageService {
   private static readonly CUSTOM_USER_NAMES_KEY = "customUserNames"
   private static readonly FORM_OPTIONS_KEY = "form-options"
 
+  // ---- Safe localStorage helpers (guard window for SSR) ----
+  private static getLSItem(key: string): string | null {
+    if (typeof window === "undefined") return null
+    try {
+      return localStorage.getItem(key)
+    } catch (e) {
+      console.error("localStorage.getItem failed", e)
+      return null
+    }
+  }
+
+  private static setLSItem(key: string, value: string): void {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(key, value)
+    } catch (e) {
+      console.error("localStorage.setItem failed", e)
+    }
+  }
+
+  private static removeLSItem(key: string): void {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.removeItem(key)
+    } catch (e) {
+      console.error("localStorage.removeItem failed", e)
+    }
+  }
+
+
   // Care Events Management
   static saveCareEvent(event: Omit<CareEvent, "id">): CareEvent {
     try {
@@ -41,8 +71,8 @@ export class DataStorageService {
         id: this.generateId(),
       } as CareEvent
 
-      events.push(newEvent)
-      localStorage.setItem(this.CARE_EVENTS_KEY, JSON.stringify(events))
+  events.push(newEvent)
+  this.setLSItem(this.CARE_EVENTS_KEY, JSON.stringify(events))
 
       return newEvent
     } catch (error) {
@@ -53,7 +83,7 @@ export class DataStorageService {
 
   static getAllCareEvents(): CareEvent[] {
     try {
-      const events = localStorage.getItem(this.CARE_EVENTS_KEY)
+      const events = this.getLSItem(this.CARE_EVENTS_KEY)
       return events ? JSON.parse(events) : []
     } catch (error) {
       console.error("Failed to load care events:", error)
@@ -83,7 +113,7 @@ export class DataStorageService {
         return false // Event not found
       }
 
-      localStorage.setItem(this.CARE_EVENTS_KEY, JSON.stringify(filteredEvents))
+  this.setLSItem(this.CARE_EVENTS_KEY, JSON.stringify(filteredEvents))
       return true
     } catch (error) {
       console.error("Failed to delete care event:", error)
@@ -106,7 +136,7 @@ export class DataStorageService {
 
         const updatedProfiles = profiles.map((p) => (p.id === existingProfile.id ? updatedProfile : p))
 
-        localStorage.setItem(this.USER_PROFILES_KEY, JSON.stringify(updatedProfiles))
+  this.setLSItem(this.USER_PROFILES_KEY, JSON.stringify(updatedProfiles))
         return updatedProfile
       } else {
         const newProfile: UserProfile = {
@@ -116,8 +146,8 @@ export class DataStorageService {
           updatedAt: new Date().toISOString(),
         }
 
-        profiles.push(newProfile)
-        localStorage.setItem(this.USER_PROFILES_KEY, JSON.stringify(profiles))
+  profiles.push(newProfile)
+  this.setLSItem(this.USER_PROFILES_KEY, JSON.stringify(profiles))
         return newProfile
       }
     } catch (error) {
@@ -128,7 +158,7 @@ export class DataStorageService {
 
   static getAllUserProfiles(): UserProfile[] {
     try {
-      const profiles = localStorage.getItem(this.USER_PROFILES_KEY)
+      const profiles = this.getLSItem(this.USER_PROFILES_KEY)
       return profiles ? JSON.parse(profiles) : []
     } catch (error) {
       console.error("Failed to load user profiles:", error)
@@ -149,7 +179,7 @@ export class DataStorageService {
         return false // Profile not found
       }
 
-      localStorage.setItem(this.USER_PROFILES_KEY, JSON.stringify(filteredProfiles))
+  this.setLSItem(this.USER_PROFILES_KEY, JSON.stringify(filteredProfiles))
       return true
     } catch (error) {
       console.error("Failed to delete user profile:", error)
@@ -160,7 +190,7 @@ export class DataStorageService {
   // Custom User Names Management
   static getCustomUserNames(): string[] {
     try {
-      const userNames = localStorage.getItem(this.CUSTOM_USER_NAMES_KEY)
+      const userNames = this.getLSItem(this.CUSTOM_USER_NAMES_KEY)
       return userNames ? JSON.parse(userNames) : []
     } catch (error) {
       console.error("Failed to load custom user names:", error)
@@ -170,7 +200,7 @@ export class DataStorageService {
 
   static saveCustomUserNames(userNames: string[]): void {
     try {
-      localStorage.setItem(this.CUSTOM_USER_NAMES_KEY, JSON.stringify(userNames))
+      this.setLSItem(this.CUSTOM_USER_NAMES_KEY, JSON.stringify(userNames))
     } catch (error) {
       console.error("Failed to save custom user names:", error)
       throw new Error("利用者名の保存に失敗しました")
@@ -181,7 +211,7 @@ export class DataStorageService {
     try {
       const events = this.getAllCareEvents()
       const updatedEvents = events.map((event) => (event.userId === oldName ? { ...event, userId: newName } : event))
-      localStorage.setItem(this.CARE_EVENTS_KEY, JSON.stringify(updatedEvents))
+  this.setLSItem(this.CARE_EVENTS_KEY, JSON.stringify(updatedEvents))
     } catch (error) {
       console.error("Failed to update user name in events:", error)
       throw new Error("記録データの利用者名更新に失敗しました")
@@ -194,7 +224,7 @@ export class DataStorageService {
       const updatedProfiles = profiles.map((profile) =>
         profile.name === oldName ? { ...profile, name: newName, updatedAt: new Date().toISOString() } : profile,
       )
-      localStorage.setItem(this.USER_PROFILES_KEY, JSON.stringify(updatedProfiles))
+  this.setLSItem(this.USER_PROFILES_KEY, JSON.stringify(updatedProfiles))
     } catch (error) {
       console.error("Failed to update user name in profiles:", error)
       throw new Error("プロフィールデータの利用者名更新に失敗しました")
@@ -204,7 +234,7 @@ export class DataStorageService {
   // Form Options Management
   static getFormOptions(): any {
     try {
-      const options = localStorage.getItem(this.FORM_OPTIONS_KEY)
+      const options = this.getLSItem(this.FORM_OPTIONS_KEY)
       return options ? JSON.parse(options) : {}
     } catch (error) {
       console.error("Failed to load form options:", error)
@@ -214,7 +244,7 @@ export class DataStorageService {
 
   static saveFormOptions(options: any): void {
     try {
-      localStorage.setItem(this.FORM_OPTIONS_KEY, JSON.stringify(options))
+      this.setLSItem(this.FORM_OPTIONS_KEY, JSON.stringify(options))
     } catch (error) {
       console.error("Failed to save form options:", error)
       throw new Error("フォーム選択項目の保存に失敗しました")
@@ -223,7 +253,7 @@ export class DataStorageService {
 
   static resetFormOptions(): void {
     try {
-      localStorage.removeItem(this.FORM_OPTIONS_KEY)
+      this.removeLSItem(this.FORM_OPTIONS_KEY)
     } catch (error) {
       console.error("Failed to reset form options:", error)
       throw new Error("フォーム選択項目のリセットに失敗しました")
@@ -262,22 +292,22 @@ export class DataStorageService {
         throw new Error("Invalid user profiles data")
       }
 
-      const backup = this.exportAllData()
-      localStorage.setItem("dataBackup", backup)
+  const backup = this.exportAllData()
+  this.setLSItem("dataBackup", backup)
 
-      localStorage.setItem(this.CARE_EVENTS_KEY, JSON.stringify(data.careEvents))
-      localStorage.setItem(this.USER_PROFILES_KEY, JSON.stringify(data.userProfiles))
+  this.setLSItem(this.CARE_EVENTS_KEY, JSON.stringify(data.careEvents))
+  this.setLSItem(this.USER_PROFILES_KEY, JSON.stringify(data.userProfiles))
 
       if (data.appSettings) {
-        localStorage.setItem(this.APP_SETTINGS_KEY, JSON.stringify(data.appSettings))
+  this.setLSItem(this.APP_SETTINGS_KEY, JSON.stringify(data.appSettings))
       }
 
       if (data.customUserNames && Array.isArray(data.customUserNames)) {
-        localStorage.setItem(this.CUSTOM_USER_NAMES_KEY, JSON.stringify(data.customUserNames))
+  this.setLSItem(this.CUSTOM_USER_NAMES_KEY, JSON.stringify(data.customUserNames))
       }
 
       if (data.formOptions && typeof data.formOptions === "object") {
-        localStorage.setItem(this.FORM_OPTIONS_KEY, JSON.stringify(data.formOptions))
+  this.setLSItem(this.FORM_OPTIONS_KEY, JSON.stringify(data.formOptions))
       }
 
       return true
@@ -290,7 +320,7 @@ export class DataStorageService {
   // App Settings
   static getAppSettings(): any {
     try {
-      const settings = localStorage.getItem(this.APP_SETTINGS_KEY)
+      const settings = this.getLSItem(this.APP_SETTINGS_KEY)
       return settings
         ? JSON.parse(settings)
         : {
@@ -307,7 +337,7 @@ export class DataStorageService {
 
   static saveAppSettings(settings: any): void {
     try {
-      localStorage.setItem(this.APP_SETTINGS_KEY, JSON.stringify(settings))
+      this.setLSItem(this.APP_SETTINGS_KEY, JSON.stringify(settings))
     } catch (error) {
       console.error("Failed to save app settings:", error)
       throw new Error("設定の保存に失敗しました")
@@ -321,11 +351,11 @@ export class DataStorageService {
 
   static clearAllData(): void {
     try {
-      localStorage.removeItem(this.CARE_EVENTS_KEY)
-      localStorage.removeItem(this.USER_PROFILES_KEY)
-      localStorage.removeItem(this.APP_SETTINGS_KEY)
-      localStorage.removeItem(this.CUSTOM_USER_NAMES_KEY)
-      localStorage.removeItem(this.FORM_OPTIONS_KEY)
+      this.removeLSItem(this.CARE_EVENTS_KEY)
+      this.removeLSItem(this.USER_PROFILES_KEY)
+      this.removeLSItem(this.APP_SETTINGS_KEY)
+      this.removeLSItem(this.CUSTOM_USER_NAMES_KEY)
+      this.removeLSItem(this.FORM_OPTIONS_KEY)
     } catch (error) {
       console.error("Failed to clear data:", error)
       throw new Error("データの削除に失敗しました")
@@ -334,10 +364,13 @@ export class DataStorageService {
 
   static getStorageInfo(): { used: number; available: number; percentage: number } {
     try {
+      if (typeof window === "undefined") return { used: 0, available: 0, percentage: 0 }
+
       let used = 0
       for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
-          used += localStorage[key].length + key.length
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+          const val = (localStorage as any)[key]
+          used += (val?.length || 0) + key.length
         }
       }
 
