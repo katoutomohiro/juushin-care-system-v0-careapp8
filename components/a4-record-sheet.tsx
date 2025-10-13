@@ -1,18 +1,56 @@
 "use client"
 
 interface A4RecordSheetProps {
-  selectedUser: string
-  dailyRecords: any[]
+  selectedUser?: string
+  dailyRecords?: any[]
   date?: string
+  // optional composed A4 record from services/a4-mapping.composeA4Record
+  record?: any
 }
 
 export function A4RecordSheet({
-  selectedUser,
-  dailyRecords,
-  date = new Date().toLocaleDateString("ja-JP"),
+  selectedUser: propSelectedUser,
+  dailyRecords: propDailyRecords = [],
+  date: propDate,
+  record,
 }: A4RecordSheetProps) {
-  const vitalsRecords = dailyRecords.filter((record) => record.eventType === "vitals")
-  const careRecords = dailyRecords.filter((record) => record.eventType !== "vitals")
+  // If a composed `record` is provided prefer it, otherwise fall back to provided dailyRecords
+  const selectedUser = record?.header?.userId || propSelectedUser || ""
+  const date = record?.header?.date || propDate || new Date().toLocaleDateString("ja-JP")
+
+  // Build vitalsRecords and careRecords from either the raw dailyRecords or the composed record
+  let vitalsRecords: any[] = []
+  let careRecords: any[] = []
+
+  if (record) {
+    // map structured A4 fields into simple record arrays used by this component
+    if (record.vitals) {
+      const maybeVitals = Array.isArray(record.vitals) ? record.vitals : [record.vitals]
+      vitalsRecords = maybeVitals.filter(Boolean)
+    }
+
+    const sections = [
+      { key: 'transport', items: record.transport },
+      { key: 'intake', items: record.intake },
+      { key: 'excretion', items: record.excretion },
+      { key: 'medCare', items: record.medCare },
+      { key: 'activities', items: record.activities },
+      { key: 'rom', items: record.rom },
+      { key: 'incidents', items: record.incidents },
+    ]
+
+    careRecords = []
+    for (const s of sections) {
+      if (!s.items) continue
+      const arr = Array.isArray(s.items) ? s.items : [s.items]
+      for (const it of arr) {
+        careRecords.push({ ...it, eventType: s.key })
+      }
+    }
+  } else {
+    vitalsRecords = (propDailyRecords || []).filter((r) => r.eventType === 'vitals')
+    careRecords = (propDailyRecords || []).filter((r) => r.eventType !== 'vitals')
+  }
 
   const translateToJapanese = (value: string | undefined): string => {
     if (!value) return ""

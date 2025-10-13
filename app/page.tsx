@@ -18,6 +18,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
 import { useRouter } from "next/navigation"
+import { composeA4Record } from '@/services/a4-mapping'
 
 const eventCategories = [
   {
@@ -323,6 +324,24 @@ export default function WorldClassSoulCareApp() {
     setIsLoading(true)
     try {
       generateDailyLog()
+      // compose A4 structured record from current journal state before opening preview
+      const a4 = composeA4Record({
+        userId: selectedUser,
+        date: new Date().toISOString(),
+        transport: careEvents.filter((e) => e.eventType === 'transport'),
+        vitals: careEvents.filter((e) => e.eventType === 'vitals'),
+        intake: careEvents.filter((e) => e.eventType === 'hydration' || e.eventType === 'intake'),
+        excretion: careEvents.filter((e) => e.eventType === 'excretion'),
+        medCare: careEvents.filter((e) => e.eventType === 'medication' || e.eventType === 'med-care'),
+        activities: careEvents.filter((e) => e.eventType === 'activity'),
+        observation: careEvents.filter((e) => e.eventType === 'observation'),
+        rom: careEvents.filter((e) => e.eventType === 'rom' || e.eventType === 'positioning'),
+        incidents: careEvents.filter((e) => e.eventType === 'incident' || e.eventType === 'incidents'),
+        notes: careEvents.filter((e) => e.eventType === 'note' || e.eventType === 'notes'),
+        serviceType: currentView,
+        staffIds: [],
+      })
+
       setIsA4RecordSheetOpen(true)
       console.log("[v0] Opening A4 record sheet preview")
       addToast({
@@ -640,11 +659,34 @@ export default function WorldClassSoulCareApp() {
               </div>
               <div className="overflow-auto max-h-[calc(90vh-80px)]">
                 <div id="a4-record-sheet">
-                  <A4RecordSheet
-                    selectedUser={selectedUser}
-                    dailyRecords={careEvents}
-                    date={new Date().toLocaleDateString("ja-JP")}
-                  />
+                  {(() => {
+                    // Build A4 record using composeA4Record from current journal state
+                    const a4 = composeA4Record({
+                      userId: selectedUser,
+                      date: new Date().toISOString(),
+                      transport: careEvents.filter((e) => e.eventType === "transport"),
+                      vitals: careEvents.filter((e) => e.eventType === "vitals"),
+                      intake: careEvents.filter((e) => ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType)),
+                      excretion: careEvents.filter((e) => e.eventType === "excretion"),
+                      medCare: careEvents.filter((e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare"),
+                      activities: careEvents.filter((e) => e.eventType === "activity" || e.eventType === "activities"),
+                      observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
+                      rom: careEvents.filter((e) => e.eventType === "rom"),
+                      incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
+                      notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes || undefined)) || undefined,
+                      serviceType: undefined,
+                      staffIds: [],
+                    })
+
+                    return (
+                      <A4RecordSheet
+                        selectedUser={selectedUser}
+                        dailyRecords={careEvents}
+                        date={new Date().toLocaleDateString("ja-JP")}
+                        record={a4}
+                      />
+                    )
+                  })()}
                 </div>
               </div>
             </div>
