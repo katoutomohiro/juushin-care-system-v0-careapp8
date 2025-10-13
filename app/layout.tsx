@@ -1,4 +1,3 @@
-// app/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
@@ -13,6 +12,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "重心ケアアプリ - PROJECT",
   description: "日誌→A4自動反映対応",
+    generator: 'v0.app'
 };
 
 export default function RootLayout({
