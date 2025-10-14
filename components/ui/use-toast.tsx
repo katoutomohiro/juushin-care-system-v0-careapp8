@@ -1,8 +1,3 @@
-import type React from "react"
-import { useToast } from "./toast"
+import { useToast, ToastProvider } from "./toast"
 
-export { useToast }
-
-export function ToastProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <>{children}</>
-}
+export { useToast, ToastProvider }

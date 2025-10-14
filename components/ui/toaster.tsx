@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import {
   Toast,
@@ -7,15 +7,15 @@ import {
   ToastTitle,
   ToastViewport,
   ToastProvider as RadixToastProvider,
-} from '@/components/ui/toast'
-import { useToast } from '@/components/ui/use-toast'
+} from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
 
 export function Toaster() {
   const { toasts } = useToast()
 
   return (
     <RadixToastProvider>
-      {toasts.map(({ id, title, description, action, ...props }) => (
+      {toasts.map(({ id, title, description, action, type, duration, ...props }) => (
         <Toast key={id} {...props}>
           <div className="grid gap-1">
             {title && <ToastTitle>{title}</ToastTitle>}
