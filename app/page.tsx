@@ -18,7 +18,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
 import { useRouter } from "next/navigation"
-import { composeA4Record } from '@/services/a4-mapping'
+import { composeA4Record } from "@/services/a4-mapping"
 
 const eventCategories = [
   {
@@ -328,16 +328,16 @@ export default function WorldClassSoulCareApp() {
       const a4 = composeA4Record({
         userId: selectedUser,
         date: new Date().toISOString(),
-        transport: careEvents.filter((e) => e.eventType === 'transport'),
-        vitals: careEvents.filter((e) => e.eventType === 'vitals'),
-        intake: careEvents.filter((e) => e.eventType === 'hydration' || e.eventType === 'intake'),
-        excretion: careEvents.filter((e) => e.eventType === 'excretion'),
-        medCare: careEvents.filter((e) => e.eventType === 'medication' || e.eventType === 'med-care'),
-        activities: careEvents.filter((e) => e.eventType === 'activity'),
-        observation: careEvents.filter((e) => e.eventType === 'observation'),
-        rom: careEvents.filter((e) => e.eventType === 'rom' || e.eventType === 'positioning'),
-        incidents: careEvents.filter((e) => e.eventType === 'incident' || e.eventType === 'incidents'),
-        notes: careEvents.filter((e) => e.eventType === 'note' || e.eventType === 'notes'),
+        transport: careEvents.filter((e) => e.eventType === "transport"),
+        vitals: careEvents.filter((e) => e.eventType === "vitals"),
+        intake: careEvents.filter((e) => e.eventType === "hydration" || e.eventType === "intake"),
+        excretion: careEvents.filter((e) => e.eventType === "excretion"),
+        medCare: careEvents.filter((e) => e.eventType === "medication" || e.eventType === "med-care"),
+        activities: careEvents.filter((e) => e.eventType === "activity"),
+        observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
+        rom: careEvents.filter((e) => e.eventType === "rom" || e.eventType === "positioning"),
+        incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
+        notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes)) || undefined,
         serviceType: currentView,
         staffIds: [],
       })
@@ -666,9 +666,13 @@ export default function WorldClassSoulCareApp() {
                       date: new Date().toISOString(),
                       transport: careEvents.filter((e) => e.eventType === "transport"),
                       vitals: careEvents.filter((e) => e.eventType === "vitals"),
-                      intake: careEvents.filter((e) => ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType)),
+                      intake: careEvents.filter((e) =>
+                        ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType),
+                      ),
                       excretion: careEvents.filter((e) => e.eventType === "excretion"),
-                      medCare: careEvents.filter((e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare"),
+                      medCare: careEvents.filter(
+                        (e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
+                      ),
                       activities: careEvents.filter((e) => e.eventType === "activity" || e.eventType === "activities"),
                       observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
                       rom: careEvents.filter((e) => e.eventType === "rom"),
