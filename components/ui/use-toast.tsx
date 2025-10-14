@@ -1,8 +1,8 @@
 import type React from "react"
-import { useToast, toast } from "./toast" // Assuming the useToast and toast functions are declared in a separate file
+import { useToast } from "./toast"
 
-export { useToast, toast }
+export { useToast }
 
-export function ToastProvider({ children }: { children: React.ReactNode }): JSX.Element {
+export function ToastProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <>{children}</>
 }

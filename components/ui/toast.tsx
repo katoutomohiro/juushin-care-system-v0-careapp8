@@ -12,6 +12,7 @@ interface ToastType {
   id: string
   title?: string
   description?: string
+  action?: React.ReactNode
   type?: "default" | "success" | "error" | "warning"
   duration?: number
 }
@@ -87,6 +88,7 @@ export function ToastContainer() {
               ×
             </button>
           </div>
+          {toast.action && <div className="mt-2">{toast.action}</div>}
         </div>
       ))}
     </div>
