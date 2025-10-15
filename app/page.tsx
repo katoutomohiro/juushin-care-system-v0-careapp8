@@ -327,19 +327,20 @@ export default function WorldClassSoulCareApp() {
       const a4 = composeA4Record({
         userId: selectedUser,
         date: new Date().toISOString(),
-        transport: careEvents.filter((e) => e.eventType === "transport"),
-        vitals: careEvents.filter((e) => e.eventType === "vitals"),
-        intake: careEvents.filter((e) =>
+        // cast to any to work around legacy/loose runtime types from DataStorageService
+        transport: (careEvents as any).filter((e: any) => e.eventType === "transport"),
+        vitals: (careEvents as any).filter((e: any) => e.eventType === "vitals"),
+        intake: (careEvents as any).filter((e: any) =>
           ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType),
         ),
-        excretion: careEvents.filter((e) => e.eventType === "excretion"),
-        medCare: careEvents.filter(
-          (e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
+        excretion: (careEvents as any).filter((e: any) => e.eventType === "excretion"),
+        medCare: (careEvents as any).filter(
+          (e: any) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
         ),
-        activities: careEvents.filter((e) => e.eventType === "activity" || e.eventType === "activities"),
-        observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
-        rom: careEvents.filter((e) => e.eventType === "rom"),
-        incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
+        activities: (careEvents as any).filter((e: any) => e.eventType === "activity" || e.eventType === "activities"),
+        observation: ((dailyLog as any) && ((dailyLog as any).observation || (dailyLog as any).observations)) || undefined,
+        rom: (careEvents as any).filter((e: any) => e.eventType === "rom"),
+        incidents: (careEvents as any).filter((e: any) => e.eventType === "incident" || e.eventType === "incidents"),
         notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes || undefined)) || undefined,
         serviceType: undefined,
         staffIds: undefined,
@@ -584,12 +585,12 @@ export default function WorldClassSoulCareApp() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg">
                     <div className="p-2 bg-secondary/10 rounded-lg">📊</div>
-                    本日の記録サマリー - {dailyLog.user}
+                    本日の記録サマリー - {(dailyLog as any).user}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {dailyLog.events.map(
+                    {((dailyLog as any).events || []).map(
                       (event: { type: string; count: number; name: string; lastRecorded: string }) => (
                         <div
                           key={event.type}
@@ -610,7 +611,7 @@ export default function WorldClassSoulCareApp() {
           <StatisticsDashboard selectedUser={selectedUser} />
         ) : (
           <div className="space-y-6">
-            <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} />
+            <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} onAppTitleUpdate={() => {}} />
             <SettingsPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
           </div>
         )}
@@ -650,22 +651,23 @@ export default function WorldClassSoulCareApp() {
                   {(() => {
                     // Build A4 record using composeA4Record from current journal state
                     const a4 = composeA4Record({
+                      // cast to any to work around legacy/loose runtime types from DataStorageService
                       userId: selectedUser,
                       date: new Date().toISOString(),
-                      transport: careEvents.filter((e) => e.eventType === "transport"),
-                      vitals: careEvents.filter((e) => e.eventType === "vitals"),
-                      intake: careEvents.filter((e) =>
+                      transport: (careEvents as any).filter((e: any) => e.eventType === "transport"),
+                      vitals: (careEvents as any).filter((e: any) => e.eventType === "vitals"),
+                      intake: (careEvents as any).filter((e: any) =>
                         ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType),
                       ),
-                      excretion: careEvents.filter((e) => e.eventType === "excretion"),
-                      medCare: careEvents.filter(
-                        (e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
+                      excretion: (careEvents as any).filter((e: any) => e.eventType === "excretion"),
+                      medCare: (careEvents as any).filter(
+                        (e: any) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
                       ),
-                      activities: careEvents.filter((e) => e.eventType === "activity" || e.eventType === "activities"),
-                      observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
-                      rom: careEvents.filter((e) => e.eventType === "rom"),
-                      incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
-                      notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes || undefined)) || undefined,
+                      activities: (careEvents as any).filter((e: any) => e.eventType === "activity" || e.eventType === "activities"),
+                      observation: ((dailyLog as any) && ((dailyLog as any).observation || (dailyLog as any).observations)) || undefined,
+                      rom: (careEvents as any).filter((e: any) => e.eventType === "rom"),
+                      incidents: (careEvents as any).filter((e: any) => e.eventType === "incident" || e.eventType === "incidents"),
+                      notes: ((dailyLog as any) && ((dailyLog as any).notes || (dailyLog as any).specialNotes || undefined)) || undefined,
                       serviceType: undefined,
                       staffIds: undefined,
                     })
