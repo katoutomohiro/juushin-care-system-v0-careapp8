@@ -1,20 +1,19 @@
-'use client'
+"use client";
 
 import {
   Toast,
   ToastClose,
   ToastDescription,
+  ToastProvider,
   ToastTitle,
   ToastViewport,
-  ToastProvider as RadixToastProvider,
-} from '@/components/ui/toast'
-import { useToast } from '@/components/ui/use-toast'
+} from "@/components/ui/toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export function Toaster() {
-  const { toasts } = useToast()
-
+  const { toasts } = useToast();
   return (
-    <RadixToastProvider>
+    <ToastProvider>
       {toasts.map(({ id, title, description, action, ...props }) => (
         <Toast key={id} {...props}>
           <div className="grid gap-1">
@@ -26,6 +25,6 @@ export function Toaster() {
         </Toast>
       ))}
       <ToastViewport />
-    </RadixToastProvider>
-  )
+    </ToastProvider>
+  );
 }
