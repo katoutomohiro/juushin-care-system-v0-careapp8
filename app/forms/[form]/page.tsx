@@ -1,29 +1,35 @@
-import Link from "next/link";
+import React from "react";
 
-export const metadata = { title: "フォーム（暫定）" };
+type Params = { form: string };
+type Search = { user?: string | string[]; service?: string | string[] };
 
-type Search = Record<string, string | string[] | undefined>;
-const TITLES: Record<string, string> = {
-  seizure: "発作記録（暫定）",
-  transport: "送迎記録（暫定）",
-  "user-edit": "利用者編集（暫定）",
-};
+const first = (v?: string | string[]) =>
+  Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
 
-export default async function Page(props: any) {
-  const form = props?.params?.form ?? "unknown";
-  const raw = props?.searchParams;
-  const sp: Search = raw && typeof raw.then === "function" ? await raw : raw ?? {};
-  const get = (k: string) => (Array.isArray(sp[k]) ? sp[k]?.[0] : (sp[k] as string | undefined)) ?? "";
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams?: Promise<Search>;
+}) {
+  // ⬇️ Next 15: params / searchParams は Promise。必ず await する
+  const { form } = await params;
+  const sp = (searchParams ? await searchParams : {}) as Search;
 
-  const user = get("user") || "(不明)";
-  const service = get("service") || "(不明)";
-  const title = TITLES[form] ?? `Unknown form: ${form}`;
+  const user = first(sp.user);
+  const service = first(sp.service);
 
+  // ここは仮のスタブ。必要に応じて本実装に差し替え
   return (
-    <main className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <p>受け取ったクエリ: user=<b>{user}</b>, service=<b>{service}</b></p>
-      <p className="text-sm text-muted-foreground">本ページはスタブです。後で本実装に置換します。</p>
+    <main className="p-6">
+      <h1 className="text-xl font-bold">Form: {form}</h1>
+      <p className="mt-2 text-sm text-gray-600">
+        user=<code>{user}</code>, service=<code>{service}</code>
+      </p>
+      <div className="mt-6 rounded-lg border p-4">
+        <p>ここに {form} のフォーム実装を差し込みます。</p>
+      </div>
     </main>
   );
 }
