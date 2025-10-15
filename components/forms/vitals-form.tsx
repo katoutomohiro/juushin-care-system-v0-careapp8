@@ -16,8 +16,8 @@ interface VitalsFormProps {
 }
 
 const ClickableDropdown = ({
-  value,
-  onValueChange,
+  value: _value,
+  onValueChange: _onValueChange,
   placeholder,
   options,
   className = "",
@@ -36,8 +36,8 @@ const ClickableDropdown = ({
         className="w-full h-12 px-3 py-2 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white hover:border-gray-400 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={value ? "text-gray-900" : "text-gray-500"}>
-          {value ? options.find((opt) => opt.value === value)?.label : placeholder}
+        <span className={_value ? "text-gray-900" : "text-gray-500"}>
+          {_value ? options.find((opt) => opt.value === _value)?.label : placeholder}
         </span>
         <span className={`transform transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
       </div>
@@ -49,7 +49,7 @@ const ClickableDropdown = ({
               key={option.value}
               className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
               onClick={() => {
-                onValueChange(option.value)
+                _onValueChange(option.value)
                 setIsOpen(false)
               }}
             >
@@ -63,8 +63,8 @@ const ClickableDropdown = ({
 }
 
 const NumberSelector = ({
-  value,
-  onValueChange,
+  value: _value,
+  onValueChange: _onValueChange,
   min,
   max,
   step = 1,
@@ -98,8 +98,8 @@ const NumberSelector = ({
         className="w-full h-12 px-3 py-2 border border-gray-300 rounded-md cursor-pointer flex items-center justify-between bg-white hover:border-gray-400 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={value ? "text-gray-900" : "text-gray-500"}>
-          {value ? `${value}${unit}` : `選択してください`}
+        <span className={_value ? "text-gray-900" : "text-gray-500"}>
+          {_value ? `${_value}${unit}` : `選択してください`}
         </span>
         <span className={`transform transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
       </div>
@@ -111,9 +111,9 @@ const NumberSelector = ({
               key={option.value}
               className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
               onClick={() => {
-                onValueChange(option.value)
-                setIsOpen(false)
-              }}
+                  _onValueChange(option.value)
+                  setIsOpen(false)
+                }}
             >
               {option.label}
             </div>
