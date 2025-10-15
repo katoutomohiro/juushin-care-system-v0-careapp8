@@ -585,7 +585,7 @@ export default function WorldClassSoulCareApp() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg">
                     <div className="p-2 bg-secondary/10 rounded-lg">📊</div>
-                    本日の記録サマリー - {(dailyLog as any).user}
+                    本日の記録サマリー - {String((dailyLog as any)?.user ?? "")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
