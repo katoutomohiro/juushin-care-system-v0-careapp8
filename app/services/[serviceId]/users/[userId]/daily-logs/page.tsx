@@ -5,6 +5,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ClickableCard } from "@/components/ui/clickable-card"
+import { formUrl } from "@/lib/url"
 
 const welfareServices: { [key: string]: { name: string; icon: string } } = {
   "life-care": { name: "生活介護", icon: "🏥" },
@@ -177,7 +178,7 @@ export default function DailyLogsPage() {
   }
 
   const handleCardClick = (categoryId: string) => {
-    router.push(`/forms/${categoryId}?user=${encodeURIComponent(userId)}&service=${serviceId}`)
+    router.push(formUrl(categoryId, serviceId, userId))
   }
 
   return (

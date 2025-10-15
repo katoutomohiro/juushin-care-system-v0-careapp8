@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import ClickableCard from "@/components/clickable-card"
+import { formUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -634,10 +635,10 @@ export default function UserDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {dailyLogCategories.map((category) => (
-                <ClickableCard
+                  <ClickableCard
                   key={category.id}
                   onClick={() => {
-                    router.push(`/forms/${category.id}?user=${encodeURIComponent(userId)}&service=${serviceId}`)
+                    router.push(formUrl(category.id, serviceId, userId))
                   }}
                   className={`group border-2 hover:border-primary/30 ${category.color} backdrop-blur-sm min-h-[200px] flex flex-col`}
                   particleColors={["#FFE4E1", "#87CEEB", "#FFD700", "#DDA0DD"]}
