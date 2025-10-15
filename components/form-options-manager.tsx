@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface FormOption {
@@ -418,12 +418,11 @@ const defaultFormOptions: FormOptionsData = {
 }
 
 export function FormOptionsManager() {
+  const { toast } = useToast()
   const [formOptions, setFormOptions] = useState<FormOptionsData>(defaultFormOptions)
   const [activeTab, setActiveTab] = useState("seizure")
   const [editingField, setEditingField] = useState<string | null>(null)
   const [newOption, setNewOption] = useState({ label: "", value: "" })
-  const { addToast } = useToast()
-
   useEffect(() => {
     const savedOptions = localStorage.getItem("form-options")
     if (savedOptions) {
@@ -440,15 +439,15 @@ export function FormOptionsManager() {
     try {
       localStorage.setItem("form-options", JSON.stringify(newOptions))
       setFormOptions(newOptions)
-      addToast({
-        type: "success",
+      toast({
+        variant: "default",
         title: "保存完了",
         description: "フォーム選択項目を保存しました",
       })
     } catch (error) {
       console.error("Failed to save form options:", error)
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "保存エラー",
         description: "フォーム選択項目の保存に失敗しました",
       })
@@ -457,8 +456,8 @@ export function FormOptionsManager() {
 
   const addOption = (fieldKey: keyof FormOptionsData) => {
     if (!newOption.label.trim() || !newOption.value.trim()) {
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "入力エラー",
         description: "ラベルと値の両方を入力してください",
       })
@@ -488,8 +487,8 @@ export function FormOptionsManager() {
 
   const resetAllToDefault = () => {
     saveFormOptions(defaultFormOptions)
-    addToast({
-      type: "success",
+    toast({
+      variant: "default",
       title: "リセット完了",
       description: "全ての選択項目をデフォルトに戻しました",
     })

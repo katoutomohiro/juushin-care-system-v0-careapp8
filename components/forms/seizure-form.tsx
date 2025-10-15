@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { NowButton } from "@/components/NowButton"
 import { SEIZURE_TYPES } from "@/app/(records)/options"
 import { DataStorageService } from "@/services/data-storage-service"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import CareFormLayout from "@/components/care-form-layout"
 
@@ -217,6 +217,7 @@ export function SeizureForm({ selectedUser, onSubmit, onCancel }: SeizureFormPro
       onSubmit(careEvent)
 
       toast({
+        variant: "default",
         title: "発作記録を保存しました",
         description: "記録が正常に保存されました。",
       })
