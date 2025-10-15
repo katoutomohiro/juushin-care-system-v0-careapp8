@@ -13,13 +13,17 @@ interface ToastType {
   title?: string
   description?: string
   action?: React.ReactNode
-  type?: "default" | "success" | "error" | "warning"
+  // support both legacy 'type' and preferred 'variant'
+  type?: "default" | "destructive" | "success" | "error" | "warning"
+  variant?: "default" | "destructive" | "success" | "error" | "warning"
   duration?: number
 }
 
 interface ToastContextType {
   toasts: ToastType[]
   addToast: (toast: Omit<ToastType, "id">) => void
+  // compatibility helper used across codebase
+  toast: (toast: Omit<ToastType, "id">) => void
   removeToast: (id: string) => void
 }
 
@@ -28,7 +32,13 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined)
 export function useToast() {
   const context = useContext(ToastContext)
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider")
+    // provide safe fallback for prerendering or before provider mounts
+    return {
+      toasts: [],
+      addToast: () => undefined,
+      toast: () => undefined,
+      removeToast: () => undefined,
+    } as ToastContextType
   }
   return context
 }
@@ -36,9 +46,14 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastType[]>([])
 
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id))
+  }, [])
+
   const addToast = useCallback((toast: Omit<ToastType, "id">) => {
     const id = Math.random().toString(36).substring(2, 9)
-    const newToast = { ...toast, id }
+    const normalizedType = (toast.type ?? toast.variant) as ToastType['type'] | undefined
+    const newToast = { ...toast, id, type: normalizedType }
     setToasts((prev) => [...prev, newToast])
 
     // Auto-remove toast after duration
@@ -46,13 +61,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       removeToast(id)
     }, duration)
-  }, [])
+  }, [removeToast])
 
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id))
-  }, [])
+  // compatibility alias
+  const toast = useCallback((t: Omit<ToastType, "id">) => addToast(t), [addToast])
 
-  return <ToastContext.Provider value={{ toasts, addToast, removeToast }}>{children}</ToastContext.Provider>
+  return (
+    <ToastPrimitives.Provider>
+      <ToastContext.Provider value={{ toasts, addToast, toast, removeToast }}>{children}</ToastContext.Provider>
+    </ToastPrimitives.Provider>
+  )
 }
 
 export function ToastContainer() {
