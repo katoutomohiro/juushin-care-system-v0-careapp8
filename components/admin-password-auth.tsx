@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
 import { AdminSettings } from "@/components/admin-settings"
 import { FormOptionsManager } from "@/components/form-options-manager"
 
@@ -17,14 +17,13 @@ interface AdminPasswordAuthProps {
 }
 
 export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: AdminPasswordAuthProps) {
+  const { toast } = useToast()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [currentPassword, setCurrentPassword] = useState("")
-  const { addToast } = useToast()
-
   // デフォルトパスワード: 1122
   const getStoredPassword = () => {
     return localStorage.getItem("admin-password") || "1122"
@@ -35,14 +34,14 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
     if (password === storedPassword) {
       setIsAuthenticated(true)
       setPassword("")
-      addToast({
-        type: "success",
+      toast({
+        variant: "default",
         title: "認証成功",
         description: "管理者機能にアクセスできます",
       })
     } else {
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "認証失敗",
         description: "パスワードが正しくありません",
       })
@@ -52,8 +51,8 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    addToast({
-      type: "default",
+    toast({
+      variant: "default",
       title: "ログアウト",
       description: "管理者機能からログアウトしました",
     })
@@ -63,8 +62,8 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
     const storedPassword = getStoredPassword()
 
     if (currentPassword !== storedPassword) {
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "パスワード変更失敗",
         description: "現在のパスワードが正しくありません",
       })
@@ -72,8 +71,8 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
     }
 
     if (newPassword.length < 4) {
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "パスワード変更失敗",
         description: "新しいパスワードは4文字以上で入力してください",
       })
@@ -81,8 +80,8 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
     }
 
     if (newPassword !== confirmPassword) {
-      addToast({
-        type: "error",
+      toast({
+        variant: "destructive",
         title: "パスワード変更失敗",
         description: "新しいパスワードと確認用パスワードが一致しません",
       })
@@ -95,8 +94,8 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
     setNewPassword("")
     setConfirmPassword("")
 
-    addToast({
-      type: "success",
+    toast({
+      variant: "default",
       title: "パスワード変更完了",
       description: "管理者パスワードが正常に変更されました",
     })

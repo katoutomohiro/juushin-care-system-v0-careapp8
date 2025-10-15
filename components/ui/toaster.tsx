@@ -1,16 +1,14 @@
 "use client"
 
-import * as ToastPrimitives from "@radix-ui/react-toast"
-import { Toast, ToastClose, ToastDescription, ToastTitle, ToastViewport } from "@/components/ui/toast"
+import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 
 export function Toaster() {
   const { toasts } = useToast()
-
   return (
-    <ToastPrimitives.Provider>
-      {toasts.map(({ id, title, description, action, type, duration, ...props }) => (
-        <Toast key={id} {...props}>
+    <ToastProvider>
+      {toasts.map(({ id, title, description, action }) => (
+        <Toast key={id}>
           <div className="grid gap-1">
             {title && <ToastTitle>{title}</ToastTitle>}
             {description && <ToastDescription>{description}</ToastDescription>}
@@ -20,6 +18,6 @@ export function Toaster() {
         </Toast>
       ))}
       <ToastViewport />
-    </ToastPrimitives.Provider>
+    </ToastProvider>
   )
 }
