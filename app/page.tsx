@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from "react"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CareFormModal } from "@/components/care-form-modal"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
 import { DataBackupPanel } from "@/components/data-backup-panel"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
@@ -19,6 +18,7 @@ import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
 import { useRouter } from "next/navigation"
 import { composeA4Record } from "@/services/a4-mapping"
+import type { CareEvent } from "@/types/care-event"
 
 const eventCategories = [
   {
@@ -228,40 +228,39 @@ const enhancedEventCategories = [
 export default function WorldClassSoulCareApp() {
   const [customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
-  const [dailyLog, setDailyLog] = useState<any>(null)
+  const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentFormType, setCurrentFormType] = useState<string | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
   const [isA4RecordSheetOpen, setIsA4RecordSheetOpen] = useState(false)
-  const [careEvents, setCareEvents] = useState<any[]>([])
+  const [careEvents, setCareEvents] = useState<CareEvent[]>([])
   const [currentView, setCurrentView] = useState<"dashboard" | "statistics" | "settings">("dashboard")
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const [appTitle, setAppTitle] = useState("日常ケア記録システム")
-  const [appSubtitle, setAppSubtitle] = useState("重症心身障がい児者支援アプリ - PROJECT SOUL")
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    const savedTitle = localStorage.getItem("app-title")
-    const savedSubtitle = localStorage.getItem("app-subtitle")
-    if (savedTitle) setAppTitle(savedTitle)
-    if (savedSubtitle) setAppSubtitle(savedSubtitle)
-  }, [])
+    const savedUserNames = DataStorageService.getCustomUserNames()
+    if (savedUserNames.length > 0) {
+      setCustomUserNames(savedUserNames)
+      // Update selected user if current selection doesn't exist in custom names
+      if (!savedUserNames.includes(selectedUser)) {
+        setSelectedUser(savedUserNames[0] || "利用者A")
+      }
+    } else {
+      setCustomUserNames(users)
+    }
+  }, [selectedUser])
 
   const generateDailyLog = useCallback(() => {
     const events = DataStorageService.getCareEventsByUser(selectedUser)
     setCareEvents(events)
     const log = DailyLogExportService.generateDailyLogFromStorage(selectedUser)
     setDailyLog(log)
-  }, [selectedUser])
+  }, [selectedUser, careEvents, currentView, dailyLog])
 
-  const openForm = (formType: string) => {
-    setCurrentFormType(formType)
-    setIsModalOpen(true)
-  }
-
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: Record<string, unknown>) => {
     console.log("[v0] Form submitted:", data)
     toast({
       variant: "default",
@@ -330,15 +329,19 @@ export default function WorldClassSoulCareApp() {
         date: new Date().toISOString(),
         transport: careEvents.filter((e) => e.eventType === "transport"),
         vitals: careEvents.filter((e) => e.eventType === "vitals"),
-        intake: careEvents.filter((e) => e.eventType === "hydration" || e.eventType === "intake"),
+        intake: careEvents.filter((e) =>
+          ["hydration", "intake", "tube_feeding", "meal_tube_feeding"].includes(e.eventType),
+        ),
         excretion: careEvents.filter((e) => e.eventType === "excretion"),
-        medCare: careEvents.filter((e) => e.eventType === "medication" || e.eventType === "med-care"),
-        activities: careEvents.filter((e) => e.eventType === "activity"),
+        medCare: careEvents.filter(
+          (e) => e.eventType === "medication" || e.eventType === "med-care" || e.eventType === "medCare",
+        ),
+        activities: careEvents.filter((e) => e.eventType === "activity" || e.eventType === "activities"),
         observation: (dailyLog && (dailyLog.observation || dailyLog.observations)) || undefined,
-        rom: careEvents.filter((e) => e.eventType === "rom" || e.eventType === "positioning"),
+        rom: careEvents.filter((e) => e.eventType === "rom"),
         incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
-        notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes)) || undefined,
-        serviceType: currentView,
+        notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes || undefined)) || undefined,
+        serviceType: undefined,
         staffIds: undefined,
       })
 
@@ -411,24 +414,6 @@ export default function WorldClassSoulCareApp() {
       setSelectedUser(newUserNames[0] || "利用者A")
     }
   }
-
-  const handleAppTitleUpdate = (title: string, subtitle: string) => {
-    setAppTitle(title)
-    setAppSubtitle(subtitle)
-  }
-
-  useEffect(() => {
-    const savedUserNames = DataStorageService.getCustomUserNames()
-    if (savedUserNames.length > 0) {
-      setCustomUserNames(savedUserNames)
-      // Update selected user if current selection doesn't exist in custom names
-      if (!savedUserNames.includes(selectedUser)) {
-        setSelectedUser(savedUserNames[0] || "利用者A")
-      }
-    } else {
-      setCustomUserNames(users)
-    }
-  }, [selectedUser])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -604,16 +589,18 @@ export default function WorldClassSoulCareApp() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {dailyLog.events.map((event: any) => (
-                      <div
-                        key={event.type}
-                        className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted rounded-xl hover:shadow-md transition-all duration-300 hover:scale-105"
-                      >
-                        <div className="text-3xl font-bold text-primary mb-1">{event.count}</div>
-                        <div className="text-sm font-medium text-foreground mb-1">{event.name}</div>
-                        <div className="text-xs text-muted-foreground">最終: {event.lastRecorded}</div>
-                      </div>
-                    ))}
+                    {dailyLog.events.map(
+                      (event: { type: string; count: number; name: string; lastRecorded: string }) => (
+                        <div
+                          key={event.type}
+                          className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted rounded-xl hover:shadow-md transition-all duration-300 hover:scale-105"
+                        >
+                          <div className="text-3xl font-bold text-primary mb-1">{event.count}</div>
+                          <div className="text-sm font-medium text-foreground mb-1">{event.name}</div>
+                          <div className="text-xs text-muted-foreground">最終: {event.lastRecorded}</div>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -623,18 +610,19 @@ export default function WorldClassSoulCareApp() {
           <StatisticsDashboard selectedUser={selectedUser} />
         ) : (
           <div className="space-y-6">
-            <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} onAppTitleUpdate={handleAppTitleUpdate} />
+            <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} />
             <SettingsPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
           </div>
         )}
 
-        <CareFormModal
+        {/* Remove unused CareFormModal */}
+        {/* <CareFormModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           formType={currentFormType}
           onSubmit={handleFormSubmit}
           selectedUser={selectedUser}
-        />
+        /> */}
 
         <PdfPreviewModal
           isOpen={isPdfPreviewOpen}
