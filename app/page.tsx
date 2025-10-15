@@ -13,7 +13,7 @@ import { SettingsPanel } from "@/components/settings-panel"
 import { A4RecordSheet } from "@/components/a4-record-sheet"
 import { DailyLogExportService } from "@/services/daily-log-export-service"
 import { DataStorageService } from "@/services/data-storage-service"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/components/ui/toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
@@ -239,8 +239,8 @@ export default function WorldClassSoulCareApp() {
   const [isExporting, setIsExporting] = useState(false)
   const [appTitle, setAppTitle] = useState("日常ケア記録システム")
   const [appSubtitle, setAppSubtitle] = useState("重症心身障がい児者支援アプリ - PROJECT SOUL")
+  const { addToast } = useToast()
   const router = useRouter()
-  const { toast } = useToast()
 
   useEffect(() => {
     const savedTitle = localStorage.getItem("app-title")
@@ -263,8 +263,8 @@ export default function WorldClassSoulCareApp() {
 
   const handleFormSubmit = (data: any) => {
     console.log("[v0] Form submitted:", data)
-    toast({
-      variant: "default",
+    addToast({
+      type: "success",
       title: "記録を保存しました",
       description: `${data.eventType}の記録が正常に保存されました`,
     })
@@ -277,20 +277,20 @@ export default function WorldClassSoulCareApp() {
       generateDailyLog()
       setIsPdfPreviewOpen(true)
       console.log("[v0] Opening PDF preview modal")
-      toast({
-        variant: "default",
+      addToast({
+        type: "success",
         title: "PDFプレビューを開きました",
       })
     } catch (error) {
-      toast({
-        variant: "destructive",
+      addToast({
+        type: "error",
         title: "PDFプレビューの生成に失敗しました",
         description: "もう一度お試しください",
       })
     } finally {
       setIsLoading(false)
     }
-  }, [generateDailyLog, toast])
+  }, [generateDailyLog, addToast])
 
   const handleExcelExport = useCallback(async () => {
     try {
@@ -303,22 +303,22 @@ export default function WorldClassSoulCareApp() {
 
       console.timeEnd("[v0] CSV Export Handler")
       console.log("[v0] CSV export completed successfully")
-      toast({
-        variant: "default",
+      addToast({
+        type: "success",
         title: "CSV出力が完了しました",
         description: "ファイルがダウンロードされました",
       })
     } catch (error) {
       console.error("[v0] CSV export failed:", error)
-      toast({
-        variant: "destructive",
+      addToast({
+        type: "error",
         title: "CSV出力に失敗しました",
         description: "もう一度お試しください",
       })
     } finally {
       setIsExporting(false)
     }
-  }, [generateDailyLog, dailyLog, careEvents, toast])
+  }, [generateDailyLog, dailyLog, careEvents, addToast])
 
   const handleA4RecordSheetPreview = useCallback(() => {
     setIsLoading(true)
@@ -339,25 +339,25 @@ export default function WorldClassSoulCareApp() {
         incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
         notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes)) || undefined,
         serviceType: currentView,
-        staffIds: undefined,
+        staffIds: [],
       })
 
       setIsA4RecordSheetOpen(true)
       console.log("[v0] Opening A4 record sheet preview")
-      toast({
-        variant: "default",
+      addToast({
+        type: "success",
         title: "A4記録用紙を開きました",
       })
     } catch (error) {
-      toast({
-        variant: "destructive",
+      addToast({
+        type: "error",
         title: "A4記録用紙の生成に失敗しました",
         description: "もう一度お試しください",
       })
     } finally {
       setIsLoading(false)
     }
-  }, [generateDailyLog, toast])
+  }, [generateDailyLog, addToast])
 
   const handleA4RecordSheetPrint = useCallback(() => {
     const printWindow = window.open("", "_blank")
@@ -398,11 +398,11 @@ export default function WorldClassSoulCareApp() {
         setSelectedUser(savedUserNames[0])
       }
     }
-    toast({
-      variant: "default",
+    addToast({
+      type: "success",
       title: "データが更新されました",
     })
-  }, [generateDailyLog, selectedUser, toast])
+  }, [generateDailyLog, addToast, selectedUser])
 
   const handleUserNamesUpdate = (newUserNames: string[]) => {
     setCustomUserNames(newUserNames)
@@ -679,7 +679,7 @@ export default function WorldClassSoulCareApp() {
                       incidents: careEvents.filter((e) => e.eventType === "incident" || e.eventType === "incidents"),
                       notes: (dailyLog && (dailyLog.notes || dailyLog.specialNotes || undefined)) || undefined,
                       serviceType: undefined,
-                      staffIds: undefined,
+                      staffIds: [],
                     })
 
                     return (
