@@ -110,4 +110,3 @@ export function ChartLegendContent({ payload }: ChartLegendContentProps) {
     </div>
   );
 }
-
