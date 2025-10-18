@@ -33,7 +33,7 @@ interface RespiratoryFormProps {
   onCancel: () => void
 }
 
-export function RespiratoryForm({ selectedUser, onSubmit, onCancel }: RespiratoryFormProps) {
+export function RespiratoryForm({ selectedUser: _selectedUser, onSubmit, onCancel }: RespiratoryFormProps) {
   const [formData, setFormData] = useState<RespiratoryFormData>({
     time: new Date().toISOString().slice(0, 16),
     airwayManagement: "",

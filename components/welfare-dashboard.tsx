@@ -8,7 +8,7 @@ interface WelfareDashboardProps {
   selectedUser: string
 }
 
-export function WelfareDashboard({ selectedUser }: WelfareDashboardProps) {
+export function WelfareDashboard({ selectedUser: _selectedUser }: WelfareDashboardProps) {
   const welfareMetrics = {
     totalServiceHours: 156,
     supportPlanAchievement: 87,
