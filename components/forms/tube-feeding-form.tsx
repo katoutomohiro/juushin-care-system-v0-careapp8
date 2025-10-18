@@ -15,7 +15,7 @@ interface TubeFeedingFormProps {
 }
 
 const ClickableDropdown = ({
-  label: _label,
+  label,
   value,
   onValueChange,
   options,

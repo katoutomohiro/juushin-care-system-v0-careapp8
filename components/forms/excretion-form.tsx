@@ -43,7 +43,7 @@ interface ExcretionFormProps {
 }
 
 const ClickableDropdown = ({
-  label: _label,
+  label,
   value,
   onValueChange,
   options,

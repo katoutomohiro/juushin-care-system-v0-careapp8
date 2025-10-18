@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,7 +34,7 @@ export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) 
     tube_feeding: "経管栄養",
   }
 
-  const calculateStatistics = useCallback(() => {
+  const calculateStatistics = () => {
     const allEvents = selectedUser
       ? DataStorageService.getCareEventsByUser(selectedUser)
       : DataStorageService.getAllCareEvents()
@@ -98,11 +98,11 @@ export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) 
       recentActivity,
       weeklyTrend,
     })
-  }, [selectedUser, timeRange])
+  }
 
   useEffect(() => {
     calculateStatistics()
-  }, [selectedUser, timeRange, calculateStatistics])
+  }, [selectedUser, timeRange])
 
   if (!stats) {
     return <div>統計データを読み込み中...</div>

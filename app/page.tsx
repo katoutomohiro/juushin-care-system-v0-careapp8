@@ -197,7 +197,7 @@ const welfareServices = [
   },
 ]
 
-const _enhancedEventCategories = [
+const enhancedEventCategories = [
   ...eventCategories,
   {
     id: "medication",
@@ -229,15 +229,15 @@ export default function WorldClassSoulCareApp() {
   const [customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
-  const [_isModalOpen, _setIsModalOpen] = useState(false)
-  const [_currentFormType, _setCurrentFormType] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentFormType, setCurrentFormType] = useState<string | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
   const [isA4RecordSheetOpen, setIsA4RecordSheetOpen] = useState(false)
   const [careEvents, setCareEvents] = useState<CareEvent[]>([])
   const [currentView, setCurrentView] = useState<"dashboard" | "statistics" | "settings">("dashboard")
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const _router = useRouter()
+  const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -258,9 +258,9 @@ export default function WorldClassSoulCareApp() {
     setCareEvents(events)
     const log = DailyLogExportService.generateDailyLogFromStorage(selectedUser)
     setDailyLog(log)
-  }, [selectedUser])
+  }, [selectedUser, careEvents, currentView, dailyLog])
 
-  const _handleFormSubmit = (data: Record<string, unknown>) => {
+  const handleFormSubmit = (data: Record<string, unknown>) => {
     console.log("[v0] Form submitted:", data)
     toast({
       variant: "default",
@@ -278,12 +278,12 @@ export default function WorldClassSoulCareApp() {
       console.log("[v0] Opening PDF preview modal")
       toast({
         variant: "default",
-        title: "PDF プレビューを開きました",
+        title: "PDFプレビューを開きました",
       })
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "PDF プレビューの生成に失敗しました",
+        title: "PDFプレビューの生成に失敗しました",
         description: "もう一度お試しください",
       })
     } finally {
@@ -324,7 +324,7 @@ export default function WorldClassSoulCareApp() {
     try {
       generateDailyLog()
       // compose A4 structured record from current journal state before opening preview
-      const _a4 = composeA4Record({
+      const a4 = composeA4Record({
         userId: selectedUser,
         date: new Date().toISOString(),
         // cast to any to work around legacy/loose runtime types from DataStorageService
@@ -361,7 +361,7 @@ export default function WorldClassSoulCareApp() {
     } finally {
       setIsLoading(false)
     }
-  }, [generateDailyLog, toast, careEvents, dailyLog, selectedUser])
+  }, [generateDailyLog, toast])
 
   const handleA4RecordSheetPrint = useCallback(() => {
     const printWindow = window.open("", "_blank")
@@ -503,7 +503,7 @@ export default function WorldClassSoulCareApp() {
           {welfareServices.map((service) => (
             <ClickableCard
               key={service.id}
-              onClick={() => _router.push(`/services/${service.id}`)}
+              onClick={() => router.push(`/services/${service.id}`)}
               className={`group border-2 hover:border-primary/30 ${service.color}`}
               particleColors={["#FFB6C1", "#FFD700", "#DDA0DD"]}
             >

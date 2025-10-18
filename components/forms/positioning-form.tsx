@@ -29,7 +29,7 @@ interface PositioningFormProps {
   onCancel: () => void
 }
 
-export function PositioningForm({ selectedUser: _selectedUser, onSubmit, onCancel }: PositioningFormProps) {
+export function PositioningForm({ selectedUser, onSubmit, onCancel }: PositioningFormProps) {
   const [formData, setFormData] = useState<PositioningFormData>({
     time: new Date().toISOString().slice(0, 16),
     currentPosition: "",

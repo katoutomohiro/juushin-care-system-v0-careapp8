@@ -14,7 +14,7 @@ interface SettingsPanelProps {
   onUserChange?: (userId: string) => void
 }
 
-export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: SettingsPanelProps) {
+export function SettingsPanel({ selectedUser, onUserChange }: SettingsPanelProps) {
   const [settings, setSettings] = useState<any>({})
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([])
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null)

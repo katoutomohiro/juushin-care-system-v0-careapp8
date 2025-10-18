@@ -32,7 +32,7 @@ interface InfectionPreventionFormProps {
   onCancel: () => void
 }
 
-export function InfectionPreventionForm({ selectedUser: _selectedUser, onSubmit, onCancel }: InfectionPreventionFormProps) {
+export function InfectionPreventionForm({ selectedUser, onSubmit, onCancel }: InfectionPreventionFormProps) {
   const [formData, setFormData] = useState<InfectionPreventionFormData>({
     time: new Date().toISOString().slice(0, 16),
     bodyTemperature: 36.5,

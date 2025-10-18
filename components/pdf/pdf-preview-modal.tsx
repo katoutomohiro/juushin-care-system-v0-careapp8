@@ -13,7 +13,7 @@ interface PdfPreviewModalProps {
 }
 
 export function PdfPreviewModal({ isOpen, onClose, dailyLog, careEvents }: PdfPreviewModalProps) {
-  const [_isGenerating, _setIsGenerating] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank")

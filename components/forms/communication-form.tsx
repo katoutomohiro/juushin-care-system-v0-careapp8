@@ -32,7 +32,7 @@ interface CommunicationFormProps {
   onCancel: () => void
 }
 
-export function CommunicationForm({ selectedUser: _selectedUser, onSubmit, onCancel }: CommunicationFormProps) {
+export function CommunicationForm({ selectedUser, onSubmit, onCancel }: CommunicationFormProps) {
   const [formData, setFormData] = useState<CommunicationFormData>({
     time: new Date().toISOString().slice(0, 16),
     communicationMethod: "",
