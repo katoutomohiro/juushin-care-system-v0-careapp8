@@ -24,3 +24,11 @@ USER-OK     : •Û‘¶=OK-•Û‘¶ / “¯Šú=OK-“¯Šú / ‘ÎÛ=OK-‘ÎÛ
 TASK        : Normalize ESLint TS config; make lint pass
 RESULT      : lint=OK(ŒxŒ”=36) typecheck=–¢À{ build=–¢À{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
 ---
+[RUN-ID: 20251018-063608]
+TARGET HEAD : 28805f0b2a98deeb91379e762bd33955908ccfb0
+BRANCH      : main
+FILES       : .eslintrc.json, .ai/RUN_BOOK.md
+USER-OK     : •Û‘¶=OK-•Û‘¶ / “¯Šú=OK-“¯Šú / ‘ÎÛ=OK-‘ÎÛ
+TASK        : Normalize ESLint TS config; make lint pass
+RESULT      : lint=OK(ŒxŒ”=36) typecheck=–¢À{ build=–¢À{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
+---
