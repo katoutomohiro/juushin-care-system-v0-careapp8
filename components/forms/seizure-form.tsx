@@ -96,7 +96,7 @@ const defaultMeasurementIssues = [
 
 export function SeizureForm({ selectedUser, onSubmit, onCancel }: SeizureFormProps) {
   const { toast } = useToast()
-  const router = useRouter()
+  const _router = useRouter()
 
   const [formData, setFormData] = useState({
     type: "",
@@ -233,7 +233,7 @@ export function SeizureForm({ selectedUser, onSubmit, onCancel }: SeizureFormPro
     }
   }
 
-  const handleSymptomChange = (symptom: string, checked: boolean) => {
+  const _handleSymptomChange = (symptom: string, checked: boolean) => {
     if (checked) {
       setFormData({ ...formData, observedSymptoms: [...formData.observedSymptoms, symptom] })
     } else {

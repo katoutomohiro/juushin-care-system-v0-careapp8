@@ -45,7 +45,7 @@ interface SkinOralCareFormProps {
 }
 
 const ClickableDropdown = ({
-  label,
+  label: _label,
   value,
   onValueChange,
   options,

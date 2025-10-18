@@ -28,7 +28,7 @@ export default function ClickableCard({
   className,
   particleColors = ["#FFB6C1", "#FFD700", "#DDA0DD"],
 }: ClickableCardProps) {
-  const [particles, setParticles] = useState<Particle[]>([])
+  const [_particles, setParticles] = useState<Particle[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)

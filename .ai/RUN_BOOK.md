@@ -28,7 +28,22 @@ RESULT      : lint=OK(�x������=36) typecheck=�����{ buil
 TARGET HEAD : 28805f0b2a98deeb91379e762bd33955908ccfb0
 BRANCH      : main
 FILES       : .eslintrc.json, .ai/RUN_BOOK.md
+<<<<<<< HEAD
+USER-OK     : 保存=OK-保存 / 同期=OK-同期 / 対象=OK-対象
+TASK        : Normalize ESLint TS config; make lint pass
+RESULT      : lint=OK(警告件数=36) typecheck=未実施 build=未実施 changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
+=======
 USER-OK     : �ۑ�=OK-�ۑ� / ����=OK-���� / �Ώ�=OK-�Ώ�
 TASK        : Normalize ESLint TS config; make lint pass
 RESULT      : lint=OK(�x������=36) typecheck=�����{ build=�����{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
+>>>>>>> origin/main
 ---
+[RUN-ID: 20251018-070000]
+TARGET HEAD : 48bc573ac12e52802201d04741e387a36f8fec9f
+BRANCH      : chore/eslint-normalize
+FILES       : app/page.tsx, components/ai-care-assistant.tsx, components/clickable-card.tsx, components/forms/*.tsx (14 files), components/pdf/pdf-preview-modal.tsx, components/settings-panel.tsx, components/statistics-dashboard.tsx, components/welfare-dashboard.tsx
+USER-OK     : 保存=OK-保存 / 同期=OK-同期(branch pushed) / 対象=OK-対象
+TASK        : Prompt A: Mechanically rename unused variables/arguments with _ prefix; Prompt B: Fix exhaustive-deps warnings with useCallback
+RESULT      : lint=OK(警告件数=0) typecheck=未実施 build=未実施 changed=22
+---
+
