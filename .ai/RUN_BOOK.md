@@ -28,7 +28,7 @@ RESULT      : lint=OK(ï¿½xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½=36) typecheck=ï¿½ï¿½ï¿½ï¿½ï¿½{ buil
 TARGET HEAD : 28805f0b2a98deeb91379e762bd33955908ccfb0
 BRANCH      : main
 FILES       : .eslintrc.json, .ai/RUN_BOOK.md
-USER-OK     : •Û‘¶=OK-•Û‘¶ / “¯Šú=OK-“¯Šú / ‘ÎÛ=OK-‘ÎÛ
+USER-OK     : ï¿½Û‘ï¿½=OK-ï¿½Û‘ï¿½ / ï¿½ï¿½ï¿½ï¿½=OK-ï¿½ï¿½ï¿½ï¿½ / ï¿½Îï¿½=OK-ï¿½Îï¿½
 TASK        : Normalize ESLint TS config; make lint pass
-RESULT      : lint=OK(ŒxŒ”=36) typecheck=–¢À{ build=–¢À{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
+RESULT      : lint=OK(ï¿½xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½=36) typecheck=ï¿½ï¿½ï¿½ï¿½ï¿½{ build=ï¿½ï¿½ï¿½ï¿½ï¿½{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
 ---
