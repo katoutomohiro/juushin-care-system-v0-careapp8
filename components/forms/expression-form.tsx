@@ -98,7 +98,7 @@ const defaultExpressionBehaviors = [
   { value: "筋緊張の変化", label: "筋緊張の変化" },
 ]
 
-export function ExpressionForm({ selectedUser, onSubmit, onCancel }: ExpressionFormProps) {
+export function ExpressionForm({ selectedUser: _selectedUser, onSubmit, onCancel }: ExpressionFormProps) {
   const [formData, setFormData] = useState<ExpressionFormData>({
     timestamp: new Date().toISOString().slice(0, 16),
     expressionType: "",
@@ -153,7 +153,7 @@ export function ExpressionForm({ selectedUser, onSubmit, onCancel }: ExpressionF
     setFormData({ ...formData, timestamp: currentTime })
   }
 
-  const handleBehaviorChange = (behavior: string, checked: boolean) => {
+  const _handleBehaviorChange = (behavior: string, checked: boolean) => {
     if (checked) {
       setFormData({ ...formData, observedBehaviors: [...formData.observedBehaviors, behavior] })
     } else {

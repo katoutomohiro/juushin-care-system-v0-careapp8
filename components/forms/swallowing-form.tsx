@@ -34,7 +34,7 @@ interface SwallowingFormProps {
   onCancel: () => void
 }
 
-export function SwallowingForm({ selectedUser, onSubmit, onCancel }: SwallowingFormProps) {
+export function SwallowingForm({ selectedUser: _selectedUser, onSubmit, onCancel }: SwallowingFormProps) {
   const [formData, setFormData] = useState<SwallowingFormData>({
     time: new Date().toISOString().slice(0, 16),
     mealType: "",

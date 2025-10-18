@@ -161,7 +161,7 @@ export function VitalsForm({ selectedUser, onSubmit, onCancel }: VitalsFormProps
     setFormData({ ...formData, time: currentTime })
   }
 
-  const handleDifficultyChange = (difficulty: string, checked: boolean) => {
+  const _handleDifficultyChange = (difficulty: string, checked: boolean) => {
     if (checked) {
       setFormData({ ...formData, measurementDifficulties: [...formData.measurementDifficulties, difficulty] })
     } else {

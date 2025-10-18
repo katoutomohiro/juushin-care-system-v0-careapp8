@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 
 export function AICareAssistant() {
   const [query, setQuery] = useState("")
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [_suggestions, _setSuggestions] = useState<string[]>([])
 
   const aiSuggestions = [
     "今日の体調変化から注意すべき点を教えて",
