@@ -126,8 +126,8 @@ export default function ClickableCard({
     <div ref={cardRef} className="relative">
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{ width: "100%", height: "100%" }}
+        className="absolute inset-0 pointer-events-none z-10 w-full h-full"
+        // 動的サイズ変更が必要な場合はstyle属性を残す
       />
       <Card
         className={cn(
