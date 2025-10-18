@@ -45,7 +45,7 @@ RESULT      : lint=OK(è­¦å‘Šä»¶æ•°=0) typecheck=æœªå®Ÿæ–½ build=æœªå®Ÿæ–½ change
 TARGET HEAD : 1b1b82214429c9ca4bfb9a180244f54e8f22e4b7
 BRANCH      : chore/no-inline-styles
 FILES       : app/page.tsx, components/clickable-card.tsx, components/settings-panel.tsx, components/statistics-dashboard.tsx, components/ui/chart.tsx, components/ui/sidebar.tsx, tsconfig.json
-USER-OK     : •Û‘¶=OK-•Û‘¶ / “¯Šú=OK-“¯Šú / ‘ÎÛ=OK-‘ÎÛ
+USER-OK     : ï¿½Û‘ï¿½=OK-ï¿½Û‘ï¿½ / ï¿½ï¿½ï¿½ï¿½=OK-ï¿½ï¿½ï¿½ï¿½ / ï¿½Îï¿½=OK-ï¿½Îï¿½
 TASK        : Remove static inline styles (webhint no-inline-styles=0); keep visuals; add comments for dynamic styles
-RESULT      : lint=OK(ŒxŒ”=0) a11y(select-name)=OK(Šm”FÏ) build=–¢À{ changed=7
+RESULT      : lint=OK(ï¿½xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½=0) a11y(select-name)=OK(ï¿½mï¿½Fï¿½ï¿½) build=ï¿½ï¿½ï¿½ï¿½ï¿½{ changed=7
 ---
