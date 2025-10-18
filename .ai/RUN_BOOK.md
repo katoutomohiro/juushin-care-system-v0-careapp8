@@ -20,9 +20,9 @@ RESULT: lint=æœªå®Ÿæ–½ typecheck=æœªå®Ÿæ–½ build=æœªå®Ÿæ–½ changed=0
 TARGET HEAD : 03e50e6fba4899d52f5efc9ac6fb1d800f6e11fb
 BRANCH      : main
 FILES       : .eslintrc.json, .ai/RUN_BOOK.md
-USER-OK     : ä¿å­˜=OK-ä¿å­˜ / åŒæœŸ=OK-åŒæœŸ / å¯¾è±¡=OK-å¯¾è±¡
+USER-OK     : ï¿½Û‘ï¿½=OK-ï¿½Û‘ï¿½ / ï¿½ï¿½ï¿½ï¿½=OK-ï¿½ï¿½ï¿½ï¿½ / ï¿½Îï¿½=OK-ï¿½Îï¿½
 TASK        : Normalize ESLint TS config; make lint pass
-RESULT      : lint=OK(è­¦å‘Šä»¶æ•°=36) typecheck=æœªå®Ÿæ–½ build=æœªå®Ÿæ–½ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
+RESULT      : lint=OK(ï¿½xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½=36) typecheck=ï¿½ï¿½ï¿½ï¿½ï¿½{ build=ï¿½ï¿½ï¿½ï¿½ï¿½{ changed=2(.eslintrc.json,.ai/RUN_BOOK.md)
 ---
 [RUN-ID: 20251018-063608]
 TARGET HEAD : 28805f0b2a98deeb91379e762bd33955908ccfb0
@@ -39,4 +39,13 @@ FILES       : app/page.tsx, components/ai-care-assistant.tsx, components/clickab
 USER-OK     : ä¿å­˜=OK-ä¿å­˜ / åŒæœŸ=OK-åŒæœŸ(branch pushed) / å¯¾è±¡=OK-å¯¾è±¡
 TASK        : Prompt A: Mechanically rename unused variables/arguments with _ prefix; Prompt B: Fix exhaustive-deps warnings with useCallback
 RESULT      : lint=OK(è­¦å‘Šä»¶æ•°=0) typecheck=æœªå®Ÿæ–½ build=æœªå®Ÿæ–½ changed=22
+---
+
+[RUN-ID: 20251018-075656]
+TARGET HEAD : 1b1b82214429c9ca4bfb9a180244f54e8f22e4b7
+BRANCH      : chore/no-inline-styles
+FILES       : app/page.tsx, components/clickable-card.tsx, components/settings-panel.tsx, components/statistics-dashboard.tsx, components/ui/chart.tsx, components/ui/sidebar.tsx, tsconfig.json
+USER-OK     : •Û‘¶=OK-•Û‘¶ / “¯Šú=OK-“¯Šú / ‘ÎÛ=OK-‘ÎÛ
+TASK        : Remove static inline styles (webhint no-inline-styles=0); keep visuals; add comments for dynamic styles
+RESULT      : lint=OK(ŒxŒ”=0) a11y(select-name)=OK(Šm”FÏ) build=–¢À{ changed=7
 ---

@@ -189,7 +189,7 @@ export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) 
                       <div className="w-20 bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${(count / maxCount) * 100}%` }}
+                          style={{ width: `${(count / maxCount) * 100}%` }} // widthは動的なのでstyle属性を残す
                         />
                       </div>
                       <Badge variant="secondary" className="text-xs">
@@ -217,7 +217,7 @@ export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) 
                         className="bg-green-500 h-2 rounded-full"
                         style={{
                           width: `${Math.max((day.count / Math.max(...stats.weeklyTrend.map((d) => d.count), 1)) * 100, 5)}%`,
-                        }}
+                        }} // widthは動的なのでstyle属性を残す
                       />
                     </div>
                     <span className="text-sm font-medium w-6 text-right">{day.count}</span>

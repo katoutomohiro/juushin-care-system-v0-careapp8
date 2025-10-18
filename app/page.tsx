@@ -465,7 +465,8 @@ export default function WorldClassSoulCareApp() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-              <select className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary">
+              <label htmlFor="serviceType" className="sr-only">サービス種別</label>
+              <select id="serviceType" className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary">
                 <option value="">サービス種別を選択</option>
                 {welfareServices.map((service) => (
                   <option key={service.id} value={service.id}>
@@ -474,7 +475,9 @@ export default function WorldClassSoulCareApp() {
                 ))}
               </select>
 
+              <label htmlFor="userSelect" className="sr-only">対象利用者</label>
               <select
+                id="userSelect"
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
                 className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[120px]"

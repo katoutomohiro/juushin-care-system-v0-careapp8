@@ -152,7 +152,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="language">言語</Label>
+              <label htmlFor="language" className="block text-sm font-medium">言語</label>
               <select
                 id="language"
                 value={settings.language || "ja"}
@@ -165,7 +165,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="theme">テーマ</Label>
+              <label htmlFor="theme" className="block text-sm font-medium">テーマ</label>
               <select
                 id="theme"
                 value={settings.theme || "light"}
@@ -238,7 +238,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
                 </div>
 
                 <div>
-                  <Label htmlFor="careLevel">ケアレベル</Label>
+                  <label htmlFor="careLevel" className="block text-sm font-medium">ケアレベル</label>
                   <select
                     id="careLevel"
                     value={newProfile.careLevel}

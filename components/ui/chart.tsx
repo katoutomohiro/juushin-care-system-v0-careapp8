@@ -64,7 +64,7 @@ export function ChartTooltipContent({
             {/* 色スウォッチ */}
             <span
               className="inline-block size-3 rounded"
-              style={{ background: p.color ?? "currentColor" }}
+              style={{ background: p.color ?? "currentColor" }} // colorは動的なのでstyle属性を残す
               aria-hidden
             />
             <span className="min-w-0 truncate">
@@ -99,7 +99,7 @@ export function ChartLegendContent({ payload }: ChartLegendContentProps) {
         >
           <span
             className="inline-block size-2.5 rounded-full"
-            style={{ background: p.color ?? "currentColor" }}
+            style={{ background: p.color ?? "currentColor" }} // colorは動的なのでstyle属性を残す
             aria-hidden
           />
           <span className="truncate max-w-[12rem]">
