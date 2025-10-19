@@ -64,11 +64,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r agents/requirements.txt
 
-      - name: Run AI agent review (Phase 1)
+      - name: Run AI agent review (Phase 1/AutoGen)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          python scripts/agent_review.py | tee agent_report.txt
+          if [ "${AUTO_GEN}" = "true" ]; then python scripts/agent_review_autogen.py | tee agent_report.txt; else python scripts/agent_review.py | tee agent_report.txt; fi
 
       - name: Comment to PR
         uses: actions/github-script@v7
