@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test": "echo \"(test script not defined)\" && exit 0"
   },
   "dependencies": {
     "@edge-runtime/vm": "latest",
