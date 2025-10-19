@@ -142,22 +142,56 @@ jobs:
             echo "_No ai_review.md generated_" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Comment AI review to PR
-        if: always() && github.event_name == 'pull_request'
+      - name: Comment AI review to PR (fallback to commit)
+        if: always()
         uses: actions/github-script@v7
+        env:
+          REVIEW_MD_PATH: ai_review.md
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const body = fs.existsSync('ai_review.md')
-              ? fs.readFileSync('ai_review.md', 'utf8')
-              : '_(No AI review generated)_';
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body
-            });
+            const body = fs.existsSync(process.env.REVIEW_MD_PATH)
+              ? fs.readFileSync(process.env.REVIEW_MD_PATH, 'utf8')
+              : 'AI review artifact was not generated.';
+            const { context, github, core } = require('@actions/github');
+            const { owner, repo } = context.repo;
+
+            // 1) pull_request イベントならその番号を使う
+            let prNumber = context.payload.pull_request?.number;
+
+            // 2) 無ければ「このコミットに紐づくPR」を探す（open/closed問わず）
+            if (!prNumber) {
+              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner, repo, commit_sha: context.sha
+              });
+              prNumber = prs.data?.[0]?.number;
+            }
+
+            if (prNumber) {
+              // PR が存在：開いていればコメント、閉じていればコミットコメントに切替
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              if (pr.data.state === 'open') {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber, body
+                });
+              } else {
+                await github.rest.repos.createCommitComment({
+                  owner, repo, commit_sha: context.sha, body
+                });
+              }
+            } else {
+              // 3) PR が見つからない：コミットコメント
+              await github.rest.repos.createCommitComment({
+                owner, repo, commit_sha: context.sha, body
+              });
+            }
+
+            // Job Summary にも出す
+            await core.summary
+              .addHeading('🤖 AI Review Summary')
+              .addRaw(body)
+              .write();
 
       - name: Fail on BLOCKER (optional)
         if: always() && env.FAIL_ON_BLOCKER == 'true'
