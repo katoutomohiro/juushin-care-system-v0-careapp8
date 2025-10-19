@@ -1,10 +1,16 @@
 name: CI Agent Pipeline
 
-on:
+
   push:
     branches: [ "main", "feat/**", "fix/**" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      auto_gen:
+        description: "Use AutoGen multi-agent reviewer"
+        required: false
+        default: "false"
 
 permissions:
   contents: read
@@ -51,6 +57,8 @@ jobs:
     needs: build-test
     if: ${{ always() && github.event_name == 'pull_request' && needs.build-test.result == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      AUTO_GEN: ${{ github.event.inputs.auto_gen }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,7 +72,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r agents/requirements.txt
 
-      - name: Run AI agent review (Phase 1/AutoGen)
+      - name: Run AI agent review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
