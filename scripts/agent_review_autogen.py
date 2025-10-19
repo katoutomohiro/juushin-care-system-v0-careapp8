@@ -4,10 +4,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 ALLOWED = (".ts", ".tsx", ".js", ".jsx", ".json")
 
 def git_diff():
-    tries = [
-        ["git","diff","--unified=0","HEAD~1...HEAD"],
-        ["git","diff","--unified=0"]
-    ]
+    # PRイベントではbase/head shaを使用
+    base = os.getenv("GITHUB_BASE_REF")
+    head = os.getenv("GITHUB_HEAD_REF")
+    if base and head:
+        tries = [
+            ["git","fetch","origin",base,head],
+            ["git","diff","--unified=0",f"origin/{base}...origin/{head}"]
+        ]
+    else:
+        tries = [
+            ["git","diff","--unified=0","HEAD~1...HEAD"],
+            ["git","diff","--unified=0"]
+        ]
     for cmd in tries:
         try:
             return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
