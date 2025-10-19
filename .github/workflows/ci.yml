@@ -55,7 +55,7 @@ jobs:
 
   ai-agent-review:
     needs: build-test
-    if: ${{ always() && github.event_name == 'pull_request' && needs.build-test.result == 'success' }}
+    if: ${{ always() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     env:
       AUTO_GEN: ${{ github.event.inputs.auto_gen }}
@@ -75,8 +75,14 @@ jobs:
       - name: Run AI agent review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BUILD_STATUS: ${{ needs.build-test.result }}
         run: |
           if [ "${AUTO_GEN}" = "true" ]; then python scripts/agent_review_autogen.py | tee agent_report.txt; else python scripts/agent_review.py | tee agent_report.txt; fi
+          if [ "${BUILD_STATUS}" != "success" ]; then
+            echo "" >> agent_report.txt
+            echo "---" >> agent_report.txt
+            echo "⚠️ **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
+          fi
 
       - name: Comment to PR
         uses: actions/github-script@v7
