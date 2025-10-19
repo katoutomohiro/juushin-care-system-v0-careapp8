@@ -105,6 +105,16 @@ jobs:
         env:
           BUILD_STATUS: ${{ needs.build-test.result }}
 
+      - name: Upload AI review artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review
+          path: |
+            agent_report.txt
+            ai_review.json
+            ai_review.md
+
       - name: Slack notify
         if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
         env:
@@ -113,7 +123,11 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_NUM: ${{ github.event.pull_request.number }}
         run: |
-          SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
-          curl -X POST -H 'Content-type: application/json' --data "{
-            \"text\": \"[CI:${STATUS}] <${PR_URL}|PR #${PR_NUM}>\\n${SUMMARY}\"
-          }" "$WEBHOOK" || echo "Slack notification skipped (webhook not configured)"
+          if [ -f ai_review.json ]; then
+            SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
+            [ -z "$SUMMARY" ] && SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
+          else
+            SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
+          fi
+          payload=$(jq -n --arg t "${{ github.repository }} PR #${PR_NUM}" --arg s "$SUMMARY" '{text: "\($t)\n" + $s}')
+          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$WEBHOOK" >/dev/null 2>&1 || echo "Slack notification skipped"
