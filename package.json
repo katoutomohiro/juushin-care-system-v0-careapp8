@@ -5,10 +5,10 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:autosave": "node scripts/auto-commit.js",
     "lint": "next lint",
     "start": "next start",
-    "test": "echo \"(test script not defined)\" && exit 0",
-    "dev:autosave": "node scripts/auto-commit.js"
+    "test": "echo \"(test script not defined)\" && exit 0"
   },
   "dependencies": {
     "@edge-runtime/vm": "latest",
@@ -55,6 +55,7 @@
     "@vitest/browser": "latest",
     "@vitest/ui": "latest",
     "autoprefixer": "^10.4.20",
+    "child_process": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "latest",
@@ -78,7 +79,7 @@
     "react-dom": "^19",
     "react-hook-form": "latest",
     "react-resizable-panels": "latest",
-    "recharts": "^3.2.1",
+    "recharts": "latest",
     "sass": "latest",
     "sass-embedded": "latest",
     "sonner": "latest",
