@@ -82,6 +82,8 @@ jobs:
             echo "" >> agent_report.txt
             echo "---" >> agent_report.txt
             echo "⚠️ **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
+            echo "" >> agent_report.txt
+            echo "**Build Status**: \`${BUILD_STATUS}\`" >> agent_report.txt
           fi
 
       - name: Comment to PR
@@ -89,10 +91,29 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('agent_report.txt','utf8');
+            let body = fs.readFileSync('agent_report.txt','utf8');
+            const status = process.env.BUILD_STATUS;
+            if (status !== 'success') {
+              body = `⚠️ **Build failed (${status}). Review below is based on source diff only.**\n\n` + body;
+            }
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body
             });
+        env:
+          BUILD_STATUS: ${{ needs.build-test.result }}
+
+      - name: Slack notify
+        if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
+        env:
+          WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ needs.build-test.result }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"text\": \"[CI:${STATUS}] <${PR_URL}|PR #${PR_NUM}>\\n${SUMMARY}\"
+          }" "$WEBHOOK" || echo "Slack notification skipped (webhook not configured)"
