@@ -39,11 +39,11 @@ jobs:
           cache: 'pnpm'
 
       - name: Install deps (pnpm)
-        if: hashFiles('pnpm-lock.yaml') != ''
+        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
         run: pnpm install --frozen-lockfile
 
       - name: Install deps (npm fallback)
-        if: hashFiles('pnpm-lock.yaml') == ''
+        if: ${{ hashFiles('pnpm-lock.yaml') == '' }}
         run: npm ci
 
       - name: Lint
@@ -60,7 +60,7 @@ jobs:
 
   ai-agent-review:
     needs: build-test
-    if: always() && github.event_name == 'pull_request'
+    if: ${{ always() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     env:
       AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
@@ -98,7 +98,7 @@ jobs:
           fi
 
       - name: Upload AI review artifacts
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ai-review
@@ -108,7 +108,7 @@ jobs:
             ai_review.md
 
       - name: Comment to PR
-        if: always()
+        if: ${{ always() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -140,7 +140,7 @@ jobs:
           curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$WEBHOOK" >/dev/null 2>&1 || echo "Slack notification skipped"
 
       - name: Attach AI review to Job Summary
-        if: always()
+        if: ${{ always() }}
         run: |
           {
             echo "##  AI Review Summary"
@@ -148,7 +148,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment AI review to PR (fallback to commit)
-        if: always()
+        if: ${{ always() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -174,3 +174,4 @@ jobs:
             } else {
               await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
             }
+
