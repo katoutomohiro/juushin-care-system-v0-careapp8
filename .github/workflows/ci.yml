@@ -66,6 +66,7 @@ jobs:
       AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
       BUILD_STATUS: ${{ needs.build-test.result }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -126,9 +127,7 @@ jobs:
             });
 
       - name: Slack notify
-        if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
-        env:
-          WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ always() && env.WEBHOOK != '' }}
         run: |
           if [ -f ai_review.json ]; then
             SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
@@ -196,4 +195,5 @@ jobs:
             } else {
               await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
             }
+
 
