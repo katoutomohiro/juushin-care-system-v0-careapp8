@@ -1,23 +1,25 @@
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-name: CI Agent Pipeline
+﻿name: ci
 
-
+on:
   push:
-    branches: [ "main", "feat/**", "fix/**" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
   workflow_dispatch:
     inputs:
       auto_gen:
-        description: "Use AutoGen multi-agent reviewer"
+        description: 'Use AutoGen agents'
+        type: boolean
         required: false
-        default: "false"
+        default: false
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test:
@@ -33,8 +35,8 @@ jobs:
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install deps (pnpm)
         if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
@@ -68,7 +70,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install Python deps
         run: |
@@ -84,9 +86,9 @@ jobs:
           if [ "${BUILD_STATUS}" != "success" ]; then
             echo "" >> agent_report.txt
             echo "---" >> agent_report.txt
-            echo "⚠️ **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
+            echo " **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
             echo "" >> agent_report.txt
-            echo "**Build Status**: \`${BUILD_STATUS}\`" >> agent_report.txt
+            echo "**Build Status**: \`\" >> agent_report.txt
           fi
 
       - name: Comment to PR
@@ -97,7 +99,7 @@ jobs:
             let body = fs.readFileSync('agent_report.txt','utf8');
             const status = process.env.BUILD_STATUS;
             if (status !== 'success') {
-              body = `⚠️ **Build failed (${status}). Review below is based on source diff only.**\n\n` + body;
+              body = \ **Build failed (${status}). Review below is based on source diff only.**\n\n\ + body;
             }
             github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -138,7 +140,7 @@ jobs:
       - name: Attach AI review to Job Summary
         if: always()
         run: |
-          echo "## 🤖 AI Review Summary" >> $GITHUB_STEP_SUMMARY
+          echo "##  AI Review Summary" >> $GITHUB_STEP_SUMMARY
           if [ -f ai_review.md ]; then
             cat ai_review.md >> $GITHUB_STEP_SUMMARY
           else
@@ -160,10 +162,8 @@ jobs:
             const { context, github, core } = require('@actions/github');
             const { owner, repo } = context.repo;
 
-            // 1) pull_request イベントならその番号を使う
             let prNumber = context.payload.pull_request?.number;
 
-            // 2) 無ければ「このコミットに紐づくPR」を探す（open/closed問わず）
             if (!prNumber) {
               const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
                 owner, repo, commit_sha: context.sha
@@ -172,7 +172,6 @@ jobs:
             }
 
             if (prNumber) {
-              // PR が存在：開いていればコメント、閉じていればコミットコメントに切替
               const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
               if (pr.data.state === 'open') {
                 await github.rest.issues.createComment({
@@ -184,15 +183,13 @@ jobs:
                 });
               }
             } else {
-              // 3) PR が見つからない：コミットコメント
               await github.rest.repos.createCommitComment({
                 owner, repo, commit_sha: context.sha, body
               });
             }
 
-            // Job Summary にも出す
             await core.summary
-              .addHeading('🤖 AI Review Summary')
+              .addHeading(' AI Review Summary')
               .addRaw(body)
               .write();
 
