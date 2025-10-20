@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       auto_gen:
-        description: 'Use AutoGen agents'
+        description: "Use AutoGen agents"
         type: boolean
         required: false
         default: false
@@ -39,11 +39,11 @@ jobs:
           cache: 'pnpm'
 
       - name: Install deps (pnpm)
-        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
+        if: hashFiles('pnpm-lock.yaml') != ''
         run: pnpm install --frozen-lockfile
 
       - name: Install deps (npm fallback)
-        if: ${{ hashFiles('pnpm-lock.yaml') == '' }}
+        if: hashFiles('pnpm-lock.yaml') == ''
         run: npm ci
 
       - name: Lint
@@ -60,10 +60,12 @@ jobs:
 
   ai-agent-review:
     needs: build-test
-    if: ${{ always() && github.event_name == 'pull_request' }}
+    if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
-      AUTO_GEN: ${{ github.event.inputs.auto_gen }}
+      AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
+      BUILD_STATUS: ${{ needs.build-test.result }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,40 +80,25 @@ jobs:
           pip install -r agents/requirements.txt
 
       - name: Run AI agent review
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BUILD_STATUS: ${{ needs.build-test.result }}
+        shell: bash
         run: |
-          if [ "${AUTO_GEN}" = "true" ]; then python scripts/agent_review_autogen.py | tee agent_report.txt; else python scripts/agent_review.py | tee agent_report.txt; fi
+          if [ "${AUTO_GEN}" = "true" ]; then
+            python scripts/agent_review_autogen.py | tee agent_report.txt
+          else
+            python scripts/agent_review.py | tee agent_report.txt
+          fi
           if [ "${BUILD_STATUS}" != "success" ]; then
-            echo "" >> agent_report.txt
-            echo "---" >> agent_report.txt
-            echo " **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
-            echo "" >> agent_report.txt
-            echo "**Build Status**: \`\" >> agent_report.txt
+            {
+              echo
+              echo "---"
+              echo " **ビルド/テスト失敗**: CI結果を確認してください。"
+              echo
+              echo "**Build Status**: \`${BUILD_STATUS}\`"
+            } >> agent_report.txt
           fi
 
-      - name: Comment to PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let body = fs.readFileSync('agent_report.txt','utf8');
-            const status = process.env.BUILD_STATUS;
-            if (status !== 'success') {
-              body = \ **Build failed (${status}). Review below is based on source diff only.**\n\n\ + body;
-            }
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body
-            });
-        env:
-          BUILD_STATUS: ${{ needs.build-test.result }}
-
       - name: Upload AI review artifacts
-        if: ${{ always() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ai-review
@@ -120,13 +107,28 @@ jobs:
             ai_review.json
             ai_review.md
 
+      - name: Comment to PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = fs.readFileSync('agent_report.txt','utf8');
+            const status = `${{ env.BUILD_STATUS }}`;
+            if (status !== 'success') {
+              body = ` **Build failed (${status}). Review below is based on source diff only.**\n\n` + body;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
       - name: Slack notify
         if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
         env:
           WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          STATUS: ${{ needs.build-test.result }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUM: ${{ github.event.pull_request.number }}
         run: |
           if [ -f ai_review.json ]; then
             SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
@@ -134,72 +136,41 @@ jobs:
           else
             SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
           fi
-          payload=$(jq -n --arg t "${{ github.repository }} PR #${PR_NUM}" --arg s "$SUMMARY" '{text: "\($t)\n" + $s}')
+          payload=$(jq -n --arg t "${{ github.repository }} PR #${{ github.event.pull_request.number }}" --arg s "$SUMMARY" '{text: ($t+"\n"+$s)}')
           curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$WEBHOOK" >/dev/null 2>&1 || echo "Slack notification skipped"
 
       - name: Attach AI review to Job Summary
         if: always()
         run: |
-          echo "##  AI Review Summary" >> $GITHUB_STEP_SUMMARY
-          if [ -f ai_review.md ]; then
-            cat ai_review.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "_No ai_review.md generated_" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "##  AI Review Summary"
+            if [ -f ai_review.md ]; then cat ai_review.md; else echo "_No ai_review.md generated_"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment AI review to PR (fallback to commit)
         if: always()
         uses: actions/github-script@v7
-        env:
-          REVIEW_MD_PATH: ai_review.md
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const body = fs.existsSync(process.env.REVIEW_MD_PATH)
-              ? fs.readFileSync(process.env.REVIEW_MD_PATH, 'utf8')
+            const body = fs.existsSync('ai_review.md')
+              ? fs.readFileSync('ai_review.md', 'utf8')
               : 'AI review artifact was not generated.';
-            const { context, github, core } = require('@actions/github');
             const { owner, repo } = context.repo;
 
             let prNumber = context.payload.pull_request?.number;
-
             if (!prNumber) {
-              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                owner, repo, commit_sha: context.sha
-              });
+              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: context.sha });
               prNumber = prs.data?.[0]?.number;
             }
 
             if (prNumber) {
               const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
               if (pr.data.state === 'open') {
-                await github.rest.issues.createComment({
-                  owner, repo, issue_number: prNumber, body
-                });
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
               } else {
-                await github.rest.repos.createCommitComment({
-                  owner, repo, commit_sha: context.sha, body
-                });
+                await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
               }
             } else {
-              await github.rest.repos.createCommitComment({
-                owner, repo, commit_sha: context.sha, body
-              });
+              await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
             }
-
-            await core.summary
-              .addHeading(' AI Review Summary')
-              .addRaw(body)
-              .write();
-
-      - name: Fail on BLOCKER (optional)
-        if: always() && env.FAIL_ON_BLOCKER == 'true'
-        run: |
-          if [ -f ai_review.json ]; then
-            SEV=$(jq -r '.overall_severity' ai_review.json 2>/dev/null || echo "minor")
-            if [ "$SEV" = "blocker" ]; then
-              echo "::error::AI review marked as BLOCKER"
-              exit 1
-            fi
-          fi
