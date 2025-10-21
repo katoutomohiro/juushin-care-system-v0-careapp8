@@ -175,3 +175,82 @@ jobs:
             }
 
 
+  agent-runner:
+    needs: build-test
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r agents/requirements.txt
+
+      - name: Run agent orchestrator
+        id: run_orchestrator
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          TOPIC="PR #${PR_NUMBER}: ${PR_TITLE}"
+          echo "Topic: ${TOPIC}"
+          python scripts/agent_run.py --topic "${TOPIC}" --path "**/*.tsx" --verbose | tee agent_runner_output.txt
+          OUTDIR=$(ls -1dt artifacts/agent_reports/* | head -n 1)
+          echo "outdir=${OUTDIR}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload agent-runner artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-runner
+          path: |
+            ${{ steps.run_orchestrator.outputs.outdir }}
+            agent_runner_output.txt
+
+      - name: Attach Agent Runner Summary
+        if: ${{ always() }}
+        run: |
+          OUTDIR='${{ steps.run_orchestrator.outputs.outdir }}'
+          {
+            echo "## Agent Runner Summary"
+            if [ -f "$OUTDIR/summary.md" ]; then cat "$OUTDIR/summary.md"; else echo "_No summary generated_"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment Agent Runner summary to PR
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = process.env.OUTDIR || '${{ steps.run_orchestrator.outputs.outdir }}';
+            const p = path + '/summary.md';
+            const body = fs.existsSync(p)
+              ? fs.readFileSync(p, 'utf8')
+              : 'Agent runner summary was not generated.';
+            const { owner, repo } = context.repo;
+
+            let prNumber = context.payload.pull_request?.number;
+            if (!prNumber) {
+              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: context.sha });
+              prNumber = prs.data?.[0]?.number;
+            }
+
+            if (prNumber) {
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              if (pr.data.state === 'open') {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+              } else {
+                await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
+              }
+            } else {
+              await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
+            }
+
+
