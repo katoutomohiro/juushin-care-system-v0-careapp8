@@ -7,6 +7,12 @@ AutoGen-like multi-role review (Planner / Reviewer / TestDesigner)
 - 3ロールを順に呼び分け（OpenAI API で疑似マルチエージェント）
 - 収束結果を ai_review.json（構造化）と ai_review.md（要約）に出力
 - 例外/キー未設定時はソフトにフォールバックして exit 0（CIを落とさない）
+
+TODO: 実装エージェント・ドキュメントエージェントを呼び出すロジックを追加する
+      - .ai/agents_config.yaml を参照してエージェントを初期化
+      - Implementation Agent: 新機能のコード生成を担当
+      - Documentation Agent: README/API docs の更新を担当
+      - 既存の Planner/Reviewer/TestDesigner との統合を検討
 """
 
 import json

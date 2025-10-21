@@ -1,0 +1,69 @@
+# AI Agents Configuration
+# This file defines the profiles for multi-agent development system
+
+implementation_agent:
+  model: gpt-4o
+  temperature: 0.2
+  description: "新機能実装やコード生成を担当"
+  capabilities:
+    - code_generation
+    - feature_implementation
+    - refactoring
+  tools:
+    - github_copilot
+    - typescript_compiler
+    - next_js_dev_server
+
+review_agent:
+  model: gpt-4o
+  temperature: 0.0
+  description: "コードレビューとパッチ提案を担当"
+  capabilities:
+    - code_review
+    - security_audit
+    - accessibility_check
+    - performance_analysis
+  tools:
+    - eslint
+    - typescript_compiler
+    - diff_generator
+
+test_agent:
+  model: gpt-4o
+  temperature: 0.0
+  description: "自動テスト設計を担当"
+  capabilities:
+    - unit_test_generation
+    - integration_test_design
+    - e2e_test_scenarios
+  tools:
+    - vitest
+    - react_testing_library
+    - playwright
+
+doc_agent:
+  model: gpt-4o
+  temperature: 0.2
+  description: "ドキュメント更新を担当"
+  capabilities:
+    - readme_generation
+    - api_documentation
+    - user_manual_creation
+  tools:
+    - markdown_formatter
+    - jsdoc_generator
+
+# Workflow configuration
+workflow:
+  sequence:
+    - implementation_agent  # Generates code first
+    - review_agent         # Reviews and suggests patches
+    - test_agent           # Creates tests
+    - doc_agent            # Updates documentation
+  
+  approval_required: true  # Human approval needed before merge
+  
+  notification:
+    slack_webhook: ${SLACK_WEBHOOK_URL}
+    on_completion: true
+    on_error: true
