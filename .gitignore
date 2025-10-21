@@ -25,6 +25,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-\n+# AI review artifacts
 ai_review.json
 ai_review.md
+\n+# Agent runner artifacts
+artifacts/agent_reports/
