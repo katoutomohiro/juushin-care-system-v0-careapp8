@@ -19,9 +19,31 @@ from textwrap import dedent
 
 # ---- Config ---------------------------------------------------------------
 
+def getenv_float(key: str, default: float) -> float:
+    """Get float from env var with fallback to default."""
+    val = os.getenv(key, "").strip()
+    if not val:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        print(f"[WARN] Invalid float for {key}={val!r}, using default={default}", file=sys.stderr)
+        return default
+
+def getenv_int(key: str, default: int) -> int:
+    """Get int from env var with fallback to default."""
+    val = os.getenv(key, "").strip()
+    if not val:
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        print(f"[WARN] Invalid int for {key}={val!r}, using default={default}", file=sys.stderr)
+        return default
+
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-TEMP = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-SEED = int(os.getenv("LLM_SEED", "123"))
+TEMP = getenv_float("LLM_TEMPERATURE", 0.2)
+SEED = getenv_int("LLM_SEED", 123)
 API_KEY = os.getenv("OPENAI_API_KEY")
 
 AI_JSON_PATH = "ai_review.json"

@@ -25,3 +25,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ai review artifacts
+ai_review.json
+ai_review.md
+
+# python
+__pycache__/
+*.pyc
