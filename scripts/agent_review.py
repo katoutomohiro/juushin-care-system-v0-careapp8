@@ -3,6 +3,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 ALLOWED = (".ts", ".tsx", ".js", ".jsx", ".json")
 
+def getenv_float(name: str, default: float) -> float:
+    """Parse float env var safely, handling whitespace/empty and fallback to default if invalid."""
+    try:
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        raw = raw.strip()
+        if raw == "":
+            return default
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
 def git_diff():
     # PRイベントではbase/head shaを使用
     base = os.getenv("GITHUB_BASE_REF")
@@ -63,9 +76,10 @@ def call_openai(prompt: str) -> str:
     from openai import OpenAI
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    temperature = getenv_float("LLM_TEMPERATURE", 0.2)
     resp = client.chat.completions.create(
         model=model,
-        temperature=0.2,
+        temperature=temperature,
         messages=[
             {"role":"system","content":"You are a meticulous senior code reviewer for a medical care app."},
             {"role":"user","content": prompt}
