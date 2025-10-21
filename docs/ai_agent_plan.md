@@ -109,21 +109,21 @@ Below are examples of prompts to feed into GitHub Copilot Chat to generate code 
 
 ### 1. Create the VoiceRecorder component
 
-```
+\`\`\`
 You are a TypeScript/React developer. Generate a `VoiceRecorder.tsx` component for a Next.js 14 app using client components. It should provide a start and stop button to control audio recording via the Web Speech API (window.SpeechRecognition). Display transcribed text in a text area, call a supplied callback when transcription completes, and handle errors gracefully. Include minimal CSS for layout and ensure ARIA labels for accessibility.
-```
+\`\`\`
 
 ### 2. Add the VoiceRecorder to the main page
 
-```
+\`\`\`
 I have a Next.js 14 project with an `app/page.tsx` that renders care categories and a log form. Show me how to import and embed the `VoiceRecorder` component you created above into the page. When a recording finishes, append the transcribed text to the notes field of the log form. Ensure state updates correctly.
-```
+\`\`\`
 
 ### 3. Stub out the Body-Movement Communication page
 
-```
+\`\`\`
 Create a new file `components/body-movement.tsx` for a Next.js project. The component should set up a video element and integrate with @mediapipe/pose (as a placeholder) to detect basic gestures (e.g. left hand raised). For now, just log recognised gestures to the console and display a message on screen when a gesture is detected. Make sure to clean up resources on unmount.
-```
+\`\`\`
 
 ## Prompts for v0.dev / v0.app
 
@@ -131,21 +131,21 @@ v0 allows natural-language UI generation. When using v0's AI to scaffold pages, 
 
 ### Generate a Voice Recording UI
 
-```
+\`\`\`
 Create a page for voice logging in a care-management app. Include a section with a microphone button that starts and stops voice recording, shows the live transcription in real time, and a button to save the transcript. Use large buttons and high-contrast colours suitable for caregivers working in a medical environment.
-```
+\`\`\`
 
 ### Design a Body-Movement Communication Page
 
-```
+\`\`\`
 Add a new page called 'Body Communication'. It should show a webcam feed, instructions to perform simple gestures, and a list of phrases that can be triggered by detected gestures. Arrange elements in a clean grid and ensure the page is responsive.
-```
+\`\`\`
 
 ### Create a Creative Activity Gallery
 
-```
+\`\`\`
 Generate a gallery page to display artworks created by users. Include a masonry grid of images or sketches, a button to start a new creation session, and an accessibility-friendly colour palette. The page should encourage creativity and self-expression.
-```
+\`\`\`
 
 ## Updating This Plan
 
