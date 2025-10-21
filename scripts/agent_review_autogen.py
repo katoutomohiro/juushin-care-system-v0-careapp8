@@ -183,7 +183,7 @@ JSON 以外は出力しないこと。
 def extract_json(text: str) -> dict:
     """
     LLM出力から最初のJSONオブジェクトを抽出してdict化。
-    ```json ... ``` や前後のテキストが混ざっていても頑張って拾う。
+    \`\`\`json ... ``` や前後のテキストが混ざっていても頑張って拾う。
     """
     if not text:
         return {}
@@ -255,9 +255,9 @@ def main() -> int:
     # ---- Planner
     planner_user = dedent(f"""
     以下は PR の unified diff です。論点の"地図"を作ってください。
-    ```diff
+    \`\`\`diff
     {diff_for_model}
-    ```
+    \`\`\`
     """).strip()
     planner_map = oai_chat(PLANNER_SYS, planner_user)
 
@@ -268,9 +268,9 @@ def main() -> int:
     {planner_map}
     ---
     同じ差分を参照して、指定スキーマどおり **JSONのみ** を出力してください。
-    ```diff
+    \`\`\`diff
     {diff_for_model}
-    ```
+    \`\`\`
     """).strip()
     reviewer_out = oai_chat(REVIEWER_SYS, reviewer_user)
     reviewer_json = extract_json(reviewer_out)
