@@ -19,9 +19,35 @@ from textwrap import dedent
 
 # ---- Config ---------------------------------------------------------------
 
+def getenv_float(name: str, default: float) -> float:
+    """Parse float env var safely, handling whitespace/empty and fallback to default if invalid."""
+    try:
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        raw = raw.strip()
+        if raw == "":
+            return default
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+def getenv_int(name: str, default: int) -> int:
+    """Parse int env var safely, handling whitespace/empty and fallback to default if invalid."""
+    try:
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        raw = raw.strip()
+        if raw == "":
+            return default
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
+
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-TEMP = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-SEED = int(os.getenv("LLM_SEED", "123"))
+TEMP = getenv_float("LLM_TEMPERATURE", 0.2)
+SEED = getenv_int("LLM_SEED", 123)
 API_KEY = os.getenv("OPENAI_API_KEY")
 
 AI_JSON_PATH = "ai_review.json"
