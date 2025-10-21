@@ -1,20 +1,25 @@
-name: CI Agent Pipeline
+﻿name: ci
 
-
+on:
   push:
-    branches: [ "main", "feat/**", "fix/**" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
   workflow_dispatch:
     inputs:
       auto_gen:
-        description: "Use AutoGen multi-agent reviewer"
+        description: "Use AutoGen agents"
+        type: boolean
         required: false
-        default: "false"
+        default: false
 
 permissions:
   contents: read
   pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test:
@@ -30,8 +35,8 @@ jobs:
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install deps (pnpm)
         if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
@@ -58,14 +63,17 @@ jobs:
     if: ${{ always() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     env:
-      AUTO_GEN: ${{ github.event.inputs.auto_gen }}
+      AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
+      BUILD_STATUS: ${{ needs.build-test.result }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install Python deps
         run: |
@@ -73,47 +81,97 @@ jobs:
           pip install -r agents/requirements.txt
 
       - name: Run AI agent review
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BUILD_STATUS: ${{ needs.build-test.result }}
+        shell: bash
         run: |
-          if [ "${AUTO_GEN}" = "true" ]; then python scripts/agent_review_autogen.py | tee agent_report.txt; else python scripts/agent_review.py | tee agent_report.txt; fi
+          if [ "${AUTO_GEN}" = "true" ]; then
+            python scripts/agent_review_autogen.py | tee agent_report.txt
+          else
+            python scripts/agent_review.py | tee agent_report.txt
+          fi
           if [ "${BUILD_STATUS}" != "success" ]; then
-            echo "" >> agent_report.txt
-            echo "---" >> agent_report.txt
-            echo "⚠️ **ビルド/テスト失敗**: CI結果を確認してください。" >> agent_report.txt
-            echo "" >> agent_report.txt
-            echo "**Build Status**: \`${BUILD_STATUS}\`" >> agent_report.txt
+            {
+              echo
+              echo "---"
+              echo " **ビルド/テスト失敗**: CI結果を確認してください。"
+              echo
+              echo "**Build Status**: \`${BUILD_STATUS}\`"
+            } >> agent_report.txt
           fi
 
+      - name: Upload AI review artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review
+          path: |
+            agent_report.txt
+            ai_review.json
+            ai_review.md
+
       - name: Comment to PR
+        if: ${{ always() }}
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             let body = fs.readFileSync('agent_report.txt','utf8');
-            const status = process.env.BUILD_STATUS;
+            const status = `${{ env.BUILD_STATUS }}`;
             if (status !== 'success') {
-              body = `⚠️ **Build failed (${status}). Review below is based on source diff only.**\n\n` + body;
+              body = ` **Build failed (${status}). Review below is based on source diff only.**\n\n` + body;
             }
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body
             });
-        env:
-          BUILD_STATUS: ${{ needs.build-test.result }}
 
       - name: Slack notify
-        if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
-        env:
-          WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          STATUS: ${{ needs.build-test.result }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUM: ${{ github.event.pull_request.number }}
+        if: ${{ always() && env.WEBHOOK != '' }}
         run: |
-          SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
-          curl -X POST -H 'Content-type: application/json' --data "{
-            \"text\": \"[CI:${STATUS}] <${PR_URL}|PR #${PR_NUM}>\\n${SUMMARY}\"
-          }" "$WEBHOOK" || echo "Slack notification skipped (webhook not configured)"
+          if [ -f ai_review.json ]; then
+            SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
+            [ -z "$SUMMARY" ] && SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
+          else
+            SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
+          fi
+          payload=$(jq -n --arg t "${{ github.repository }} PR #${{ github.event.pull_request.number }}" --arg s "$SUMMARY" '{text: ($t+"\n"+$s)}')
+          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$WEBHOOK" >/dev/null 2>&1 || echo "Slack notification skipped"
+
+      - name: Attach AI review to Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "##  AI Review Summary"
+            if [ -f ai_review.md ]; then cat ai_review.md; else echo "_No ai_review.md generated_"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment AI review to PR (fallback to commit)
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.existsSync('ai_review.md')
+              ? fs.readFileSync('ai_review.md', 'utf8')
+              : 'AI review artifact was not generated.';
+            const { owner, repo } = context.repo;
+
+            let prNumber = context.payload.pull_request?.number;
+            if (!prNumber) {
+              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: context.sha });
+              prNumber = prs.data?.[0]?.number;
+            }
+
+            if (prNumber) {
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              if (pr.data.state === 'open') {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+              } else {
+                await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
+              }
+            } else {
+              await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
+            }
+
+
