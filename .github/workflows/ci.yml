@@ -173,27 +173,5 @@ jobs:
             } else {
               await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
             }
-            const fs = require('fs');
-            const body = fs.existsSync('ai_review.md')
-              ? fs.readFileSync('ai_review.md', 'utf8')
-              : 'AI review artifact was not generated.';
-            const { owner, repo } = context.repo;
-
-            let prNumber = context.payload.pull_request?.number;
-            if (!prNumber) {
-              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: context.sha });
-              prNumber = prs.data?.[0]?.number;
-            }
-
-            if (prNumber) {
-              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
-              if (pr.data.state === 'open') {
-                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
-              } else {
-                await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
-              }
-            } else {
-              await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
-            }
 
 
