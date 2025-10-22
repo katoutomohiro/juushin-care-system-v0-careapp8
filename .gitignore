@@ -19,6 +19,9 @@ yarn-error.log*
 # env files
 .env*
 
+# Allow example env
+!.env.local.example
+
 # vercel
 .vercel
 
@@ -27,7 +30,8 @@ yarn-error.log*
 next-env.d.ts
 ai_review.json
 ai_review.md
-\n+# Agent runner artifacts
+
+# Agent runner artifacts
 artifacts/agent_reports/
 
 # Python
