@@ -29,3 +29,10 @@ ai_review.json
 ai_review.md
 \n+# Agent runner artifacts
 artifacts/agent_reports/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
