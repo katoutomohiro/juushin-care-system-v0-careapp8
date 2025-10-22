@@ -45,7 +45,7 @@
     "@react-pdf/renderer": "latest",
     "@storybook/react": "latest",
     "@storybook/test": "latest",
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "latest",
     "@testing-library/dom": "latest",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
