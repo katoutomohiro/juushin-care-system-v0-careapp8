@@ -40,3 +40,6 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+# pnpm 等が作る複製キャッシュを無視
+.ignored_node_modules/
