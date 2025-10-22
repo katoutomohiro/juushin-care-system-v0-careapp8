@@ -25,6 +25,49 @@ type CreateTranscriberOptions = {
   onError?: (err: Error) => void
 }
 
+type TranscriptionMode = 'web-speech' | 'whisper'
+
+/**
+ * 指数バックオフでリトライする fetch ラッパー
+ * @param url - リクエスト先
+ * @param options - fetch options
+ * @param maxRetries - 最大リトライ回数
+ * @param baseDelay - 初回待機時間(ms)
+ * @param maxDelay - 累計待機上限(ms)
+ */
+async function fetchWithBackoff(
+  url: string,
+  options: RequestInit,
+  maxRetries = 5,
+  baseDelay = 500,
+  maxDelay = 5000
+): Promise<Response> {
+  let totalWait = 0
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      const res = await fetch(url, options)
+      if (res.ok) return res
+      if (res.status === 429 || res.status >= 500) {
+        if (i === maxRetries) throw new Error(`HTTP ${res.status} after ${maxRetries} retries`)
+        const wait = Math.min(baseDelay * 2 ** i, maxDelay - totalWait)
+        if (totalWait + wait > maxDelay) throw new Error(`Retry timeout exceeded ${maxDelay}ms`)
+        await new Promise((r) => setTimeout(r, wait))
+        totalWait += wait
+        continue
+      }
+      // 4xx (429以外) は即座に返す
+      return res
+    } catch (e: any) {
+      if (i === maxRetries || e.message.includes('timeout')) throw e
+      const wait = Math.min(baseDelay * 2 ** i, maxDelay - totalWait)
+      if (totalWait + wait > maxDelay) throw e
+      await new Promise((r) => setTimeout(r, wait))
+      totalWait += wait
+    }
+  }
+  throw new Error('Unexpected retry loop exit')
+}
+
 // 将来 Whisper API に置換できるよう、Web Speech API 実装を分離
 function createWebTranscriber(opts: CreateTranscriberOptions = {}): Transcriber | null {
   const SR = (typeof window !== 'undefined') && (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -89,13 +132,6 @@ function createWebTranscriber(opts: CreateTranscriberOptions = {}): Transcriber 
   }
 }
 
-async function saveToSupabaseDummy(text: string, meta: Record<string, any>) {
-  // TODO: 後日 Supabase SDK 接続
-  // ここでは擬似的に遅延して成功扱い
-  await new Promise((r) => setTimeout(r, 400))
-  return { id: 'dummy-id', ...meta, length: text.length }
-}
-
 function formatElapsed(ms: number) {
   const s = Math.floor(ms / 1000)
   const mm = String(Math.floor(s / 60)).padStart(2, '0')
@@ -111,6 +147,7 @@ export default function VoiceRecorder() {
   const [level, setLevel] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [mode, setMode] = useState<TranscriptionMode>('web-speech')
 
   const startedAtRef = useRef<number | null>(null)
   const timerRef = useRef<number | null>(null)
@@ -121,6 +158,10 @@ export default function VoiceRecorder() {
   const analyserRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
   const transcriberRef = useRef<Transcriber | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordedChunksRef = useRef<Blob[]>([])
+  const levelSumRef = useRef<number>(0)
+  const levelCountRef = useRef<number>(0)
 
   // サポート確認
   useEffect(() => {
@@ -134,6 +175,8 @@ export default function VoiceRecorder() {
     const analyser = analyserRef.current
     if (!analyser) return
     const buf = new Uint8Array(analyser.fftSize)
+    levelSumRef.current = 0
+    levelCountRef.current = 0
     const loop = () => {
       analyser.getByteTimeDomainData(buf)
       // 0-255 の中点128からの振幅の平均で簡易レベル
@@ -145,6 +188,9 @@ export default function VoiceRecorder() {
       const rms = Math.sqrt(sum / buf.length) // 0..~
       const normalized = Math.min(1, rms / 64) // 大きめに正規化
       setLevel(normalized)
+      // 平均計算用
+      levelSumRef.current += normalized
+      levelCountRef.current += 1
       levelTimerRef.current = window.setTimeout(loop, 66) // ~15fps
     }
     loop()
@@ -212,32 +258,80 @@ export default function VoiceRecorder() {
     try {
       setTranscript('')
       await startStreamAndMeter()
-      const transcriber = createWebTranscriber({
-        onPartial: (t) => setTranscript(t),
-        onFinal: (t) => setTranscript(t),
-        onError: (e) => setMessage(`音声認識エラー: ${e.message}`),
-      })
-      if (!transcriber) {
-        setMessage('このブラウザは Web Speech API に対応していません。別ブラウザをご検討ください。')
-        return
+      const stream = streamRef.current
+      if (!stream) throw new Error('Stream not available')
+
+      // MediaRecorder でBlobを録音（Whisper用）
+      recordedChunksRef.current = []
+      try {
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) recordedChunksRef.current.push(e.data)
+        }
+        recorder.start()
+        mediaRecorderRef.current = recorder
+      } catch {
+        // MediaRecorder未対応の場合も続行（Whisperモード選択時にエラー表示）
       }
-      transcriberRef.current = transcriber
-      transcriber.start()
+
+      if (mode === 'web-speech') {
+        const transcriber = createWebTranscriber({
+          onPartial: (t) => setTranscript(t),
+          onFinal: (t) => setTranscript(t),
+          onError: (e) => setMessage(`音声認識エラー: ${e.message}`),
+        })
+        if (!transcriber) {
+          setMessage('このブラウザは Web Speech API に対応していません。別ブラウザをご検討ください。')
+          return
+        }
+        transcriberRef.current = transcriber
+        transcriber.start()
+      }
       startTimer()
       setIsRecording(true)
     } catch (e: any) {
       setMessage(e?.message || 'マイクの使用に失敗しました')
       stopStreamAndMeter()
     }
-  }, [isRecording, startStreamAndMeter, startTimer, stopStreamAndMeter, supported])
+  }, [isRecording, mode, startStreamAndMeter, startTimer, stopStreamAndMeter, supported])
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (!isRecording) return
     transcriberRef.current?.stop()
+    
+    // MediaRecorder停止
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+    }
+    
     stopStreamAndMeter()
     stopTimer()
     setIsRecording(false)
-  }, [isRecording, stopStreamAndMeter, stopTimer])
+
+    // Whisperモードの場合はサーバへ送信
+    if (mode === 'whisper' && recordedChunksRef.current.length > 0) {
+      setMessage('Whisper で変換中…')
+      try {
+        const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' })
+        const formData = new FormData()
+        formData.append('audio', blob, 'recording.webm')
+        
+        const res = await fetchWithBackoff('/api/whisper', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await res.json()
+        if (data.error) {
+          setMessage(`Whisper エラー: ${data.error}`)
+        } else {
+          setTranscript(data.text || '')
+          setMessage(data.text?.includes('[DRY-RUN]') ? 'DRY-RUN: OPENAI_API_KEY 未設定' : 'Whisper 変換完了')
+        }
+      } catch (e: any) {
+        setMessage(`Whisper 呼び出し失敗: ${e.message}`)
+      }
+    }
+  }, [isRecording, mode, stopStreamAndMeter, stopTimer])
 
   useEffect(() => {
     return () => {
@@ -262,8 +356,23 @@ export default function VoiceRecorder() {
     setSaving(true)
     setMessage(null)
     try {
-      const res = await saveToSupabaseDummy(transcript, { elapsed })
-      setMessage(`保存しました (id: ${res.id})`)
+      const avgLevel = levelCountRef.current > 0 ? levelSumRef.current / levelCountRef.current : 0
+      const res = await fetch('/api/voice/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: transcript,
+          durationMs: elapsed,
+          avgLevel,
+          device: navigator.userAgent,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage(`保存失敗: ${data.error || 'unknown'}`)
+      } else {
+        setMessage(`保存しました (id: ${data.id})`)
+      }
     } catch (e: any) {
       setMessage(`保存に失敗しました: ${e?.message || 'unknown'}`)
     } finally {
@@ -279,6 +388,35 @@ export default function VoiceRecorder() {
           このブラウザは音声認識（Web Speech API）またはマイク取得に対応していません。対応ブラウザをご利用ください。
         </div>
       )}
+
+      {/* モード切替 */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-sm font-medium text-gray-700">認識モード:</span>
+        <label className="inline-flex items-center cursor-pointer">
+          <input
+            type="radio"
+            name="mode"
+            value="web-speech"
+            checked={mode === 'web-speech'}
+            onChange={() => setMode('web-speech')}
+            disabled={isRecording}
+            className="mr-1.5 focus:ring-2 focus:ring-emerald-500"
+          />
+          <span className="text-sm">Web Speech (ブラウザ)</span>
+        </label>
+        <label className="inline-flex items-center cursor-pointer">
+          <input
+            type="radio"
+            name="mode"
+            value="whisper"
+            checked={mode === 'whisper'}
+            onChange={() => setMode('whisper')}
+            disabled={isRecording}
+            className="mr-1.5 focus:ring-2 focus:ring-emerald-500"
+          />
+          <span className="text-sm">Whisper (サーバ)</span>
+        </label>
+      </div>
 
       <div className="flex items-center gap-4 mb-4">
         <button
@@ -298,7 +436,7 @@ export default function VoiceRecorder() {
           onClick={onSave}
           disabled={!canSave}
         >
-          {saving ? '保存中…' : '保存(ダミー)'}
+          {saving ? '保存中…' : '保存'}
         </button>
 
         <div className="flex items-center gap-2" aria-live="polite">
