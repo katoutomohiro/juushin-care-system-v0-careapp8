@@ -1,5 +1,8 @@
 import type { NextConfig } from "next"
 
+const DEV_PORT = 3000
+const ip = process.env.DEV_HOST
+
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: {
@@ -9,7 +12,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   experimental: {
-    allowedDevOrigins: ["http://localhost:3000","http://192.168.2.7:3000"],
+    allowedDevOrigins: [
+      `http://localhost:${DEV_PORT}`,
+      ...(ip ? [`http://${ip}:${DEV_PORT}`] : []),
+    ],
   },
 }
 
