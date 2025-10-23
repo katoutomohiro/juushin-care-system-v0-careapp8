@@ -53,6 +53,36 @@ doc_agent:
     - markdown_formatter
     - jsdoc_generator
 
+db_modeler:
+  model: gpt-4o
+  temperature: 0.0
+  description: "データベーススキーマ（Prisma/TypeORM）を解析し、フィールド・リレーションを抽出"
+  capabilities:
+    - prisma_schema_parsing
+    - typeorm_entity_detection
+    - database_structure_analysis
+    - field_relation_extraction
+    - missing_schema_detection
+  tools:
+    - prisma_parser
+    - typeorm_parser
+    - db_model_utils
+
+i18n_reviewer:
+  model: gpt-4o
+  temperature: 0.0
+  description: "ハードコードされた日本語テキストを検出し、翻訳キーを提案"
+  capabilities:
+    - japanese_text_detection
+    - translation_key_extraction
+    - locale_file_analysis
+    - i18n_infrastructure_detection
+    - translation_suggestion_generation
+  tools:
+    - regex_parser
+    - ast_analyzer
+    - i18n_utils
+
 # Workflow configuration
 workflow:
   sequence:

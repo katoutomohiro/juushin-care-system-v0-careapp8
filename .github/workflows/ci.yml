@@ -1,4 +1,4 @@
-ï»¿name: ci
+name: ci
 
 on:
   push:
@@ -92,7 +92,7 @@ jobs:
             {
               echo
               echo "---"
-              echo " **ãƒ“ãƒ«ãƒ‰/ãƒ†ã‚¹ãƒˆå¤±æ•—**: CIçµæžœã‚’ç¢ºèªã—ã¦ãã ã•ã„ã€‚"
+              echo " **ƒrƒ‹ƒh/ƒeƒXƒgŽ¸”s**: CIŒ‹‰Ê‚ðŠm”F‚µ‚Ä‚­‚¾‚³‚¢B"
               echo
               echo "**Build Status**: \`${BUILD_STATUS}\`"
             } >> agent_report.txt
@@ -254,3 +254,57 @@ jobs:
             }
 
 
+
+  # V‚µ‚¢ƒG[ƒWƒFƒ“ƒg: DB ƒ‚ƒfƒ‰[ (Žè“®ŽÀs)
+  db-modeler:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run DB Modeler Agent
+        id: db_modeler
+        run: |
+          python scripts/agent_run.py --topic "database schema analysis" --verbose
+          echo "outdir=$(ls -dt artifacts/agent_reports/* | Select-Object -First 1)" >> $env:GITHUB_OUTPUT
+
+      - name: Upload DB Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-analysis-report
+          path: ${{ steps.db_modeler.outputs.outdir }}
+
+  # V‚µ‚¢ƒG[ƒWƒFƒ“ƒg: i18n ƒŒƒrƒ…[ (Žè“®ŽÀs)
+  i18n-reviewer:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run i18n Reviewer Agent
+        id: i18n_reviewer
+        run: |
+          python scripts/agent_run.py --topic "i18n translation review" --verbose
+          echo "outdir=$(ls -dt artifacts/agent_reports/* | Select-Object -First 1)" >> $env:GITHUB_OUTPUT
+
+      - name: Upload i18n Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18n-analysis-report
+          path: ${{ steps.i18n_reviewer.outputs.outdir }}

@@ -81,6 +81,8 @@ class Agents:
     review: AgentSpec
     test: AgentSpec
     doc: AgentSpec
+    db_modeler: Optional[AgentSpec] = None
+    i18n_reviewer: Optional[AgentSpec] = None
 
 # ------------- ビルド/実行ロジック ------------------------------------------
 
@@ -90,6 +92,8 @@ def build_agents(cfg: Dict[str, Any]) -> Agents:
     rev = cfg.get("review_agent", {})
     tst = cfg.get("test_agent", {})
     doc = cfg.get("doc_agent", {})
+    db = cfg.get("db_modeler", {})
+    i18n = cfg.get("i18n_reviewer", {})
 
     def sp(name: str, d: Dict[str, Any]) -> AgentSpec:
         return AgentSpec(
@@ -104,6 +108,8 @@ def build_agents(cfg: Dict[str, Any]) -> Agents:
         review=sp("review", rev),
         test=sp("test", tst),
         doc=sp("doc", doc),
+        db_modeler=sp("db_modeler", db) if db else None,
+        i18n_reviewer=sp("i18n_reviewer", i18n) if i18n else None,
     )
 
 # 擬似LLM呼び出し（実運用時は httpx/openai/autogen 等に差し替え）
@@ -124,6 +130,49 @@ def llm_call(prompt: str, *, retry: int = 3, backoff: float = 1.0) -> str:
     return "LLM呼び出しに失敗しました（429過多）。時間をおいて再実行してください。"
 
 # 各エージェントのアウトプットを合成
+
+def run_db_modeler(agents: Agents, verbose: bool = False) -> str:
+    """データベースモデル解析エージェントの実行"""
+    try:
+        # db_model_utils をインポート
+        sys.path.insert(0, str(SCRIPT_DIR / "utils"))
+        from db_model_utils import detect_database_infrastructure, generate_db_analysis_report
+        
+        if verbose:
+            print("[db_modeler] Analyzing database infrastructure...")
+        
+        detection_result = detect_database_infrastructure()
+        report = generate_db_analysis_report(detection_result)
+        
+        if verbose:
+            print(f"[db_modeler] Found Prisma: {detection_result['has_prisma']}, TypeORM: {detection_result['has_typeorm']}")
+        
+        return report
+    except Exception as e:
+        return f"# Database Model Analysis Report\n\n**Error:** {type(e).__name__}: {e}\n\nPlease ensure db_model_utils.py is available."
+
+
+def run_i18n_reviewer(agents: Agents, verbose: bool = False) -> str:
+    """国際化レビューエージェントの実行"""
+    try:
+        # i18n_utils をインポート
+        sys.path.insert(0, str(SCRIPT_DIR / "utils"))
+        from i18n_utils import detect_i18n_infrastructure, generate_i18n_analysis_report
+        
+        if verbose:
+            print("[i18n_reviewer] Analyzing i18n infrastructure and hardcoded texts...")
+        
+        detection_result = detect_i18n_infrastructure()
+        report = generate_i18n_analysis_report(detection_result)
+        
+        if verbose:
+            total_texts = sum(len(texts) for texts in detection_result['hardcoded_texts'].values())
+            print(f"[i18n_reviewer] Found {total_texts} hardcoded Japanese strings in {len(detection_result['hardcoded_texts'])} files")
+        
+        return report
+    except Exception as e:
+        return f"# i18n Analysis Report\n\n**Error:** {type(e).__name__}: {e}\n\nPlease ensure i18n_utils.py is available."
+
 
 def run_pipeline(agents: Agents, topic: str, files: List[Tuple[str, str]], verbose: bool = False) -> Dict[str, str]:
     """Implementation→Review→Test→Doc の順で擬似生成を行い、各レポート文字列を返す。"""
@@ -210,18 +259,53 @@ def main(argv: Optional[List[str]] = None) -> int:
         cfg = load_agents_config(cfg_path)
         agents = build_agents(cfg)
 
-        # 参照ファイルの準備
-        files: List[Tuple[str, str]] = []
-        if args.path:
-            files = read_files_by_glob(args.path, limit=50)
-
-        # 実行
-        outputs = run_pipeline(agents, args.topic or "(no topic)", files, verbose=args.verbose)
-
+        # トピックベースのルーティング
+        topic_lower = args.topic.lower() if args.topic else ""
+        
         # 保存先
         base = Path(args.outdir) if args.outdir else None
         outdir = make_report_dir(base)
+        
+        outputs: Dict[str, str] = {}
+        
+        # db-modeler専用実行
+        if "db-model" in topic_lower or "database" in topic_lower or "schema" in topic_lower:
+            if args.verbose:
+                print("[agent_run] Detected database modeling request")
+            if agents.db_modeler:
+                report = run_db_modeler(agents, verbose=args.verbose)
+                outputs["db-analysis.md"] = report
+                outputs["summary.md"] = f"# Agent Run Summary\n\n- topic: {args.topic}\n- agent: db_modeler\n- timestamp: {datetime.utcnow().isoformat()}"
+            else:
+                print("[WARNING] db_modeler not configured in agents_config.yaml")
+                return 1
+        
+        # i18n-reviewer専用実行
+        elif "i18n" in topic_lower or "translation" in topic_lower or "国際化" in topic_lower:
+            if args.verbose:
+                print("[agent_run] Detected i18n review request")
+            if agents.i18n_reviewer:
+                report = run_i18n_reviewer(agents, verbose=args.verbose)
+                outputs["i18n-analysis.md"] = report
+                outputs["summary.md"] = f"# Agent Run Summary\n\n- topic: {args.topic}\n- agent: i18n_reviewer\n- timestamp: {datetime.utcnow().isoformat()}"
+            else:
+                print("[WARNING] i18n_reviewer not configured in agents_config.yaml")
+                return 1
+        
+        # 通常のパイプライン実行 (Implementation → Review → Test → Doc)
+        else:
+            if args.verbose:
+                print("[agent_run] Running standard pipeline")
+            
+            # 参照ファイルの準備
+            files: List[Tuple[str, str]] = []
+            if args.path:
+                files = read_files_by_glob(args.path, limit=50)
 
+            # 実行
+            outputs = run_pipeline(agents, args.topic or "(no topic)", files, verbose=args.verbose)
+
+        # 保存
         for name, content in outputs.items():
             write_text(outdir / name, content)
 
