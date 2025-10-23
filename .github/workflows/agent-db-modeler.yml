@@ -1,0 +1,24 @@
+name: agent-db-modeler
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "prisma/**"
+      - "src/**/*.entity.ts"
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: python -m pip install --upgrade pip && pip install pyyaml
+      - name: Run db-modeler
+        run: python scripts/agent_run.py --topic "database schema analysis"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-model-analysis
+          path: artifacts/agent_reports/**
