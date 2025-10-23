@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import glob
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -33,7 +33,7 @@ def read_files_by_glob(pattern: str, limit: int = 50) -> List[Tuple[str, str]]:
 
 def make_report_dir(base: Optional[Path] = None) -> Path:
     base = base or Path("artifacts") / "agent_reports"
-    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     outdir = base / ts
     ensure_dir(outdir)
     return outdir
