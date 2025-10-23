@@ -1,0 +1,34 @@
+name: auto-update-branch
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  pull_request:
+    types: [synchronize, opened, reopened]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  update-and-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr list --state open --json number,mergeStateStatus,isDraft --jq '.[] | select(.isDraft==false) | [.number,.mergeStateStatus] | @tsv' > pr.tsv
+      - name: Update behind branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS=$'\t' read -r num state; do
+            if [ "$state" = "BEHIND" ]; then
+              gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
+            fi
+          done < pr.tsv
+      - name: Arm auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS=$'\t' read -r num state; do
+            gh pr merge "$num" --squash --delete-branch --auto || true
+          done < pr.tsv
