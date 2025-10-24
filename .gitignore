@@ -43,3 +43,7 @@ __pycache__/
 
 # pnpm 等が作る複製キャッシュを無視
 .ignored_node_modules/
+
+# ai-review artifacts (safe to ignore)
+agent_report.txt
+artifacts/agent_reports/
