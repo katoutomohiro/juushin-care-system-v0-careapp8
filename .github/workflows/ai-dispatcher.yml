@@ -7,7 +7,9 @@ permissions:
   pull-requests: write
 jobs:
   dispatch:
-    if: ${{ github.event.comment.user.login == github.repository_owner && startsWith(github.event.comment.body, '/ai ') }}
+    if: >
+      github.event.comment.user.login == github.repository_owner &&
+      startsWith(github.event.comment.body, '/ai ')
     runs-on: ubuntu-latest
     steps:
       - name: Parse command
@@ -21,11 +23,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr list --state open --json number,mergeStateStatus --jq '.[] | [.number,.mergeStateStatus] | @tsv' | \
+          gh pr list --state open --json number,mergeStateStatus \
+            --jq '.[] | [.number,.mergeStateStatus] | @tsv' |
           while IFS=$'\t' read -r num state; do
-            if [ "$state" = "BEHIND" ]; then
-              gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
-            fi
+            [ "$state" = "BEHIND" ] && gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
           done
       - name: Arm auto-merge all
         if: steps.cmd.outputs.cmd == 'merge all'
@@ -40,4 +41,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr list --state open --json number,title,mergeStateStatus,autoMergeRequest --jq '.[] | [.number,(if .autoMergeRequest then "ARMED" else "NOT-ARMED" end),.mergeStateStatus,.title] | @tsv'
+          gh pr list --state open --json number,title,mergeStateStatus,autoMergeRequest \
+            --jq '.[] | [.number,(if .autoMergeRequest then "ARMED" else "NOT-ARMED" end),.mergeStateStatus,.title] | @tsv'

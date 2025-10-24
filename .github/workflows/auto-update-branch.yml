@@ -11,24 +11,13 @@ jobs:
   update-and-arm:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch open PRs
+      - name: Update behind branches and arm auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr list --state open --json number,mergeStateStatus,isDraft --jq '.[] | select(.isDraft==false) | [.number,.mergeStateStatus] | @tsv' > pr.tsv
-      - name: Update behind branches
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+          gh pr list --state open --json number,mergeStateStatus,isDraft \
+            --jq '.[] | select(.isDraft==false) | [.number,.mergeStateStatus] | @tsv' > pr.tsv
           while IFS=$'\t' read -r num state; do
-            if [ "$state" = "BEHIND" ]; then
-              gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
-            fi
-          done < pr.tsv
-      - name: Arm auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          while IFS=$'\t' read -r num state; do
+            [ "$state" = "BEHIND" ] && gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
             gh pr merge "$num" --squash --delete-branch --auto || true
           done < pr.tsv
