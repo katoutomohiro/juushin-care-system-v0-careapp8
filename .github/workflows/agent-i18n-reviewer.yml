@@ -1,0 +1,26 @@
+name: agent-i18n-reviewer
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "app/**/*.tsx"
+      - "components/**/*.tsx"
+      - "lib/**/*.ts"
+      - "public/locales/**"
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: python -m pip install --upgrade pip && pip install pyyaml
+      - name: Run i18n-reviewer
+        run: python scripts/agent_run.py --topic "i18n translation review"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18n-review
+          path: artifacts/agent_reports/**

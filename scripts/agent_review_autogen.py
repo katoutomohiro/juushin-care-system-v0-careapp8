@@ -7,6 +7,12 @@ AutoGen-like multi-role review (Planner / Reviewer / TestDesigner)
 - 3ロールを順に呼び分け（OpenAI API で疑似マルチエージェント）
 - 収束結果を ai_review.json（構造化）と ai_review.md（要約）に出力
 - 例外/キー未設定時はソフトにフォールバックして exit 0（CIを落とさない）
+
+TODO: 実装エージェント・ドキュメントエージェントを呼び出すロジックを追加する
+      - .ai/agents_config.yaml を参照してエージェントを初期化
+      - Implementation Agent: 新機能のコード生成を担当
+      - Documentation Agent: README/API docs の更新を担当
+      - 既存の Planner/Reviewer/TestDesigner との統合を検討
 """
 
 import json
@@ -19,26 +25,30 @@ from textwrap import dedent
 
 # ---- Config ---------------------------------------------------------------
 
-def getenv_float(key: str, default: float) -> float:
-    """Get float from env var with fallback to default."""
-    val = os.getenv(key, "").strip()
-    if not val:
-        return default
+def getenv_float(name: str, default: float) -> float:
+    """Parse float env var safely, handling whitespace/empty and fallback to default if invalid."""
     try:
-        return float(val)
-    except (ValueError, TypeError):
-        print(f"[WARN] Invalid float for {key}={val!r}, using default={default}", file=sys.stderr)
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        raw = raw.strip()
+        if raw == "":
+            return default
+        return float(raw)
+    except (TypeError, ValueError):
         return default
 
-def getenv_int(key: str, default: int) -> int:
-    """Get int from env var with fallback to default."""
-    val = os.getenv(key, "").strip()
-    if not val:
-        return default
+def getenv_int(name: str, default: int) -> int:
+    """Parse int env var safely, handling whitespace/empty and fallback to default if invalid."""
     try:
-        return int(val)
-    except (ValueError, TypeError):
-        print(f"[WARN] Invalid int for {key}={val!r}, using default={default}", file=sys.stderr)
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        raw = raw.strip()
+        if raw == "":
+            return default
+        return int(raw)
+    except (TypeError, ValueError):
         return default
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -179,7 +189,7 @@ JSON 以外は出力しないこと。
 def extract_json(text: str) -> dict:
     """
     LLM出力から最初のJSONオブジェクトを抽出してdict化。
-    ```json ... ``` や前後のテキストが混ざっていても頑張って拾う。
+    \`\`\`json ... ``` や前後のテキストが混ざっていても頑張って拾う。
     """
     if not text:
         return {}
@@ -251,9 +261,9 @@ def main() -> int:
     # ---- Planner
     planner_user = dedent(f"""
     以下は PR の unified diff です。論点の"地図"を作ってください。
-    ```diff
+    \`\`\`diff
     {diff_for_model}
-    ```
+    \`\`\`
     """).strip()
     planner_map = oai_chat(PLANNER_SYS, planner_user)
 
@@ -264,9 +274,9 @@ def main() -> int:
     {planner_map}
     ---
     同じ差分を参照して、指定スキーマどおり **JSONのみ** を出力してください。
-    ```diff
+    \`\`\`diff
     {diff_for_model}
-    ```
+    \`\`\`
     """).strip()
     reviewer_out = oai_chat(REVIEWER_SYS, reviewer_user)
     reviewer_json = extract_json(reviewer_out)

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "@/lib/i18n-client"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
 import { DataBackupPanel } from "@/components/data-backup-panel"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
@@ -239,6 +240,7 @@ export default function WorldClassSoulCareApp() {
   const [isExporting, setIsExporting] = useState(false)
   const _router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const savedUserNames = DataStorageService.getCustomUserNames()
@@ -460,7 +462,7 @@ export default function WorldClassSoulCareApp() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">重心ケアアプリ - PROJECT SOUL</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('app.title', '重心ケアアプリ')} - PROJECT SOUL</h1>
               <p className="text-muted-foreground font-medium">重症心身障がい児者の包括的福祉支援システム</p>
             </div>
 

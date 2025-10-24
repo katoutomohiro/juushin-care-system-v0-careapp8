@@ -19,17 +19,27 @@ yarn-error.log*
 # env files
 .env*
 
+# Allow example env
+!.env.local.example
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# ai review artifacts
 ai_review.json
 ai_review.md
 
-# python
+# Agent runner artifacts
+artifacts/agent_reports/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# pnpm 等が作る複製キャッシュを無視
+.ignored_node_modules/
