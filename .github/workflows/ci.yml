@@ -92,7 +92,7 @@ jobs:
             {
               echo
               echo "---"
-              echo " **ビルド/テスト失敗**: CI結果を確認してください。"
+              echo " **Build/Test Failed**: Please review CI results."
               echo
               echo "**Build Status**: \`${BUILD_STATUS}\`"
             } >> agent_report.txt
