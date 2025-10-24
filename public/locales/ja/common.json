@@ -1,0 +1,15 @@
+{
+  "app.title": "重心ケアシステム",
+  "nav.home": "ホーム",
+  "nav.services": "事業所",
+  "nav.settings": "設定",
+  "actions.add": "追加",
+  "actions.edit": "編集",
+  "actions.delete": "削除",
+  "actions.save": "保存",
+  "actions.cancel": "キャンセル",
+  "common.name": "氏名",
+  "common.age": "年齢",
+  "common.date": "日付",
+  "common.time": "時刻"
+}

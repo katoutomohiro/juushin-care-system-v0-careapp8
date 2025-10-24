@@ -19,7 +19,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -61,7 +61,7 @@ except Exception:
 
     def make_report_dir(base: Optional[Path] = None) -> Path:
         base = base or Path("artifacts") / "agent_reports"
-        ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         outdir = base / ts
         ensure_dir(outdir)
         return outdir

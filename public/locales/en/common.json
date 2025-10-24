@@ -1,0 +1,15 @@
+{
+  "app.title": "Care System",
+  "nav.home": "Home",
+  "nav.services": "Services",
+  "nav.settings": "Settings",
+  "actions.add": "Add",
+  "actions.edit": "Edit",
+  "actions.delete": "Delete",
+  "actions.save": "Save",
+  "actions.cancel": "Cancel",
+  "common.name": "Name",
+  "common.age": "Age",
+  "common.date": "Date",
+  "common.time": "Time"
+}
