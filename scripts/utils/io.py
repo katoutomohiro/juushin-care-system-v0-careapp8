@@ -37,3 +37,21 @@ def make_report_dir(base: Optional[Path] = None) -> Path:
     outdir = base / ts
     ensure_dir(outdir)
     return outdir
+
+
+def save_artifact(output_dir: Path, filename: str, content: str) -> Path:
+    """
+    指定されたディレクトリにアーティファクトを保存
+    
+    Args:
+        output_dir: 出力先ディレクトリ
+        filename: ファイル名 (例: "db-analysis.md")
+        content: ファイル内容
+    
+    Returns:
+        保存したファイルのPath
+    """
+    ensure_dir(output_dir)
+    file_path = output_dir / filename
+    write_text(file_path, content)
+    return file_path
