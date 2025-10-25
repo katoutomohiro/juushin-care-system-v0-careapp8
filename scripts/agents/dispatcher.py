@@ -2,6 +2,7 @@ import importlib
 import json
 import argparse
 from .registry import AGENTS
+from .validate import ensure_valid
 
 def load_agent(task: str):
     if task not in AGENTS:
@@ -19,6 +20,7 @@ def main():
     agent_fn = load_agent(args.task)
     payload = json.loads(args.payload or "{}")
     result = agent_fn(payload)
+    ensure_valid(result)
     print(json.dumps(result, ensure_ascii=False))
 
 if __name__ == "__main__":
