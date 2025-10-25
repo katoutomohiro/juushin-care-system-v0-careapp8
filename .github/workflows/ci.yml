@@ -256,4 +256,22 @@ jobs:
       - name: Run agent dispatcher
         run: python -m scripts.agents.dispatcher --task i18n_review --payload "{}"
 
+      - name: Save agent result and check ok
+        shell: bash
+        run: |
+          set -e
+          mkdir -p artifacts/agent_reports
+          python -m scripts.agents.dispatcher --task i18n_review --payload "{}" | tee artifacts/agent_reports/i18n_review.json
+          ok=$(cat artifacts/agent_reports/i18n_review.json | jq -r '.ok')
+          if [ "$ok" != "true" ]; then
+            echo agent returned not ok
+            exit 1
+          fi
+
+      - name: Upload agent result
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-i18n-review
+          path: artifacts/agent_reports/i18n_review.json
+
 
