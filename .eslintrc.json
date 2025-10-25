@@ -16,5 +16,16 @@
         "varsIgnorePattern": "^_"
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["app/**/*.{ts,tsx}"],
+      "excludedFiles": ["app/api/**"],
+      "rules": {
+        "no-restricted-imports": ["error", {
+          "paths": [{ "name": "@/lib/env", "message": "server-only: クライアントから import しないでください" }]
+        }]
+      }
+    }
+  ]
 }
