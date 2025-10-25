@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { OPENAI_API_KEY } from '@/lib/env'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'audio file required' }, { status: 400 })
     }
 
-    const apiKey = process.env.OPENAI_API_KEY
+    const apiKey = OPENAI_API_KEY
     if (!apiKey) {
       // DRY-RUN: キー未設定時はダミー応答
       return NextResponse.json({
