@@ -30,4 +30,6 @@ export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 export const LLM_TEMPERATURE = parseFloatEnv('LLM_TEMPERATURE', 0.2);
 export const LLM_SEED = parseIntEnv('LLM_SEED', 123);
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+export const SUPABASE_URL = process.env.SUPABASE_URL || '';
+export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 export const NODE_ENV = process.env.NODE_ENV || 'development';
