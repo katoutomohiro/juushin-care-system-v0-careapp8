@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env'
 
 export const runtime = 'nodejs'
 
@@ -21,8 +22,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'durationMs must be a non-negative number' }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = SUPABASE_URL
+    const supabaseServiceKey = SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
       // DRY-RUN: 環境変数未設定
