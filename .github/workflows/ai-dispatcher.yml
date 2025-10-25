@@ -2,6 +2,9 @@ name: ai-dispatcher
 on:
   issue_comment:
     types: [created]
+  workflow_dispatch:
+  schedule:
+    - cron: '15 3 * * MON'
 permissions:
   contents: write
   pull-requests: write
@@ -43,3 +46,33 @@ jobs:
         run: |
           gh pr list --state open --json number,title,mergeStateStatus,autoMergeRequest \
             --jq '.[] | [.number,(if .autoMergeRequest then "ARMED" else "NOT-ARMED" end),.mergeStateStatus,.title] | @tsv'
+
+  env-hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run env hardening dispatch
+        run: |
+          mkdir -p artifacts/agent_reports
+          python -m scripts.agents.dispatcher --task env_hardening --payload "{}" | tee artifacts/agent_reports/env_hardening.json
+        - name: Guard ok field without jq
+          run: |
+            python - << 'PY'
+            import json,sys
+            from pathlib import Path
+            p=Path("artifacts/agent_reports/env_hardening.json")
+            data=json.loads(p.read_text())
+            if not isinstance(data.get("ok"), bool):
+                print("ok must be boolean"); sys.exit(1)
+            if not data["ok"]:
+                print("agent reported not ok"); sys.exit(1)
+            print("ok true")
+            PY
+      - name: Upload env hardening result
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-env-hardening
+          path: artifacts/agent_reports/env_hardening.json
