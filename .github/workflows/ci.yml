@@ -253,4 +253,7 @@ jobs:
               await github.rest.repos.createCommitComment({ owner, repo, commit_sha: context.sha, body });
             }
 
+      - name: Run agent dispatcher
+        run: python -m scripts.agents.dispatcher --task i18n_review --payload "{}"
+
 
