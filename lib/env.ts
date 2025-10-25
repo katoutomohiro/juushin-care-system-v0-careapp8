@@ -1,3 +1,5 @@
+import 'server-only'
+
 /* Environment guard utilities (server-only intended) */
 
 function parseFloatEnv(name: string, def: number): number {
