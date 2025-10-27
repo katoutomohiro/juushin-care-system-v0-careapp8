@@ -14,6 +14,8 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_MIN: ${{ vars.COVERAGE_MIN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,7 +30,7 @@ jobs:
           coverage run -m pytest -q scripts/agents/tests --maxfail=1
           coverage xml
           coverage html
-          coverage report --fail-under=60
+          coverage report --fail-under=${COVERAGE_MIN:-60}
         env:
           PYTHONPATH: ${{ github.workspace }}
       - name: Upload coverage artifacts
