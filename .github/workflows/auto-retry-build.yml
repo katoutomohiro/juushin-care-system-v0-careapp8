@@ -1,6 +1,6 @@
 name: auto-retry-build
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: agents-${{ github.ref }}
   cancel-in-progress: true
 on:
   workflow_run:
