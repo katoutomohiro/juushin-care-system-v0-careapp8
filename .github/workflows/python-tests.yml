@@ -28,6 +28,7 @@ jobs:
           coverage run -m pytest -q scripts/agents/tests --maxfail=1
           coverage xml
           coverage html
+          coverage report --fail-under=60
         env:
           PYTHONPATH: ${{ github.workspace }}
       - name: Upload coverage artifacts
