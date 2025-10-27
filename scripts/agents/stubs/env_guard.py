@@ -1,55 +1,34 @@
+from __future__ import annotations
 import os
-import json
-from typing import Dict, Any
-from typing import List
+from typing import Dict, List
 
-REQUIRED_VARS = ["OPENAI_API_KEY"]
-OPTIONAL_VARS = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+# 必須ENV（既存要件）
+REQUIRED = {"OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"}
 
-def run(payload: Dict[str, Any]) -> Dict[str, Any]:
-    missing: List[str] = [k for k in REQUIRED_VARS if not os.environ.get(k)]
-    notes: List[str] = []
+# 許可リスト（REQUIREDに加えて必要ならここへ拡張）
+ALLOWED = set(REQUIRED)
 
-    # 温度とシードは数値かつ範囲（存在すればチェック）
-    def read_float(name: str, lo: float, hi: float) -> None:
-        v = os.environ.get(name)
-        if v is None or v == "":
-            return
-        try:
-            x = float(v)
-            if not (lo <= x <= hi):
-                notes.append(f"{name} out of range")
-        except ValueError:
-            notes.append(f"{name} not a float")
+# 対象とする接頭辞（ここに載るENVだけ未知キー判定の対象）
+CANDIDATE_PREFIXES = ("OPENAI_", "SUPABASE_")
 
-    def read_int(name: str, lo: int) -> None:
-        v = os.environ.get(name)
-        if v is None or v == "":
-            return
-        try:
-            x = int(v)
-            if x < lo:
-                notes.append(f"{name} below {lo}")
-        except ValueError:
-            notes.append(f"{name} not an int")
+def _unknown_env_keys(env: Dict[str, str]) -> List[str]:
+    candidates = {k for k in env.keys() if k.startswith(CANDIDATE_PREFIXES)}
+    extras = sorted(k for k in candidates if k not in ALLOWED)
+    return extras
 
-    read_float("LLM_TEMPERATURE", 0.0, 2.0)
-    read_int("LLM_SEED", 0)
-
-    ok = len(missing) == 0
-    summary = "env ok" if ok else "missing env vars: " + ", ".join(missing)
-
-    return {
-        "ok": ok,
-        "summary": summary,
-        "artifacts": [{
-            "path": "env_hardening_report.json",
-            "type": "note"
-        }],
-        "next_actions": [],
-        "report": {  # 任意フィールド（将来拡張用）
-            "missing": missing,
-            "notes": notes,
-            "seen": {k: bool(os.environ.get(k)) for k in REQUIRED_VARS + OPTIONAL_VARS}
+def run(payload: Dict | None = None) -> Dict:
+    missing = sorted(k for k in REQUIRED if not os.getenv(k))
+    if missing:
+        return {
+            "ok": False,
+            "summary": f"missing required env: {', '.join(missing)}",
+            "artifacts": [],
+            "next_actions": [],
         }
-    }
+
+    summary = "env_guard: required env present"
+    extras = _unknown_env_keys(os.environ)
+    if extras:
+        summary += f" | WARN unknown env keys: {', '.join(extras)}"
+
+    return {"ok": True, "summary": summary, "artifacts": [], "next_actions": []}
