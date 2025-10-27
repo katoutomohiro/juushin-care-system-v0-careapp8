@@ -1,5 +1,9 @@
 ﻿name: ci
 
+x-agents-concurrency: &agents_concurrency
+  group: agents-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -17,9 +21,7 @@ permissions:
   contents: read
   pull-requests: write
 
-concurrency:
-  group: agents-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
-  cancel-in-progress: true
+concurrency: *agents_concurrency
 
 jobs:
   build-test:
