@@ -1,1 +1,1 @@
-﻿(ci) trigger python-tests
+﻿trigger python-tests
