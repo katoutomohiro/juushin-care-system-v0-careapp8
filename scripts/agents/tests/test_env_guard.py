@@ -20,3 +20,19 @@ def test_valid_env_passes(monkeypatch):
     mod = importlib.import_module("scripts.agents.stubs.env_guard")
     result = mod.run({})
     assert result["ok"] is True
+
+def test_unknown_env_warns(monkeypatch):
+    # 必須ENVは揃える
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "y")
+
+    # 未知キーを1つ投入（OPENAI_ / SUPABASE_ のどちらでもOK）
+    monkeypatch.setenv("OPENAI_FOO", "1")
+
+    mod = importlib.import_module("scripts.agents.stubs.env_guard")
+    res = mod.run({})
+
+    assert res["ok"] is True
+    # WARN文言が summary に含まれること
+    assert "WARN unknown env keys: OPENAI_FOO" in res["summary"]
