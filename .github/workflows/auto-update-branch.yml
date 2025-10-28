@@ -1,23 +1,50 @@
 name: auto-update-branch
+
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   pull_request:
-    types: [synchronize, opened, reopened]
-permissions:
-  contents: write
-  pull-requests: write
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+    branches:
+      - "*"
+
+concurrency:
+  group: agents-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  update-and-arm:
+  update:
+    name: Update PR branch from base
+    if: >
+      github.event.pull_request != null &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
-      - name: Update behind branches and arm auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr list --state open --json number,mergeStateStatus,isDraft \
-            --jq '.[] | select(.isDraft==false) | [.number,.mergeStateStatus] | @tsv' > pr.tsv
-          while IFS=$'\t' read -r num state; do
-            [ "$state" = "BEHIND" ] && gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/$num/update-branch" || true
-            gh pr merge "$num" --squash --delete-branch --auto || true
-          done < pr.tsv
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # base ブランチの最新を PR ブランチへマージ(またはrebase)する公式API
+      - name: Update PR branch (merge base into head)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.notice('No PR context. Skipping.');
+              return;
+            }
+            core.info(`Updating PR #${pr.number} from base: ${pr.base.ref}`);
+            try {
+              await github.rest.pulls.updateBranch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+              core.info('updateBranch API invoked successfully.');
+            } catch (e) {
+              core.warning(`updateBranch failed: ${e.message}`);
+              // 失敗してもCI全体を落とさない（情報提供のみ）
+            }
