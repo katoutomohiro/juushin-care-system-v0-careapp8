@@ -1,10 +1,8 @@
 name: auto-retry-build
 
-x-agents-concurrency: &agents_concurrency
+concurrency:
   group: agents-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
   cancel-in-progress: true
-
-concurrency: *agents_concurrency
 
 on:
   workflow_run:
