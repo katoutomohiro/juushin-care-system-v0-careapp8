@@ -1,1 +1,1 @@
-﻿(ci) trigger python-tests
+﻿smoke trigger 2025-10-28T17:01:32
