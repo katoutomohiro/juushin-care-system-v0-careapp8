@@ -9,11 +9,13 @@ permissions:
   contents: write
   pull-requests: write
 concurrency:
-  group: ai-dispatcher
+  group: ai-dispatcher-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
   cancel-in-progress: true
+
 jobs:
   dispatch:
     if: >
+      github.event_name == 'issue_comment' &&
       github.event.comment.user.login == github.repository_owner &&
       startsWith(github.event.comment.body, '/ai ')
     runs-on: ubuntu-latest
@@ -51,6 +53,7 @@ jobs:
             --jq '.[] | [.number,(if .autoMergeRequest then "ARMED" else "NOT-ARMED" end),.mergeStateStatus,.title] | @tsv'
 
   env-hardening:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
