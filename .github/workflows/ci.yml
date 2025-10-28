@@ -109,7 +109,7 @@ jobs:
             ai_review.md
 
       - name: Comment to PR
-        if: ${{ always() }}
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -127,7 +127,7 @@ jobs:
             });
 
       - name: Slack notify
-        if: ${{ always() && env.WEBHOOK != '' }}
+        if: ${{ always() && env.WEBHOOK != '' && github.event_name == 'pull_request' }}
         run: |
           if [ -f ai_review.json ]; then
             SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
@@ -147,7 +147,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment AI review to PR (fallback to commit)
-        if: ${{ always() }}
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -224,7 +224,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment Agent Runner summary to PR
-        if: ${{ always() }}
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         with:
           script: |
