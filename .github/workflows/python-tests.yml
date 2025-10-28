@@ -1,16 +1,13 @@
 name: python-tests
 on:
   pull_request:
-    paths:
-      - "scripts/agents/**"
-      - ".github/workflows/python-tests.yml"
   push:
-    paths:
-      - "scripts/agents/**"
-      - ".github/workflows/python-tests.yml"
+    branches: [main]
+
 concurrency:
   group: python-tests-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
