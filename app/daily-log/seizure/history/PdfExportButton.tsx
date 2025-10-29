@@ -1,49 +1,45 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import type { SeizureLog } from "@/lib/persistence/seizure"
+import { exportAsPdf, PdfColumn } from "@/lib/exporter/pdf"
 
-const styles = StyleSheet.create({
-  page: { padding: 24 },
-  title: { fontSize: 18, marginBottom: 12 },
-  row: { flexDirection: "row", borderBottom: 1, borderColor: "#ccc", paddingVertical: 4 },
-  cell: { fontSize: 10, paddingRight: 8, flexGrow: 1 },
-})
+const columns: PdfColumn<SeizureLog>[] = [
+  { 
+    key: "occurredAt", 
+    header: "日時", 
+    width: 1.2,
+    map: (v) => new Date(v).toLocaleString("ja-JP")
+  },
+  { key: "seizureType", header: "発作タイプ", width: 1 },
+  { 
+    key: "duration", 
+    header: "持続時間", 
+    width: 0.8,
+    map: (v) => {
+      if (!v) return "-"
+      const m = Math.floor(v / 60)
+      const s = v % 60
+      return m > 0 ? `${m}分${s}秒` : `${s}秒`
+    }
+  },
+  { key: "trigger", header: "きっかけ", width: 1, map: (v) => v || "-" },
+  { key: "intervention", header: "対応", width: 1, map: (v) => v || "-" },
+  { key: "note", header: "メモ", width: 1.5, map: (v) => v || "" },
+]
 
-function LogsPdf({ logs }: { logs: SeizureLog[] }) {
-  const formatDuration = (seconds?: number | null) => {
-    if (!seconds) return "-"
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    if (m > 0) return `${m}分${s}秒`
-    return `${s}秒`
+export default function PdfExportButton({ logs }: { logs: SeizureLog[] }) {
+  const handleExport = async () => {
+    await exportAsPdf(logs.slice(0, 100), columns, {
+      title: "発作記録 履歴",
+      filename: `seizure-history-${Date.now()}`,
+      maskFields: ["note"], // PII/自由記述をマスク
+    })
   }
 
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>発作記録 一覧（先頭 {Math.min(20, logs.length)} 件）</Text>
-        <View>
-          {logs.slice(0, 20).map((l) => (
-            <View key={l.id} style={styles.row}>
-              <Text style={[styles.cell, { flexBasis: 120 }]}> {new Date(l.occurredAt).toLocaleString("ja-JP")} </Text>
-              <Text style={styles.cell}>{l.seizureType}</Text>
-              <Text style={styles.cell}>{formatDuration(l.duration)}</Text>
-              <Text style={styles.cell}>{l.trigger || "-"}</Text>
-              <Text style={styles.cell}>{l.intervention || "-"}</Text>
-              <Text style={[styles.cell, { flexBasis: 160 }]}>{l.note || ""}</Text>
-            </View>
-          ))}
-        </View>
-      </Page>
-    </Document>
+    <Button variant="outline" onClick={handleExport}>
+      PDF
+    </Button>
   )
 }
 
-export default function PdfExportButton({ logs }: { logs: SeizureLog[] }) {
-  return (
-    <PDFDownloadLink document={<LogsPdf logs={logs} />} fileName={`seizure_logs_${Date.now()}.pdf`}>
-      {({ loading }: any) => <Button variant="outline">{loading ? "PDF生成中…" : "PDF"}</Button>}
-    </PDFDownloadLink>
-  )
-}
