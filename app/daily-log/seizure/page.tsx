@@ -68,7 +68,10 @@ function SeizureForm() {
       <Card className="shadow-sm">
         <CardHeader className="pb-2 flex items-center justify-between">
           <CardTitle className="text-xl">発作記録</CardTitle>
-          <Button asChild variant="outline" size="sm"><a href="/daily-log">一覧に戻る</a></Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm"><a href="/daily-log/seizure/history">履歴</a></Button>
+            <Button asChild variant="outline" size="sm"><a href="/daily-log">一覧に戻る</a></Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
