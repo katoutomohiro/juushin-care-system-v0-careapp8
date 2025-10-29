@@ -4,6 +4,28 @@
  * @param headers Array of column names (header row)
  * @param rowMapper Function to map each record to an array of values (must match headers length)
  * @returns Blob URL for download
+ * 
+ * TODO: 個人情報保護対応
+ * - マスキングオプション追加（例：氏名 → イニシャル、生年月日 → 年齢）
+ * - 監査ログ記録（exportされたデータの記録）
+ * - アクセス権限チェック（role-based export制限）
+ * 
+ * @example
+ * // Basic usage
+ * const csvUrl = exportAsCsv(
+ *   users,
+ *   ['id', 'name', 'email'],
+ *   (u) => [u.id, u.name, u.email]
+ * )
+ * 
+ * @example
+ * // With future masking option (TODO)
+ * const csvUrl = exportAsCsv(
+ *   users,
+ *   ['id', 'name', 'email'],
+ *   (u) => [u.id, maskName(u.name), maskEmail(u.email)],
+ *   { enableMasking: true } // Future option
+ * )
  */
 export function exportAsCsv<T>(
   data: T[],
