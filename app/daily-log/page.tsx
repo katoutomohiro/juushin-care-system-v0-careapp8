@@ -17,12 +17,20 @@ export default function Page() {
     <main className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex gap-4 items-center justify-between border-b pb-4">
         <h1 className="text-2xl font-bold">日誌</h1>
-        <Link
-          href="/daily-log/expression"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-        >
-          😊 表情・反応記録（新UI）
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/daily-log/expression"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+          >
+            😊 表情・反応記録（新UI）
+          </Link>
+          <Link
+            href="/daily-log/seizure"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors"
+          >
+            ⚡ 発作記録（新UI）
+          </Link>
+        </div>
       </div>
       <DailyVitalsChart log={log} />
     </main>

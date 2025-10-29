@@ -180,6 +180,8 @@ export default function DailyLogsPage() {
   const handleCardClick = (categoryId: string) => {
     if (categoryId === "expression") {
       router.push(`/daily-log/expression?serviceId=${serviceId}&userId=${encodeURIComponent(userId)}`)
+    } else if (categoryId === "seizure") {
+      router.push(`/daily-log/seizure?serviceId=${serviceId}&userId=${encodeURIComponent(userId)}`)
     } else {
       router.push(formUrl(categoryId, serviceId, userId))
     }

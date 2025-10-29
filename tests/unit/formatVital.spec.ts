@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { formatVital, formatVitalRange, type VitalData } from "../lib/formatVital"
+import { formatVital, formatVitalRange, type VitalData } from "../../lib/formatVital"
 
 describe("formatVital", () => {
   it("正常値を正しくフォーマットする", () => {

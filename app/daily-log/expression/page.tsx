@@ -82,8 +82,11 @@ function ExpressionForm() {
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-6">
       <Card className="shadow-sm">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex items-center justify-between">
           <CardTitle className="text-xl">表情・反応記録</CardTitle>
+          <Button asChild variant="outline" size="sm">
+            <a href="/daily-log/expression/history">履歴を見る</a>
+          </Button>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

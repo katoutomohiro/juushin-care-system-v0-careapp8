@@ -1,0 +1,161 @@
+﻿env-hardening	Set up job	・ｿ2025-10-28T08:19:17.8270686Z Current runner version: '2.328.0'
+env-hardening	Set up job	2025-10-28T08:19:17.8300605Z ##[group]Runner Image Provisioner
+env-hardening	Set up job	2025-10-28T08:19:17.8301440Z Hosted Compute Agent
+env-hardening	Set up job	2025-10-28T08:19:17.8301937Z Version: 20250912.392
+env-hardening	Set up job	2025-10-28T08:19:17.8302765Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+env-hardening	Set up job	2025-10-28T08:19:17.8303435Z Build Date: 2025-09-12T15:23:14Z
+env-hardening	Set up job	2025-10-28T08:19:17.8304033Z ##[endgroup]
+env-hardening	Set up job	2025-10-28T08:19:17.8304621Z ##[group]Operating System
+env-hardening	Set up job	2025-10-28T08:19:17.8305145Z Ubuntu
+env-hardening	Set up job	2025-10-28T08:19:17.8305614Z 24.04.3
+env-hardening	Set up job	2025-10-28T08:19:17.8306022Z LTS
+env-hardening	Set up job	2025-10-28T08:19:17.8306532Z ##[endgroup]
+env-hardening	Set up job	2025-10-28T08:19:17.8306973Z ##[group]Runner Image
+env-hardening	Set up job	2025-10-28T08:19:17.8307539Z Image: ubuntu-24.04
+env-hardening	Set up job	2025-10-28T08:19:17.8308071Z Version: 20250929.60.1
+env-hardening	Set up job	2025-10-28T08:19:17.8309094Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+env-hardening	Set up job	2025-10-28T08:19:17.8310468Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+env-hardening	Set up job	2025-10-28T08:19:17.8311666Z ##[endgroup]
+env-hardening	Set up job	2025-10-28T08:19:17.8313236Z ##[group]GITHUB_TOKEN Permissions
+env-hardening	Set up job	2025-10-28T08:19:17.8315348Z Contents: write
+env-hardening	Set up job	2025-10-28T08:19:17.8315913Z Metadata: read
+env-hardening	Set up job	2025-10-28T08:19:17.8316487Z PullRequests: write
+env-hardening	Set up job	2025-10-28T08:19:17.8316966Z ##[endgroup]
+env-hardening	Set up job	2025-10-28T08:19:17.8319083Z Secret source: Actions
+env-hardening	Set up job	2025-10-28T08:19:17.8320449Z Prepare workflow directory
+env-hardening	Set up job	2025-10-28T08:19:17.8653885Z Prepare all required actions
+env-hardening	Set up job	2025-10-28T08:19:17.8694305Z Getting action download info
+env-hardening	Set up job	2025-10-28T08:19:18.2159950Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+env-hardening	Set up job	2025-10-28T08:19:18.4136316Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+env-hardening	Set up job	2025-10-28T08:19:18.6271253Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+env-hardening	Set up job	2025-10-28T08:19:18.8282578Z Complete job name: env-hardening
+env-hardening	Run actions/checkout@v4	・ｿ2025-10-28T08:19:18.8994958Z ##[group]Run actions/checkout@v4
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8995909Z with:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8996421Z   repository: katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8997265Z   token: ***
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8997643Z   ssh-strict: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8998039Z   ssh-user: git
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8998436Z   persist-credentials: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8998875Z   clean: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8999282Z   sparse-checkout-cone-mode: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.8999754Z   fetch-depth: 1
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9000143Z   fetch-tags: false
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9000528Z   show-progress: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9000923Z   lfs: false
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9001272Z   submodules: false
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9001659Z   set-safe-directory: true
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:18.9002528Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0107746Z Syncing repository: katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0110048Z ##[group]Getting Git version info
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0111088Z Working directory is '/home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8'
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0112655Z [command]/usr/bin/git version
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0147901Z git version 2.51.0
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0174738Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0190224Z Temporarily overriding HOME='/home/runner/work/_temp/5b14a5e2-3f72-4eeb-9fbc-6041bc5ba227' before making global git config changes
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0191817Z Adding repository directory to the temporary git global config as a safe directory
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0197014Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0233417Z Deleting the contents of '/home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8'
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0236873Z ##[group]Initializing the repository
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0241666Z [command]/usr/bin/git init /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0312636Z hint: Using 'master' as the name for the initial branch. This default branch name
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0315164Z hint: is subject to change. To configure the initial branch name to use in all
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0317000Z hint: of your new repositories, which will suppress this warning, call:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0318636Z hint:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0320006Z hint: 	git config --global init.defaultBranch <name>
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0321110Z hint:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0322276Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0324024Z hint: 'development'. The just-created branch can be renamed via this command:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0325372Z hint:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0326076Z hint: 	git branch -m <name>
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0326847Z hint:
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0327896Z hint: Disable this message with "git config set advice.defaultBranchName false"
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0330371Z Initialized empty Git repository in /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8/.git/
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0334217Z [command]/usr/bin/git remote add origin https://github.com/katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0366432Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0367641Z ##[group]Disabling automatic garbage collection
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0371550Z [command]/usr/bin/git config --local gc.auto 0
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0401865Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0403452Z ##[group]Setting up auth
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0410017Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0442304Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0721868Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0755125Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.0988939Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.1035243Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.1036595Z ##[group]Fetching the repository
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.1046452Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a472f764cf8fc160dba14a157606f060e2a15987:refs/remotes/origin/main
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3198852Z From https://github.com/katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3200233Z  * [new ref]         a472f764cf8fc160dba14a157606f060e2a15987 -> origin/main
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3230825Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3232838Z ##[group]Determining the checkout info
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3235001Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3239411Z [command]/usr/bin/git sparse-checkout disable
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3282345Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3312263Z ##[group]Checking out the ref
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3316973Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3485541Z Switched to a new branch 'main'
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3487431Z branch 'main' set up to track 'origin/main'.
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3495843Z ##[endgroup]
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3538364Z [command]/usr/bin/git log -1 --format=%H
+env-hardening	Run actions/checkout@v4	2025-10-28T08:19:19.3561842Z a472f764cf8fc160dba14a157606f060e2a15987
+env-hardening	Run actions/setup-python@v5	・ｿ2025-10-28T08:19:19.3822193Z ##[group]Run actions/setup-python@v5
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3822951Z with:
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3823417Z   python-version: 3.11
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3823945Z   check-latest: false
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3824652Z   token: ***
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3825153Z   update-environment: true
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3825707Z   allow-prereleases: false
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3826271Z   freethreaded: false
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.3826809Z ##[endgroup]
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.5508648Z ##[group]Installed versions
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.5628128Z Successfully set up CPython (3.11.13)
+env-hardening	Run actions/setup-python@v5	2025-10-28T08:19:19.5629600Z ##[endgroup]
+env-hardening	Run env hardening dispatch	・ｿ2025-10-28T08:19:19.5760483Z ##[group]Run mkdir -p artifacts/agent_reports
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5761396Z [36;1mmkdir -p artifacts/agent_reports[0m
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5762994Z [36;1mpython -m scripts.agents.dispatcher --task env_hardening --payload "{}" | tee artifacts/agent_reports/env_hardening.json[0m
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5812738Z shell: /usr/bin/bash -e {0}
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5813384Z env:
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5813958Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5814864Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5815733Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5816531Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5817318Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5818112Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.5818821Z ##[endgroup]
+env-hardening	Run env hardening dispatch	2025-10-28T08:19:19.6544310Z {"ok": false, "summary": "missing required env: OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL", "artifacts": [], "next_actions": []}
+env-hardening	Guard ok field without jq	・ｿ2025-10-28T08:19:19.6653010Z ##[group]Run python - << 'PY'
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6653768Z [36;1mpython - << 'PY'[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6654296Z [36;1mimport json,sys[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6654833Z [36;1mfrom pathlib import Path[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6655537Z [36;1mp=Path("artifacts/agent_reports/env_hardening.json")[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6656280Z [36;1mdata=json.loads(p.read_text())[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6656944Z [36;1mif not isinstance(data.get("ok"), bool):[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6657644Z [36;1m    print("ok must be boolean"); sys.exit(1)[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6658331Z [36;1mif not data["ok"]:[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6658948Z [36;1m    print("agent reported not ok"); sys.exit(1)[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6659609Z [36;1mprint("ok true")[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6660147Z [36;1mPY[0m
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6697505Z shell: /usr/bin/bash -e {0}
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6698099Z env:
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6698668Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6699570Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6700522Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6701344Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6702392Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6703238Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6703937Z ##[endgroup]
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.6994632Z agent reported not ok
+env-hardening	Guard ok field without jq	2025-10-28T08:19:19.7045792Z ##[error]Process completed with exit code 1.
+env-hardening	Post Run actions/checkout@v4	・ｿ2025-10-28T08:19:19.7256720Z Post job cleanup.
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8239617Z [command]/usr/bin/git version
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8278281Z git version 2.51.0
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8345036Z Temporarily overriding HOME='/home/runner/work/_temp/7a87c16c-4078-4ac6-bdef-9e74bbcd668c' before making global git config changes
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8347519Z Adding repository directory to the temporary git global config as a safe directory
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8362454Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8409933Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8453604Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8718021Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8745135Z http.https://github.com/.extraheader
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8759029Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+env-hardening	Post Run actions/checkout@v4	2025-10-28T08:19:19.8796912Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+env-hardening	Complete job	・ｿ2025-10-28T08:19:19.9182607Z Cleaning up orphan processes

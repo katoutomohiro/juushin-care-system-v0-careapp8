@@ -1,0 +1,161 @@
+﻿env-hardening	UNKNOWN STEP	・ｿ2025-10-28T09:58:59.0274493Z Current runner version: '2.328.0'
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0297519Z ##[group]Runner Image Provisioner
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0298462Z Hosted Compute Agent
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0299221Z Version: 20250912.392
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0299871Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0300582Z Build Date: 2025-09-12T15:23:14Z
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0301180Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0301710Z ##[group]Operating System
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0302333Z Ubuntu
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0302788Z 24.04.3
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0303294Z LTS
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0303735Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0304235Z ##[group]Runner Image
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0304729Z Image: ubuntu-24.04
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0305340Z Version: 20250929.60.1
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0306347Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0307879Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0308955Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0310144Z ##[group]GITHUB_TOKEN Permissions
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0312172Z Contents: write
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0312721Z Metadata: read
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0313297Z PullRequests: write
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0313827Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0315796Z Secret source: Actions
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0316985Z Prepare workflow directory
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0704099Z Prepare all required actions
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.0741869Z Getting action download info
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.5057846Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.6373181Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.7193785Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9200351Z Complete job name: env-hardening
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9905223Z ##[group]Run actions/checkout@v4
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9906117Z with:
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9906659Z   repository: katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9907472Z   token: ***
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9907871Z   ssh-strict: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9908281Z   ssh-user: git
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9908694Z   persist-credentials: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9909327Z   clean: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9909738Z   sparse-checkout-cone-mode: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9910232Z   fetch-depth: 1
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9910619Z   fetch-tags: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9911030Z   show-progress: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9911445Z   lfs: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9911825Z   submodules: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9912255Z   set-safe-directory: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:58:59.9912971Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1036469Z Syncing repository: katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1040007Z ##[group]Getting Git version info
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1041856Z Working directory is '/home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8'
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1044192Z [command]/usr/bin/git version
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1113160Z git version 2.51.0
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1140308Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1162906Z Temporarily overriding HOME='/home/runner/work/_temp/69aa56bf-9df7-4630-8069-3d92273d16c7' before making global git config changes
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1165397Z Adding repository directory to the temporary git global config as a safe directory
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1168078Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1206600Z Deleting the contents of '/home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8'
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1209651Z ##[group]Initializing the repository
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1214075Z [command]/usr/bin/git init /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1351550Z hint: Using 'master' as the name for the initial branch. This default branch name
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1353791Z hint: is subject to change. To configure the initial branch name to use in all
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1355484Z hint: of your new repositories, which will suppress this warning, call:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1356742Z hint:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1357588Z hint: 	git config --global init.defaultBranch <name>
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1358623Z hint:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1359870Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1361507Z hint: 'development'. The just-created branch can be renamed via this command:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1362850Z hint:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1363578Z hint: 	git branch -m <name>
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1364472Z hint:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1365626Z hint: Disable this message with "git config set advice.defaultBranchName false"
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1367920Z Initialized empty Git repository in /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8/.git/
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1372300Z [command]/usr/bin/git remote add origin https://github.com/katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1416275Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1419412Z ##[group]Disabling automatic garbage collection
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1421214Z [command]/usr/bin/git config --local gc.auto 0
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1459894Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1460638Z ##[group]Setting up auth
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1461359Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1489790Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1858195Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.1888214Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.2107061Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.2142326Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.2143252Z ##[group]Fetching the repository
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.2150656Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8ff3165db6b14f5169980eac1da9949421fb1c6a:refs/remotes/origin/main
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8045712Z From https://github.com/katoutomohiro/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8049247Z  * [new ref]         8ff3165db6b14f5169980eac1da9949421fb1c6a -> origin/main
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8077425Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8078713Z ##[group]Determining the checkout info
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8080630Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8084762Z [command]/usr/bin/git sparse-checkout disable
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8125362Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8154884Z ##[group]Checking out the ref
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8159051Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8332252Z Switched to a new branch 'main'
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8335170Z branch 'main' set up to track 'origin/main'.
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8342731Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8375323Z [command]/usr/bin/git log -1 --format=%H
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8396847Z 8ff3165db6b14f5169980eac1da9949421fb1c6a
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8705845Z ##[group]Run actions/setup-python@v5
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8707062Z with:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8707921Z   python-version: 3.11
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8709224Z   check-latest: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8710549Z   token: ***
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8711475Z   update-environment: true
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8712553Z   allow-prereleases: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8713599Z   freethreaded: false
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:00.8714548Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0365944Z ##[group]Installed versions
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0488277Z Successfully set up CPython (3.11.13)
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0492010Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0637726Z ##[group]Run mkdir -p artifacts/agent_reports
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0639410Z [36;1mmkdir -p artifacts/agent_reports[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0641848Z [36;1mpython -m scripts.agents.dispatcher --task env_hardening --payload "{}" | tee artifacts/agent_reports/env_hardening.json[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0817303Z shell: /usr/bin/bash -e {0}
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0818336Z env:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0819632Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0821525Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0823565Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0825207Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0827113Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0828945Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.0830638Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5551067Z {"ok": false, "summary": "missing required env: OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL", "artifacts": [], "next_actions": []}
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5673273Z ##[group]Run python - << 'PY'
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5674350Z [36;1mpython - << 'PY'[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5675306Z [36;1mimport json,sys[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5676276Z [36;1mfrom pathlib import Path[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5677596Z [36;1mp=Path("artifacts/agent_reports/env_hardening.json")[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5679220Z [36;1mdata=json.loads(p.read_text())[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5680443Z [36;1mif not isinstance(data.get("ok"), bool):[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5681745Z [36;1m    print("ok must be boolean"); sys.exit(1)[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5682934Z [36;1mif not data["ok"]:[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5684037Z [36;1m    print("agent reported not ok"); sys.exit(1)[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5685251Z [36;1mprint("ok true")[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5686152Z [36;1mPY[0m
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5723074Z shell: /usr/bin/bash -e {0}
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5723997Z env:
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5724962Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5726707Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5728394Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5730244Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5731784Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5733318Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.5734610Z ##[endgroup]
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.6219103Z agent reported not ok
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.6269388Z ##[error]Process completed with exit code 1.
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.6529364Z Post job cleanup.
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7478648Z [command]/usr/bin/git version
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7513724Z git version 2.51.0
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7557004Z Temporarily overriding HOME='/home/runner/work/_temp/ae218e75-b1e7-44b6-94bf-59f260dddbcb' before making global git config changes
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7560640Z Adding repository directory to the temporary git global config as a safe directory
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7569303Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/juushin-care-system-v0-careapp8/juushin-care-system-v0-careapp8
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7605785Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7642428Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7876062Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7897622Z http.https://github.com/.extraheader
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7910195Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.7941781Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+env-hardening	UNKNOWN STEP	2025-10-28T09:59:01.8283217Z Cleaning up orphan processes
