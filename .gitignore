@@ -47,3 +47,10 @@ __pycache__/
 # ai-review artifacts (safe to ignore)
 agent_report.txt
 artifacts/agent_reports/
+
+# Font files (download locally per developer)
+/public/fonts/*.ttf
+/public/fonts/*.otf
+/public/fonts/*.woff
+/public/fonts/*.woff2
+!/public/fonts/README.md
