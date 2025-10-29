@@ -178,7 +178,11 @@ export default function DailyLogsPage() {
   }
 
   const handleCardClick = (categoryId: string) => {
-    router.push(formUrl(categoryId, serviceId, userId))
+    if (categoryId === "expression") {
+      router.push(`/daily-log/expression?serviceId=${serviceId}&userId=${encodeURIComponent(userId)}`)
+    } else {
+      router.push(formUrl(categoryId, serviceId, userId))
+    }
   }
 
   return (
