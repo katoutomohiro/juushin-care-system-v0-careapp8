@@ -5,10 +5,14 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:ci": "PORT=3000 next dev",
     "dev:autosave": "node scripts/auto-commit.js",
     "lint": "next lint",
     "start": "next start",
-    "test": "echo \"(test script not defined)\" && exit 0"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "playwright test"
   },
   "dependencies": {
     "@edge-runtime/vm": "latest",

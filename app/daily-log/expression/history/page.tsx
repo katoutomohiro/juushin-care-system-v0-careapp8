@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { listExpressionLogs, getExpressionLog, updateExpressionLog, deleteExpressionLog, type ExpressionLog } from "@/lib/persistence/expression"
+import { exportAsCsv } from "@/lib/exporter/csv"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
 
@@ -26,11 +27,11 @@ export default function ExpressionHistoryPage() {
   const [end, setEnd] = useState<string>("")
 
   const csvHref = useMemo(() => {
-    const header = ["occurredAt","expression","reaction","intervention","discomfort","note","serviceId","userId"].join(",")
-    const rows = logs.map(l => [l.occurredAt, l.expression, l.reaction ?? "", l.intervention ?? "", l.discomfort ?? "", (l.note ?? "").replace(/\r?\n/g, " "), l.serviceId ?? "", l.userId ?? ""].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))
-    const csv = [header, ...rows].join("\n")
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-    return URL.createObjectURL(blob)
+    return exportAsCsv(
+      logs,
+      ["occurredAt", "expression", "reaction", "intervention", "discomfort", "note", "serviceId", "userId"],
+      (l) => [l.occurredAt, l.expression, l.reaction ?? "", l.intervention ?? "", l.discomfort ?? "", l.note ?? "", l.serviceId ?? "", l.userId ?? ""]
+    )
   }, [logs])
 
   const refresh = useCallback(async () => {
