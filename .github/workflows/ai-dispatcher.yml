@@ -3,6 +3,11 @@ on:
   issue_comment:
     types: [created]
   workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Fail when required secrets are missing'
+        type: boolean
+        default: false
   schedule:
     - cron: '15 18 * * SUN'
 permissions:
@@ -55,6 +60,13 @@ jobs:
   env-hardening:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    env:
+      # secrets presence flags (true/false as strings)
+      HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+      HAS_SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+      HAS_SUPABASE_URL: ${{ secrets.SUPABASE_URL != '' }}
+      # strict only for workflow_dispatch (manual); schedule is always treated as strict via job if-condition below
+      STRICT: ${{ github.event_name == 'workflow_dispatch' && inputs.strict == true }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -64,7 +76,17 @@ jobs:
         run: |
           mkdir -p artifacts/agent_reports
           python -m scripts.agents.dispatcher --task env_hardening --payload "{}" | tee artifacts/agent_reports/env_hardening.json
+      # In non-strict manual runs, only warn (do not fail) when required secrets are missing
+      - name: Warn when secrets are missing (non-strict mode)
+        if: ${{ env.STRICT != 'true' && github.event_name == 'workflow_dispatch' && (env.HAS_OPENAI != 'true' || env.HAS_SUPABASE_KEY != 'true' || env.HAS_SUPABASE_URL != 'true') }}
+        run: |
+          missing=()
+          [ "${HAS_OPENAI}" = "true" ] || missing+=("OPENAI_API_KEY")
+          [ "${HAS_SUPABASE_KEY}" = "true" ] || missing+=("SUPABASE_SERVICE_ROLE_KEY")
+          [ "${HAS_SUPABASE_URL}" = "true" ] || missing+=("SUPABASE_URL")
+          echo "::warning::Missing required secrets (non-strict run): ${missing[*]}"
       - name: Guard ok field without jq
+        if: ${{ env.STRICT == 'true' || github.event_name == 'schedule' }}
         run: |
           python - << 'PY'
           import json,sys
