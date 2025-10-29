@@ -5,19 +5,22 @@ export interface VitalData {
 }
 
 export function formatVital(vital: VitalData): string {
-  if (vital.value === null || vital.value === undefined) {
-    return `${vital.label}: --`
+  const { value, unit, label } = vital
+  if (value === null || value === undefined) {
+    return `${label}: --`
   }
 
-  if (typeof vital.value !== "number" || !isFinite(vital.value)) {
-    return `${vital.label}: エラー`
+  if (typeof value !== "number" || !isFinite(value) || Number.isNaN(value)) {
+    return `${label}: エラー`
   }
 
-  if (vital.value < 0) {
-    return `${vital.label}: 範囲外`
+  if (value < 0) {
+    return `${label}: 範囲外`
   }
 
-  return `${vital.label}: ${vital.value}${vital.unit}`
+  const needsOneDecimal = unit === "°C" || unit === "°F"
+  const numStr = needsOneDecimal ? value.toFixed(1) : Number.isInteger(value) ? String(value) : String(value)
+  return `${label}: ${numStr}${unit}`
 }
 
 export function formatVitalRange(vital: VitalData, min: number, max: number): string {

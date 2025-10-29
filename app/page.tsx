@@ -504,7 +504,7 @@ export default function WorldClassSoulCareApp() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Quick access to Expression Log */}
+        {/* Quick access to Expression & Seizure Logs */}
         <Card className="shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -518,6 +518,26 @@ export default function WorldClassSoulCareApp() {
               <Button
                 onClick={() => _router.push("/daily-log/expression")}
                 className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                記録を入力
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-rose-50 to-red-50 border-rose-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-rose-100 rounded-xl text-2xl">⚡</div>
+                <div>
+                  <h3 className="font-semibold text-rose-900">発作記録（新UI）</h3>
+                  <p className="text-sm text-rose-700">表情・反応と同一UXで素早く入力</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => _router.push("/daily-log/seizure")}
+                className="bg-rose-600 hover:bg-rose-700 text-white"
               >
                 記録を入力
               </Button>
