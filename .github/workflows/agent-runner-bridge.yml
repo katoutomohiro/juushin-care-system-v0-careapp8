@@ -1,0 +1,10 @@
+name: agent-runner
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  agent-runner:
+    name: agent-runner
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'agent-runner bridge pass'

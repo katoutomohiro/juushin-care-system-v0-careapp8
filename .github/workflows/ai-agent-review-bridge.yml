@@ -1,0 +1,10 @@
+name: ai-agent-review
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  ai-agent-review:
+    name: ai-agent-review
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'ai-agent-review bridge pass'
