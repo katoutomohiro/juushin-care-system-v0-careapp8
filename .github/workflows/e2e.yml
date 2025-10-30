@@ -2,31 +2,27 @@ name: e2e-test
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
-  schedule:
-    # JST 03:00（= UTC 18:00）
-    - cron: "0 18 * * *"
-
-env:
-  TZ: Asia/Tokyo
-
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   noop:
-    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'e2e-required') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'e2e-required') }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Skipping heavy e2e (no e2e-required label)."
 
   e2e:
-    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-required') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'e2e-required') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: e2e-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
+      # pnpm -> node の順（pnpm先）
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -36,22 +32,13 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
       - name: Cache .next
         uses: actions/cache@v4
         with:
-          path: |
-            **/.next/cache
-          key: ${{ runner.os }}-next-${{ hashFiles('**/pnpm-lock.yaml', '**/next.config.*', '**/tsconfig*.json') }}
+          path: .next
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-next-
+            next-${{ runner.os }}-
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -60,7 +47,15 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright deps
-        run: pnpm dlx playwright install --with-deps
+        run: npx playwright install --with-deps
 
       - name: Test (E2E)
-        run: pnpm test:e2e
+        run: pnpm exec playwright test --reporter=github,html --timeout=45000 --workers=2
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 3
