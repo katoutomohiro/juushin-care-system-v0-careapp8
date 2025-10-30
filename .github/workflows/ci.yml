@@ -1,9 +1,13 @@
 ﻿name: ci
 
 on:
-  push:
-    branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  push:
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -18,7 +22,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: agents-${{ (github.event.pull_request.number != null && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
