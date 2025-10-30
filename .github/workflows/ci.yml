@@ -29,14 +29,30 @@ jobs:
   build-test:
     name: build-test
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      TZ: Asia/Tokyo
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
+
+      - name: Cache (pnpm + .next/cache)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            .next/cache
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}-next-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-
 
       - name: Use Node
         uses: actions/setup-node@v4
@@ -56,14 +72,30 @@ jobs:
   tests:
     name: tests
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      TZ: Asia/Tokyo
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
+
+      - name: Cache (pnpm + .next/cache)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            .next/cache
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}-next-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-
 
       - name: Use Node
         uses: actions/setup-node@v4
@@ -80,11 +112,16 @@ jobs:
   e2e-test:
     needs: build-test
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      TZ: Asia/Tokyo
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
@@ -119,7 +156,11 @@ jobs:
     needs: [build-test, tests]
     if: ${{ always() && needs.build-test.result == 'success' && needs.tests.result == 'success' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     env:
+      TZ: Asia/Tokyo
       AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
       BUILD_STATUS: ${{ needs.build-test.result }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -237,6 +278,11 @@ jobs:
     needs: build-test
     if: ${{ always() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      TZ: Asia/Tokyo
     steps:
       - uses: actions/checkout@v4
 
