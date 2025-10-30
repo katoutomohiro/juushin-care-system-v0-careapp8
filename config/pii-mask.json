@@ -1,0 +1,8 @@
+{
+  "defaultMask": ["note", "memo", "familyContact"],
+  "categories": {
+    "freeText": ["note", "memo"],
+    "contact": ["familyContact", "emergencyContact"],
+    "medical": ["medication", "diagnosis"]
+  }
+}
