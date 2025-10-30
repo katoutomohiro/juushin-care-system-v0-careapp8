@@ -78,6 +78,7 @@ jobs:
         run: pnpm test
 
   e2e-test:
+    if: ${{ false }}  # moved to .github/workflows/e2e.yml
     needs: build-test
     runs-on: ubuntu-latest
     steps:
