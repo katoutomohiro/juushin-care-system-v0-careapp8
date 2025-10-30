@@ -1,0 +1,62 @@
+name: Issue Triage
+description: 新しいIssueをトリアージして適切なエージェントラベルを付与
+title: "[Triage]: "
+labels: ["triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        このIssueは自動的にトリアージされ、適切なエージェントラベルが付与されます。
+        
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue種別
+      description: このIssueの主な種別を選択してください
+      options:
+        - リリース・タグ作成
+        - 機能実装・バグ修正
+        - テスト追加・修正
+        - E2E/統合テスト
+        - ドキュメント作成・更新
+        - セキュリティ・依存関係
+        - 国際化・文言
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: 詳細
+      description: Issue内容を具体的に記述してください
+      placeholder: |
+        例:
+        - PR #92 のE2Eテストが不安定なので、waitForVisible を追加して安定化したい
+        - v0.11.1 のパッチリリースを作成する必要がある
+        - CSV/PDFエクスポートの PII マスク漏れがないか監査したい
+    validations:
+      required: true
+      
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 完了条件
+      description: このIssueがクローズされる条件を記述してください
+      placeholder: |
+        例:
+        - E2Eテストが3回連続で成功する
+        - Release v0.11.1 が作成され、GitHub Releaseページに表示される
+        - PII監査レポートがドキュメントに追加される
+    validations:
+      required: false
+      
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: 制約事項（該当するものをチェック）
+      options:
+        - label: main ブランチへの直接コミットは禁止
+        - label: PII/Secrets に触れない
+        - label: 1PR=1トピック（小粒変更）
+        - label: 既存機能を壊さない（後方互換）
+        - label: 作業ログをスレッドに残す

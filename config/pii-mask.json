@@ -1,0 +1,9 @@
+{
+  "defaultMask": ["note", "memo", "familyContact"],
+  "description": "PII/個人情報フィールドの集中管理。CSV/PDFエクスポート時のデフォルトマスク対象",
+  "categories": {
+    "freeText": ["note", "memo"],
+    "contact": ["familyContact", "emergencyContact"],
+    "medical": ["medication", "diagnosis"]
+  }
+}
