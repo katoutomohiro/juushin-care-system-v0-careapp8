@@ -112,8 +112,8 @@ jobs:
 
   ai-agent-review:
     name: ai-agent-review
-    needs: [build-test, e2e-test]
-    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [build-test, tests]
+    if: ${{ always() && needs.build-test.result == 'success' && needs.tests.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       AUTO_GEN: ${{ inputs.auto_gen || github.event.inputs.auto_gen || 'false' }}
