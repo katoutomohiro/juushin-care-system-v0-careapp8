@@ -32,3 +32,5 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+運用メモ: PRに e2e-required ラベルが付いたときのみ E2E を実行（未付与時は短絡成功で高速化）・Dependabotは npm: daily / gh-actions: weekly・E2Eは毎日03:00 JSTに自動実行。

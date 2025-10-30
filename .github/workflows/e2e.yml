@@ -1,0 +1,74 @@
+name: e2e-test
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *' # JST 03:00 実行（必要に応じ変更OK）
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+    branches: [main]
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: true
+    env:
+      TZ: Asia/Tokyo
+
+    steps:
+      - name: Decide run mode by label
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasLabel = (context.payload.pull_request?.labels || [])
+              .some(l => l.name === 'e2e-required');
+            core.setOutput('run', hasLabel ? 'true' : 'false');
+
+      - name: Short-circuit (no label)
+        if: steps.gate.outputs.run != 'true'
+        run: |
+          echo "Label 'e2e-required' not found. Skipping heavy e2e."
+          echo "This job returns success quickly to keep PRs fast."
+        shell: bash
+
+      - name: Checkout
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        if: steps.gate.outputs.run == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache (pnpm + .next/cache)
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            .next/cache
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}-next-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-
+
+      - name: Install
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm i --frozen-lockfile
+
+      - name: Build
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm build
+
+      - name: Run e2e
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          if pnpm run -s test:e2e; then
+            echo "e2e passed"
+          else
+            echo "e2e failed"; exit 1
+          fi
