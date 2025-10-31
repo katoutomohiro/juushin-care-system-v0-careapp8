@@ -28,7 +28,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: process.env.CI ? "pnpm dev:ci" : "pnpm dev",
+    // CI ではビルド済みアプリを next start で起動して高速安定化
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
