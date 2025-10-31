@@ -1,9 +1,9 @@
 'use client';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getEntry, updateEntry, DiaryEntry } from '../../../hooks/useDiary';
 
-export default function DiaryDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function DiaryDetail({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [notes, setNotes] = useState('');
