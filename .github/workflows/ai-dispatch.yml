@@ -110,7 +110,7 @@ jobs:
       - name: Scaffold diary feature (minimal, app router)
         run: |
           set -e
-          mkdir -p schemas hooks app/diary app/diary/monthly app/diary/[id] e2e db
+          mkdir -p schemas hooks app/diary app/diary/monthly app/diary/[id] tests/e2e db
           cat > schemas/diary.ts << 'EOF'
           import { z } from 'zod';
           export const MedicalRecordSchema = z.object({
@@ -165,14 +165,13 @@ jobs:
           cat > app/diary/page.tsx << 'EOF'
           'use client';
           import { useState } from 'react';
-          import { v4 as uuid } from 'uuid';
           import { createEntry } from '../../hooks/useDiary';
           export default function DiaryPage() {
             const [heartRate, setHr] = useState<number | ''>('');
             const [temperature, setTp] = useState<number | ''>('');
             const [notes, setNotes] = useState('');
             const onSave = () => {
-              const id = uuid();
+              const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? crypto.randomUUID() : String(Date.now());
               const date = new Date().toISOString().slice(0,10);
               const record = { time: new Date().toISOString(), heartRate: heartRate=== ''? undefined:Number(heartRate), temperature: temperature=== ''? undefined:Number(temperature), notes } as any;
               createEntry({ id, date, records: [record] } as any);
@@ -221,7 +220,7 @@ jobs:
           }
           EOF
 
-          cat > e2e/diary.spec.ts << 'EOF'
+          cat > tests/e2e/diary.spec.ts << 'EOF'
           import { test, expect } from '@playwright/test';
           test('diary create and monthly chart', async ({ page }) => {
             await page.goto('/diary');
