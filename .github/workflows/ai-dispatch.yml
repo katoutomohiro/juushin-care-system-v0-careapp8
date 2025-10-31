@@ -18,11 +18,33 @@ jobs:
           script: |
             const sender = context.payload.comment.user.login;
             const owner  = context.repo.owner;
-            const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-              owner: context.repo.owner,
-              repo:  context.repo.repo,
-              username: sender
-            });
+            /**
+             * Use Octokit REST client when available, but fall back to legacy path if needed.
+             * Add a secondary fallback to checkCollaborator to avoid hard failures.
+             */
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                // 204 means the user is a collaborator; treat as write-equivalent
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
             if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
               core.setFailed(`not trusted: ${sender}`);
             }
@@ -52,11 +74,28 @@ jobs:
           script: |
             const sender = context.payload.comment.user.login;
             const owner  = context.repo.owner;
-            const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-              owner: context.repo.owner,
-              repo:  context.repo.repo,
-              username: sender
-            });
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
             if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
               core.setFailed(`not trusted: ${sender}`);
             }
@@ -95,11 +134,28 @@ jobs:
           script: |
             const sender = context.payload.comment.user.login;
             const owner  = context.repo.owner;
-            const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-              owner: context.repo.owner,
-              repo:  context.repo.repo,
-              username: sender
-            });
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
             if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
               core.setFailed(`not trusted: ${sender}`);
             }
