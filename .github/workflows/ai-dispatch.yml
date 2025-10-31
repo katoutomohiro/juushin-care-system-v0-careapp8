@@ -24,14 +24,13 @@ jobs:
               username: sender
             });
             if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
-              core.setFailed(
-ot trusted: );
+              core.setFailed(`not trusted: ${sender}`);
             }
       - name: Touch to trigger e2e
         run: |
-          ts=
+          ts=$(date +%Y%m%d-%H%M%S)
           mkdir -p .chore/ci_touch
-          echo ok > ".chore/ci_touch/e2e_smoke_20251031-091203.txt"
+          echo ok > ".chore/ci_touch/e2e_smoke_${ts}.txt"
       - name: Create PR for smoke
         uses: peter-evans/create-pull-request@v5
         with:
