@@ -1,26 +1,71 @@
-/* eslint-disable */
-export type DiaryEntry = import('../schemas/diary').DiaryEntry;
-export type MedicalRecord = import('../schemas/diary').MedicalRecord;
-const KEY = 'diaryEntries';
-const safeWindow: any = typeof window !== 'undefined' ? window : undefined;
-function readAll(): DiaryEntry[] {
-  if (!safeWindow) return [];
-  try { return JSON.parse(safeWindow.localStorage.getItem(KEY) || '[]'); } catch { return []; }
+import { db, DiaryEntry, MedicalRecord, EditHistory } from '../lib/db';
+
+/**
+ * Dexie ベースの日誌操作フック
+ */
+
+export async function createEntry(entry: Partial<DiaryEntry>): Promise<string> {
+  const now = new Date().toISOString();
+  const fullEntry: DiaryEntry = {
+    id: entry.id || crypto.randomUUID(),
+    date: entry.date || new Date().toISOString().slice(0, 10),
+    records: entry.records || [],
+    photos: entry.photos || [],
+    editHistory: entry.editHistory || [],
+    createdAt: entry.createdAt || now,
+    updatedAt: now,
+  };
+  await db.diaryEntries.put(fullEntry);
+  return fullEntry.id;
 }
-function writeAll(list: DiaryEntry[]) {
-  if (!safeWindow) return;
-  safeWindow.localStorage.setItem(KEY, JSON.stringify(list));
+
+export async function listEntries(): Promise<DiaryEntry[]> {
+  return await db.diaryEntries.orderBy('date').reverse().toArray();
 }
-export function createEntry(entry: DiaryEntry) {
-  const list = readAll();
-  const i = list.findIndex(e => e.id === entry.id);
-  if (i >= 0) list[i] = entry; else list.push(entry);
-  writeAll(list);
+
+export async function getEntry(id: string): Promise<DiaryEntry | undefined> {
+  return await db.diaryEntries.get(id);
 }
-export function listEntries(): DiaryEntry[] { return readAll(); }
-export function getEntry(id: string): DiaryEntry | undefined { return readAll().find(e => e.id === id); }
-export function monthlyStats(ym: string) {
-  const list = readAll().filter(e => e.date.startsWith(ym));
-  const days = list.flatMap(e => e.records.map(r => ({ date: e.date, hr: r.heartRate ?? null, temp: r.temperature ?? null })));
+
+export async function updateEntry(id: string, updates: Partial<DiaryEntry>, editor: string = 'system'): Promise<void> {
+  const existing = await db.diaryEntries.get(id);
+  if (!existing) throw new Error('Entry not found');
+  
+  const editHistory: EditHistory[] = existing.editHistory || [];
+  editHistory.push({
+    timestamp: new Date().toISOString(),
+    editor,
+    changes: JSON.stringify(updates),
+  });
+
+  await db.diaryEntries.update(id, {
+    ...updates,
+    editHistory,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteEntry(id: string): Promise<void> {
+  await db.diaryEntries.delete(id);
+}
+
+export async function monthlyStats(ym: string) {
+  const entries = await db.diaryEntries
+    .where('date')
+    .startsWith(ym)
+    .toArray();
+  
+  const days = entries.flatMap(e =>
+    e.records.map(r => ({
+      date: e.date,
+      hr: r.heartRate ?? null,
+      temp: r.temperature ?? null,
+      spO2: r.oxygenSaturation ?? null,
+      seizure: r.seizureType ? 1 : 0,
+    }))
+  );
   return days;
 }
+
+export type { DiaryEntry, MedicalRecord, EditHistory };
+
