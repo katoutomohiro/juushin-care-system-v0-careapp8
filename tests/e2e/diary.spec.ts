@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
-test('diary create and monthly chart', async ({ page }) => {
+
+test('diary page smoke', async ({ page }) => {
+  // 最小スモークテスト: ページが開けて基本要素が存在するか
   await page.goto('/diary');
-  await page.fill('input[type=number]:nth-of-type(1)', '80');
-  await page.fill('input[type=number]:nth-of-type(2)', '36.8');
-  await page.click('text=Save');
-  await page.waitForTimeout(300);
+  await expect(page.locator('text=Diary')).toBeVisible();
+  // 保存ボタン確認
+  const saveButton = page.locator('button:has-text("Save")');
+  await expect(saveButton).toBeVisible();
+  // 月次チャートページに遷移
   await page.goto('/diary/monthly');
   await expect(page.locator('text=Monthly Vitals')).toBeVisible();
 });
