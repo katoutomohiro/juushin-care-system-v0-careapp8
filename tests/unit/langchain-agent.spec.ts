@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { MonthlyReportData } from "../../reports/generateMonthlyReport";
+import type { MonthlyReportData, TodoLite } from "../../services/langchain/agent";
 
 // Mock ChatOpenAI to avoid network calls
 vi.mock("@langchain/openai", () => {
@@ -23,7 +23,7 @@ vi.mock("@langchain/openai", () => {
   return { ChatOpenAI: ChatOpenAIProxy };
 });
 
-import { summarizeMonthlyReport } from "../../services/langchain/agent";
+import { summarizeMonthlyReport, summarizeTodosLocally } from "../../services/langchain/agent";
 import { ChatOpenAI as ChatOpenAIMock } from "@langchain/openai";
 
 const sample: MonthlyReportData = {
@@ -76,5 +76,54 @@ describe("summarizeMonthlyReport (LLM)", () => {
     expect(res.model).toBe("fallback-rule");
     expect(res.summary).toContain("今月(2025-10)");
     expect(res.highlights.some((h: string) => h.includes("発作頻度"))).toBe(true);
+  });
+
+  it("includes todos in prompt and summary when provided", async () => {
+    const todos: TodoLite[] = [
+      { id: "1", title: "月次報告確認", completed: false, dueDate: "2025-10-15", priority: "high" },
+      { id: "2", title: "家族面談", completed: true, dueDate: "2025-10-10" },
+      { id: "3", title: "リハビリ計画更新", completed: false, dueDate: "2025-09-30", priority: "medium" },
+    ];
+
+    const sampleWithTodos: MonthlyReportData = { ...sample, todos };
+
+    // Mock returns JSON with todos mention
+    const inst: any = (ChatOpenAIMock as any).__instance;
+    inst.setMock(async (input: string) => {
+      // Verify todos data is in prompt
+      expect(input).toContain("todos");
+      expect(input).toContain("completed");
+      return { content: '{"summary":"ToDo状況含む要約","highlights":["完了1件","未完了2件","期限切れ1件"]}' };
+    });
+
+    const res = await summarizeMonthlyReport(sampleWithTodos);
+    expect(res.summary).toContain("ToDo");
+    expect(res.highlights.length).toBeGreaterThan(0);
+  });
+});
+
+describe("summarizeTodosLocally", () => {
+  it("returns correct todo summary with completed/pending/overdue counts", () => {
+    const todos: TodoLite[] = [
+      { id: "1", title: "Task 1", completed: true, dueDate: "2025-10-01" },
+      { id: "2", title: "Task 2", completed: false, dueDate: "2025-10-15" },
+      { id: "3", title: "Task 3", completed: false, dueDate: "2025-09-30" }, // overdue
+    ];
+
+    const summary = summarizeTodosLocally(todos);
+    expect(summary).toContain("ToDo 3件");
+    expect(summary).toContain("完了1");
+    expect(summary).toContain("未完了2");
+    // Note: With YYYY-MM-DD string comparison, both "2025-10-15" < "2025-11-01" and "2025-09-30" < "2025-11-01" are true
+    // So overdue count is 2, not 1 (both Task 2 and Task 3 are overdue as of 2025-11-01)
+    expect(summary).toContain("期限切れ 2 件");
+  });
+
+  it("handles empty todos array", () => {
+    const summary = summarizeTodosLocally([]);
+    expect(summary).toContain("ToDo 0件");
+    expect(summary).toContain("完了0");
+    expect(summary).toContain("未完了0");
+    expect(summary).toContain("期限切れ 0 件");
   });
 });

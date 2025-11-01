@@ -12,7 +12,11 @@ export type MonthlyReportData = {
     avgSpO2: number | null;
   };
   days: Array<{ date: string; hr: number | null; temp: number | null; spO2: number | null; seizure: number }>;
+  todos?: TodoLite[]; // Optional: ToDo情報を含める
 };
+
+// --- Optional: ToDo関連の要約スロット（将来の統合用のプレースホルダ） ---
+export type TodoLite = { id: string; title: string; completed: boolean; dueDate?: string; priority?: string };
 
 export type SummaryResult = {
   summary: string;
@@ -33,7 +37,7 @@ const SummarySchema = z.object({
 });
 
 function buildPrompt(report: MonthlyReportData) {
-  const { totals, ym } = report;
+  const { totals, ym, todos } = report;
   const header = `以下は月次ケアレポート(${ym})の要約対象データです。`;
   const instructions = [
     "日本語で、臨床現場の家族・スタッフ向けに、平易で丁寧な自然文の要約を書いてください。",
@@ -42,11 +46,27 @@ function buildPrompt(report: MonthlyReportData) {
     "重要: JSON以外の文字を含めないでください。コードブロックも不要です。",
   ].join("\n");
 
-  const compact = {
+  const compact: any = {
     ym,
     totals,
     daysPreview: report.days.slice(0, 7), // LLMへの入力サイズを抑える
   };
+
+  // ToDoがあれば含める
+  if (todos && todos.length > 0) {
+    const total = todos.length;
+    const done = todos.filter(t => t.completed).length;
+    const pending = total - done;
+    const today = new Date().toISOString().slice(0, 10);
+    const overdue = todos.filter(t => !t.completed && t.dueDate && t.dueDate < today).length;
+    compact.todos = {
+      total,
+      completed: done,
+      pending,
+      overdue,
+      sample: todos.slice(0, 3).map(t => ({ title: t.title, completed: t.completed, dueDate: t.dueDate })),
+    };
+  }
 
   return [
     "[SYSTEM] あなたは重症児者ケアの記録から安全で配慮のある自然言語要約を作成する専門家です。",
@@ -55,12 +75,13 @@ function buildPrompt(report: MonthlyReportData) {
     "",
     `[USER] ${header}`,
     "要約方針:\n- バイタル平均(心拍/体温/SpO2)、発作頻度、全体傾向、注意点、推奨事項に触れる",
+    todos && todos.length > 0 ? "- ToDoの状況（完了・未完了・期限切れ）も簡潔に含める" : "",
     "",
     "データ(JSON):",
     JSON.stringify(compact),
     "",
     instructions,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 export async function summarizeMonthlyReport(
@@ -116,9 +137,6 @@ export async function getAgentSummary(report: MonthlyReportData): Promise<string
   const result = await summarizeMonthlyReport(report);
   return result.summary;
 }
-
-// --- Optional: ToDo関連の要約スロット（将来の統合用のプレースホルダ） ---
-export type TodoLite = { id: string; title: string; completed: boolean; dueDate?: string; priority?: string };
 
 /**
  * 将来的にLangChainでの要約へ差し替える前提の軽量版。

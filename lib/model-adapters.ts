@@ -1,4 +1,5 @@
 ﻿import type { DiaryEntry, MedicalRecord } from "../lib/db";
+import { UnifiedEntrySchema } from "../schemas/unified";
 import type { UnifiedEntry, UnifiedRecordT, UnifiedCategory } from "../schemas/unified";
 
 export type JournalEntry = {
@@ -9,17 +10,20 @@ export type JournalEntry = {
 };
 
 export function journalToUnified(j: JournalEntry): UnifiedEntry {
-  return {
+  const base = {
     id: j.id,
     date: j.date,
     category: (j.category as UnifiedCategory) || "other",
-    records: [{
-      time: j.date,
-      notes: JSON.stringify(j.data),
-    }],
+    records: [
+      {
+        time: j.date,
+        notes: JSON.stringify(j.data),
+      },
+    ],
     createdAt: j.date,
     updatedAt: j.date,
-  };
+  } as Partial<UnifiedEntry>;
+  return UnifiedEntrySchema.parse(base);
 }
 
 export function unifiedToJournal(u: UnifiedEntry): JournalEntry {
@@ -51,7 +55,7 @@ export function dexieDiaryToUnified(d: DiaryEntry, opts?: { userId?: string; ser
   if (d.records.some(r => r.heartRate || r.temperature || r.oxygenSaturation)) category = "vitals";
   else if (d.records.some(r => r.seizureType)) category = "seizure";
 
-  return {
+  const base = {
     id: d.id,
     date: d.date,
     category,
@@ -66,7 +70,8 @@ export function dexieDiaryToUnified(d: DiaryEntry, opts?: { userId?: string; ser
     updatedAt: d.updatedAt,
     userId: opts?.userId,
     serviceId: opts?.serviceId,
-  };
+  } as Partial<UnifiedEntry>;
+  return UnifiedEntrySchema.parse(base);
 }
 
 export function unifiedToDexieDiary(u: UnifiedEntry): DiaryEntry {
