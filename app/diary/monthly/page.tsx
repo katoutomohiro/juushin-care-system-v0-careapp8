@@ -22,9 +22,13 @@ const TEMP_THRESHOLD_LOW = 36.0;
 export default function Monthly() {
   const [data, setData] = useState<any[]>([]);
   const ym = new Date().toISOString().slice(0, 7);
+  const [month, setMonth] = useState<string>(ym);
+  const [serviceId, setServiceId] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [downloading, setDownloading] = useState<boolean>(false);
 
   useEffect(() => {
-    monthlyStats(ym).then((stats) => {
+    monthlyStats(month).then((stats) => {
       // 日付ごとに集計
       const grouped = stats.reduce((acc: any, item: any) => {
         if (!acc[item.date]) {
@@ -56,11 +60,83 @@ export default function Monthly() {
 
       setData(result);
     });
-  }, [ym]);
+  }, [month]);
+
+  async function handleDownloadAIReport() {
+    try {
+      setDownloading(true);
+      const daysRaw = await monthlyStats(month);
+      const entries = daysRaw.length;
+      const seizureCount = daysRaw.reduce((s: number, d: any) => s + (d.seizure || 0), 0);
+      const avg = (arr: Array<number | null>) => {
+        const nums = arr.filter((v): v is number => typeof v === 'number');
+        if (nums.length === 0) return null;
+        const v = nums.reduce((a, b) => a + b, 0) / nums.length;
+        return Math.round(v * 10) / 10;
+      };
+      const reportData = {
+        ym: month,
+        totals: {
+          entries,
+          seizureCount,
+          avgHeartRate: avg(daysRaw.map((d: any) => d.hr)),
+          avgTemperature: avg(daysRaw.map((d: any) => d.temp)),
+          avgSpO2: avg(daysRaw.map((d: any) => d.spO2)),
+        },
+        days: daysRaw.map((d: any) => ({
+          date: d.date,
+          hr: d.hr,
+          temp: d.temp,
+          spO2: d.spO2,
+          seizure: d.seizure,
+        })),
+        // 表示用補助
+        userId,
+        serviceId,
+        startDate: `${month}-01`,
+        endDate: `${month}-31`,
+      } as any;
+
+      const { generateMonthlyReportPDF } = await import('../../../components/pdf/monthly-report-doc');
+      const blob = await generateMonthlyReportPDF(reportData);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `monthly-report-ai-${month}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to generate AI monthly PDF', e);
+      alert('PDF生成に失敗しました。しばらくしてから再度お試しください。');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Monthly Vitals ({ym})</h1>
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="text-2xl font-bold">Monthly Vitals ({month})</h1>
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col text-sm">
+            <label className="text-gray-600 mb-1">対象月</label>
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="border rounded px-2 py-1" aria-label="対象月" />
+          </div>
+          <div className="flex flex-col text-sm">
+            <label className="text-gray-600 mb-1">Service ID</label>
+            <input value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="border rounded px-2 py-1" placeholder="svc_..." aria-label="Service ID" />
+          </div>
+          <div className="flex flex-col text-sm">
+            <label className="text-gray-600 mb-1">User ID</label>
+            <input value={userId} onChange={(e) => setUserId(e.target.value)} className="border rounded px-2 py-1" placeholder="usr_..." aria-label="User ID" />
+          </div>
+          <button onClick={handleDownloadAIReport} disabled={downloading} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded disabled:opacity-50" aria-busy={downloading} aria-live="polite">
+            {downloading ? '生成中…' : 'AI月次要約PDF'}
+          </button>
+        </div>
+      </div>
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Heart Rate (bpm)</h2>

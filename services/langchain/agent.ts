@@ -1,6 +1,18 @@
 import { z } from "zod";
 import { createChatModel } from "../../config/langchain";
-import type { MonthlyReportData } from "../../reports/generateMonthlyReport";
+
+// Minimal input contract for monthly report to avoid cross-module coupling
+export type MonthlyReportData = {
+  ym: string;
+  totals: {
+    entries: number;
+    seizureCount: number;
+    avgHeartRate: number | null;
+    avgTemperature: number | null;
+    avgSpO2: number | null;
+  };
+  days: Array<{ date: string; hr: number | null; temp: number | null; spO2: number | null; seizure: number }>;
+};
 
 export type SummaryResult = {
   summary: string;
@@ -97,4 +109,10 @@ export async function summarizeMonthlyReport(
     metrics: { ...report.totals },
     model: (model as any).model ?? undefined,
   } as SummaryResult;
+}
+
+// Convenience wrapper to return only summary text for simple consumers (e.g., PDF rendering)
+export async function getAgentSummary(report: MonthlyReportData): Promise<string> {
+  const result = await summarizeMonthlyReport(report);
+  return result.summary;
 }
