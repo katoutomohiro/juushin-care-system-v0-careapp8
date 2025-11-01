@@ -12,6 +12,8 @@ import { FACE_OPTIONS, RESPONSE_GOOD_FAIR_NONE, INTERVENTION_OPTIONS, AVERSIVE_S
 import { saveExpressionLog } from "@/lib/persistence/expression";
 import { toast } from "sonner";
 
+export const dynamic = "force-dynamic";
+
 function ExpressionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
