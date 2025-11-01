@@ -194,10 +194,13 @@ Maintaining a living plan ensures alignment across human developers and AI agent
 
 ## 実装進捗（本ブランチ）
 
-- 追加: 統一データモデル `schemas/unified.ts`（既存コードへの影響なし、将来のAPI統合に備え）
-- 追加: 変換アダプタ `lib/model-adapters.ts`（journal/Dexie日誌 ↔ unified）＋ ユニットテスト
-- 追加: AIモニタリングMVP `services/ai-monitoring/`（移動平均・zスコア・しきい値アラート）＋ テスト
-- 追加: 月次レポート生成 `reports/generateMonthlyReport.ts` と印刷用コンポーネント `components/pdf/monthly-report-doc.tsx`
-- 追加: 家族ポータル仮ページ `app/family/page.tsx`（既存フロー不変）
+- ✅ 統一データモデル `schemas/unified.ts`（既存コードへの影響なし、将来のAPI統合に備え）
+- ✅ 変換アダプタ `lib/model-adapters.ts`（journal/Dexie日誌 ↔ unified）＋ ユニットテスト
+- ✅ AIモニタリングMVP `services/ai-monitoring/`（移動平均・zスコア・しきい値アラート）＋ テスト
+- ✅ 月次レポート生成 `reports/generateMonthlyReport.ts` と印刷用コンポーネント `components/pdf/monthly-report-doc.tsx`
+- ✅ 家族ポータル仮ページ `app/family/page.tsx`（既存フロー不変）
+- ✅ 共通日誌UI `components/diary/CommonDiary.tsx`（unified準拠、カテゴリ選択、ARIA属性強化）
+- ✅ 月次レポート印刷統合 `app/diary/monthly/page.tsx`（印刷ボタン＋モーダル表示）
+- ✅ AIしきい値設定UI `app/settings/thresholds/page.tsx`（localStorage永続化、ARIA対応）
 
-次段階では unified スキーマを段階的に既存フォーム/APIへ適用しつつ、しきい値設定UIとPDF出力導線を整備します。
+次段階では unified スキーマを段階的に既存フォーム/APIへ適用しつつ、LangChainベースのマニュアルQ&Aエージェントの統合を検討します。
