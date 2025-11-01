@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie';
+import type { TodoItem } from '../schemas/todo';
 
 export interface MedicalRecord {
   time: string;
@@ -31,11 +32,18 @@ export interface DiaryEntry {
 
 export class DiaryDatabase extends Dexie {
   diaryEntries!: Table<DiaryEntry, string>;
+  todos!: Table<TodoItem, string>;
 
   constructor() {
     super('DiaryDatabase');
+    // v1: diaryEntries only
     this.version(1).stores({
       diaryEntries: 'id, date, createdAt, updatedAt'
+    });
+    // v2: add todos table
+    this.version(2).stores({
+      diaryEntries: 'id, date, createdAt, updatedAt',
+      todos: 'id, completed, dueDate, priority, createdAt, updatedAt'
     });
   }
 }

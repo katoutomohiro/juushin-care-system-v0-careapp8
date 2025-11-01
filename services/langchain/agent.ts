@@ -116,3 +116,19 @@ export async function getAgentSummary(report: MonthlyReportData): Promise<string
   const result = await summarizeMonthlyReport(report);
   return result.summary;
 }
+
+// --- Optional: ToDo関連の要約スロット（将来の統合用のプレースホルダ） ---
+export type TodoLite = { id: string; title: string; completed: boolean; dueDate?: string; priority?: string };
+
+/**
+ * 将来的にLangChainでの要約へ差し替える前提の軽量版。
+ * 現状はローカル集計で、完了数/未完了数、期限切れの数などを要約テキストにする。
+ */
+export function summarizeTodosLocally(todos: TodoLite[]): string {
+  const total = todos.length;
+  const done = todos.filter(t => t.completed).length;
+  const pending = total - done;
+  const today = new Date().toISOString().slice(0, 10);
+  const overdue = todos.filter(t => !t.completed && t.dueDate && t.dueDate < today).length;
+  return `ToDo ${total}件（完了${done}・未完了${pending}）。期限切れ ${overdue} 件。`;
+}
