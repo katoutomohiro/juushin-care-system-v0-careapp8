@@ -189,3 +189,15 @@ Maintaining a living plan ensures alignment across human developers and AI agent
 5. グラフとレポート機能（PDF出力）
 6. 家族・医療者ポータル
 7. テスト・E2E 自動化
+
+---
+
+## 実装進捗（本ブランチ）
+
+- 追加: 統一データモデル `schemas/unified.ts`（既存コードへの影響なし、将来のAPI統合に備え）
+- 追加: 変換アダプタ `lib/model-adapters.ts`（journal/Dexie日誌 ↔ unified）＋ ユニットテスト
+- 追加: AIモニタリングMVP `services/ai-monitoring/`（移動平均・zスコア・しきい値アラート）＋ テスト
+- 追加: 月次レポート生成 `reports/generateMonthlyReport.ts` と印刷用コンポーネント `components/pdf/monthly-report-doc.tsx`
+- 追加: 家族ポータル仮ページ `app/family/page.tsx`（既存フロー不変）
+
+次段階では unified スキーマを段階的に既存フォーム/APIへ適用しつつ、しきい値設定UIとPDF出力導線を整備します。
