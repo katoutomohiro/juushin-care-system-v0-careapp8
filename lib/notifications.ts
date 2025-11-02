@@ -21,6 +21,17 @@ export async function requestPermission(): Promise<NotificationPermission> {
 }
 
 /**
+ * 必要時のみ許可を要求し、結果をbooleanで返す
+ */
+export async function ensurePermission(): Promise<boolean> {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const res = await Notification.requestPermission();
+  return res === 'granted';
+}
+
+/**
  * Service Workerを登録（/sw.js）
  */
 export async function registerServiceWorker(): Promise<void> {
@@ -39,26 +50,31 @@ export async function registerServiceWorker(): Promise<void> {
 /**
  * ローカル通知を表示（Service Worker経由）
  */
-export async function notifyLocal(title: string, body?: string): Promise<void> {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-    console.warn('[notifyLocal] Service Worker or Notification API not available');
-    return;
+export async function notifyLocal(opts: { title: string; body?: string; data?: any; icon?: string; tag?: string }): Promise<void> {
+  const { title, body = '', data, icon = '/icon-192.png', tag = 'care-app-alert' } = opts;
+  const canNotify = 'serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted';
+  if (canNotify) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, {
+        body,
+        icon,
+        badge: '/badge-96.png',
+        tag,
+        requireInteraction: false,
+        data,
+      });
+      return;
+    } catch (err) {
+      console.warn('[notifyLocal] showNotification failed, fallback to toast:', err);
+    }
   }
-  if (Notification.permission !== 'granted') {
-    console.warn('[notifyLocal] Notification permission not granted');
-    return;
-  }
+  // fallback: toast
   try {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification(title, {
-      body: body || '',
-      icon: '/icon-192.png', // Future: アイコン画像を追加
-      badge: '/badge-96.png',
-      tag: 'care-app-alert',
-      requireInteraction: false,
-    });
-  } catch (err) {
-    console.error('[notifyLocal] failed:', err);
+    const { toast } = await import('sonner');
+    toast(title + (body ? ` — ${body}` : ''));
+  } catch {
+    console.log('[notifyLocal:fallback]', title, body);
   }
 }
 

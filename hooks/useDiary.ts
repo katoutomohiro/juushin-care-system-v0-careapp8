@@ -1,4 +1,6 @@
 import { db, DiaryEntry, MedicalRecord, EditHistory } from '../lib/db';
+import { computeDailyAlerts } from '../services/alerts/computeDailyAlerts';
+import { compareAlertsAndNotify } from '../services/alerts/notify';
 
 /**
  * Dexie ベースの日誌操作フック
@@ -16,6 +18,12 @@ export async function createEntry(entry: Partial<DiaryEntry>): Promise<string> {
     updatedAt: now,
   };
   await db.diaryEntries.put(fullEntry);
+  // S-04: 保存後にアラート再計算と通知
+  const userId = 'default'; // S-05でUserContextに置換
+  const ym = fullEntry.date.slice(0, 7);
+  const prev = await db.alerts.where('userId').equals(userId).and(a => a.date === fullEntry.date).toArray();
+  await computeDailyAlerts(ym, userId);
+  await compareAlertsAndNotify(userId, fullEntry.date, prev);
   return fullEntry.id;
 }
 
@@ -43,6 +51,13 @@ export async function updateEntry(id: string, updates: Partial<DiaryEntry>, edit
     editHistory,
     updatedAt: new Date().toISOString(),
   });
+  // S-04: 更新後にアラート再計算と通知
+  const date = updates.date || existing.date;
+  const userId = 'default';
+  const ym = date.slice(0, 7);
+  const prev = await db.alerts.where('userId').equals(userId).and(a => a.date === date).toArray();
+  await computeDailyAlerts(ym, userId);
+  await compareAlertsAndNotify(userId, date, prev);
 }
 
 export async function deleteEntry(id: string): Promise<void> {

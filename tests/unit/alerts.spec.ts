@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '../../lib/db';
 import { computeDailyAlerts } from '../../services/alerts/computeDailyAlerts';
 import { summarizeAlerts } from '../../services/alerts/alertSummary';
 import { ALERT_THRESHOLDS } from '../../services/alerts/constants';
+import { createEntry, updateEntry } from '../../hooks/useDiary';
 
 describe('Alert computation', () => {
   beforeEach(async () => {
@@ -360,5 +361,48 @@ describe('Alert filtering and sorting', () => {
     expect(sorted[0].level).toBe('critical');
     expect(sorted[1].level).toBe('warn');
     expect(sorted[2].level).toBe('info');
+  });
+});
+
+describe('Alert notifications on save (S-04)', () => {
+  beforeEach(async () => {
+    await db.alerts.clear();
+    await db.diaryEntries.clear();
+    // Mock Notification & Service Worker
+    (globalThis as any).Notification = { permission: 'granted', requestPermission: () => Promise.resolve('granted') };
+    (globalThis as any).navigator = {
+      serviceWorker: {
+        ready: Promise.resolve({ showNotification: vi.fn() } as any)
+      }
+    } as any;
+  });
+
+  afterEach(async () => {
+    await db.alerts.clear();
+    await db.diaryEntries.clear();
+  });
+
+  it('notifies once for new warn alert and does not duplicate on same-level recompute', async () => {
+    const date = '2025-10-21';
+    // 1st save: temp 37.6 → warn expected
+    await createEntry({ date, records: [{ time: '09:00', temperature: 37.6 }] });
+    const reg1: any = await (navigator as any).serviceWorker.ready;
+    expect(reg1.showNotification).toHaveBeenCalledTimes(1);
+    // 2nd save: another record but still warn (no upgrade) → no additional notify
+    await createEntry({ date, records: [{ time: '12:00', temperature: 37.7 }] });
+    const reg2: any = await (navigator as any).serviceWorker.ready;
+    expect(reg2.showNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('notifies again when level upgrades to critical', async () => {
+    const date = '2025-10-22';
+    // initial warn
+    await createEntry({ date, records: [{ time: '08:00', temperature: 37.6 }] });
+    const reg1: any = await (navigator as any).serviceWorker.ready;
+    expect(reg1.showNotification).toHaveBeenCalledTimes(1);
+    // upgrade to critical
+    await createEntry({ date, records: [{ time: '13:00', temperature: 38.1 }] });
+    const reg2: any = await (navigator as any).serviceWorker.ready;
+    expect(reg2.showNotification).toHaveBeenCalledTimes(2);
   });
 });
