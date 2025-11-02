@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { db, type Alert } from '../../lib/db';
+import { db, type Alert, type AlertType, type AlertLevel } from '../../lib/db';
 
 function getLevelBadgeClass(level: string): string {
   switch (level) {
@@ -11,11 +11,16 @@ function getLevelBadgeClass(level: string): string {
   }
 }
 
+type SortBy = 'createdAt-desc' | 'createdAt-asc' | 'level-desc';
+
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('default');
   const [days, setDays] = useState(7);
+  const [typeFilter, setTypeFilter] = useState<AlertType | 'all'>('all');
+  const [levelFilter, setLevelFilter] = useState<AlertLevel | 'all'>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('createdAt-desc');
 
   async function load() {
     setLoading(true);
@@ -23,11 +28,28 @@ export default function AlertsPage() {
     cutoff.setDate(cutoff.getDate() - days);
     const cutoffDate = cutoff.toISOString().slice(0, 10);
 
-    const rows = await db.alerts
+    let rows = await db.alerts
       .where('userId').equals(userId)
       .and(a => a.date >= cutoffDate)
-      .reverse()
-      .sortBy('createdAt');
+      .toArray();
+
+    // Apply filters
+    if (typeFilter !== 'all') {
+      rows = rows.filter(a => a.type === typeFilter);
+    }
+    if (levelFilter !== 'all') {
+      rows = rows.filter(a => a.level === levelFilter);
+    }
+
+    // Apply sort
+    if (sortBy === 'createdAt-desc') {
+      rows.sort((a, b) => b.createdAt - a.createdAt);
+    } else if (sortBy === 'createdAt-asc') {
+      rows.sort((a, b) => a.createdAt - b.createdAt);
+    } else if (sortBy === 'level-desc') {
+      const levelPriority = { critical: 3, warn: 2, info: 1 };
+      rows.sort((a, b) => (levelPriority[b.level] || 0) - (levelPriority[a.level] || 0));
+    }
 
     setAlerts(rows.slice(0, 20)); // limit to 20
     setLoading(false);
@@ -35,13 +57,21 @@ export default function AlertsPage() {
 
   useEffect(() => {
     load();
-  }, [userId, days]);
+  }, [userId, days, typeFilter, levelFilter, sortBy]);
+
+  function getDetailLink(alert: Alert): string {
+    // Deep link to daily-log or seizure page for the date
+    if (alert.type === 'seizure') {
+      return `/daily-log/seizure?date=${alert.date}`;
+    }
+    return `/daily-log?date=${alert.date}`;
+  }
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">⚠️ アラート一覧</h1>
 
-      <div className="flex gap-3 items-end bg-gray-50 p-4 rounded border">
+      <div className="flex flex-wrap gap-3 items-end bg-gray-50 p-4 rounded border">
         <div>
           <label className="block text-sm text-gray-600 mb-1" htmlFor="alert-user">User ID</label>
           <input
@@ -63,6 +93,49 @@ export default function AlertsPage() {
             <option value={7}>直近7日</option>
             <option value={14}>直近14日</option>
             <option value={30}>直近30日</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1" htmlFor="alert-type">タイプ</label>
+          <select
+            id="alert-type"
+            className="border rounded px-3 py-2"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as AlertType | 'all')}
+          >
+            <option value="all">すべて</option>
+            <option value="vital">バイタル</option>
+            <option value="seizure">てんかん</option>
+            <option value="hydration">水分</option>
+            <option value="sleep">睡眠</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1" htmlFor="alert-level">レベル</label>
+          <select
+            id="alert-level"
+            className="border rounded px-3 py-2"
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value as AlertLevel | 'all')}
+          >
+            <option value="all">すべて</option>
+            <option value="critical">重大</option>
+            <option value="warn">警告</option>
+            <option value="info">情報</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1" htmlFor="alert-sort">並び順</label>
+          <select
+            id="alert-sort"
+            className="border rounded px-3 py-2"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+          >
+            <option value="createdAt-desc">新しい順</option>
+            <option value="createdAt-asc">古い順</option>
+            <option value="level-desc">重要度順</option>
           </select>
         </div>
         <button
@@ -91,6 +164,12 @@ export default function AlertsPage() {
                   {a.metrics && ` / ${JSON.stringify(a.metrics)}`}
                 </div>
               </div>
+              <a
+                href={getDetailLink(a)}
+                className="text-sky-600 hover:text-sky-700 text-sm font-medium whitespace-nowrap"
+              >
+                詳細へ →
+              </a>
             </div>
           ))
         )}

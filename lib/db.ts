@@ -74,7 +74,7 @@ export class DiaryDatabase extends Dexie {
       diaryEntries: 'id, date, createdAt, updatedAt',
       todos: 'id, completed, dueDate, priority, createdAt, updatedAt',
       medications: 'id, userId, date, time, taken',
-      alerts: 'id, userId, date, type, level, createdAt'
+      alerts: 'id, userId, date, type, level, createdAt, [userId+date+type+level]'
     });
   }
 }

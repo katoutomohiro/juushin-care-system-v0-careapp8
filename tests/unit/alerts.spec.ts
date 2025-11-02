@@ -172,3 +172,193 @@ describe('Alert summary', () => {
     expect(summary.hydrationLowDays).toBe(0);
   });
 });
+
+describe('Alert filtering and sorting', () => {
+  beforeEach(async () => {
+    await db.alerts.clear();
+  });
+
+  afterEach(async () => {
+    await db.alerts.clear();
+  });
+
+  it('filters alerts by date range (7 days)', async () => {
+    const today = new Date();
+    const dates = Array.from({ length: 10 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      return d.toISOString().slice(0, 10);
+    });
+
+    await db.alerts.bulkPut(
+      dates.map((date, idx) => ({
+        id: `alert-${idx}`,
+        userId: 'user1',
+        date,
+        type: 'vital' as const,
+        level: 'warn' as const,
+        message: 'test',
+        createdAt: Date.now() - idx * 86400000,
+      }))
+    );
+
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+    const filtered = await db.alerts
+      .where('userId').equals('user1')
+      .and(a => a.date >= cutoffDate)
+      .toArray();
+
+    expect(filtered.length).toBe(8); // today + 7 days back = 8 days
+  });
+
+  it('filters alerts by type', async () => {
+    await db.alerts.bulkPut([
+      {
+        id: 't1',
+        userId: 'user1',
+        date: '2025-10-01',
+        type: 'vital',
+        level: 'warn',
+        message: 'vital msg',
+        createdAt: Date.now(),
+      },
+      {
+        id: 't2',
+        userId: 'user1',
+        date: '2025-10-02',
+        type: 'seizure',
+        level: 'critical',
+        message: 'seizure msg',
+        createdAt: Date.now(),
+      },
+      {
+        id: 't3',
+        userId: 'user1',
+        date: '2025-10-03',
+        type: 'vital',
+        level: 'info',
+        message: 'vital info',
+        createdAt: Date.now(),
+      },
+    ]);
+
+    const vitalOnly = await db.alerts.where('userId').equals('user1').and(a => a.type === 'vital').toArray();
+    expect(vitalOnly.length).toBe(2);
+  });
+
+  it('filters alerts by level', async () => {
+    await db.alerts.bulkPut([
+      {
+        id: 'l1',
+        userId: 'user1',
+        date: '2025-10-01',
+        type: 'vital',
+        level: 'warn',
+        message: 'warn',
+        createdAt: Date.now(),
+      },
+      {
+        id: 'l2',
+        userId: 'user1',
+        date: '2025-10-02',
+        type: 'vital',
+        level: 'critical',
+        message: 'critical',
+        createdAt: Date.now(),
+      },
+      {
+        id: 'l3',
+        userId: 'user1',
+        date: '2025-10-03',
+        type: 'vital',
+        level: 'info',
+        message: 'info',
+        createdAt: Date.now(),
+      },
+    ]);
+
+    const criticalOnly = await db.alerts.where('userId').equals('user1').and(a => a.level === 'critical').toArray();
+    expect(criticalOnly.length).toBe(1);
+    expect(criticalOnly[0].level).toBe('critical');
+  });
+
+  it('sorts alerts by createdAt descending', async () => {
+    await db.alerts.bulkPut([
+      {
+        id: 's1',
+        userId: 'user1',
+        date: '2025-10-01',
+        type: 'vital',
+        level: 'warn',
+        message: 'oldest',
+        createdAt: 1000,
+      },
+      {
+        id: 's2',
+        userId: 'user1',
+        date: '2025-10-02',
+        type: 'vital',
+        level: 'warn',
+        message: 'newest',
+        createdAt: 3000,
+      },
+      {
+        id: 's3',
+        userId: 'user1',
+        date: '2025-10-03',
+        type: 'vital',
+        level: 'warn',
+        message: 'middle',
+        createdAt: 2000,
+      },
+    ]);
+
+    const sorted = (await db.alerts.where('userId').equals('user1').toArray()).sort((a, b) => b.createdAt - a.createdAt);
+    expect(sorted[0].message).toBe('newest');
+    expect(sorted[2].message).toBe('oldest');
+  });
+
+  it('sorts alerts by level priority (critical > warn > info)', async () => {
+    await db.alerts.bulkPut([
+      {
+        id: 'p1',
+        userId: 'user1',
+        date: '2025-10-01',
+        type: 'vital',
+        level: 'info',
+        message: 'info',
+        createdAt: Date.now(),
+      },
+      {
+        id: 'p2',
+        userId: 'user1',
+        date: '2025-10-02',
+        type: 'vital',
+        level: 'critical',
+        message: 'critical',
+        createdAt: Date.now(),
+      },
+      {
+        id: 'p3',
+        userId: 'user1',
+        date: '2025-10-03',
+        type: 'vital',
+        level: 'warn',
+        message: 'warn',
+        createdAt: Date.now(),
+      },
+    ]);
+
+    const levelPriority = { critical: 3, warn: 2, info: 1 };
+    const sorted = (await db.alerts.where('userId').equals('user1').toArray()).sort(
+      (a, b) => (levelPriority[b.level] || 0) - (levelPriority[a.level] || 0)
+    );
+
+    expect(sorted[0].level).toBe('critical');
+    expect(sorted[1].level).toBe('warn');
+    expect(sorted[2].level).toBe('info');
+  });
+});

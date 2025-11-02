@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import { ServiceWorkerRegistration } from "./service-worker-registration"
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body>
+        <ServiceWorkerRegistration />
         {children}
         <Toaster />
       </body>
