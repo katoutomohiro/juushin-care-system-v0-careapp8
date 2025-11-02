@@ -34,6 +34,7 @@ export interface DiaryEntry {
 export class DiaryDatabase extends Dexie {
   diaryEntries!: Table<DiaryEntry, string>;
   todos!: Table<TodoItem, string>;
+  medications!: Table<Medication, string>;
 
   constructor() {
     super('DiaryDatabase');
@@ -45,6 +46,13 @@ export class DiaryDatabase extends Dexie {
     this.version(2).stores({
       diaryEntries: 'id, date, createdAt, updatedAt',
       todos: 'id, completed, dueDate, priority, createdAt, updatedAt'
+    });
+    // v3: add medications table
+    // Note: medication.id is string per schema; use string primary key (no auto-increment).
+    this.version(3).stores({
+      diaryEntries: 'id, date, createdAt, updatedAt',
+      todos: 'id, completed, dueDate, priority, createdAt, updatedAt',
+      medications: 'id, userId, date, time, taken'
     });
   }
 }
