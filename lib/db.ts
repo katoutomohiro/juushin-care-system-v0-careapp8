@@ -1,5 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import type { TodoItem } from '../schemas/todo';
+import type { Medication } from '../schemas/medication';
 
 export interface MedicalRecord {
   time: string;
