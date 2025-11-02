@@ -14,6 +14,7 @@ export type MonthlyReportData = {
   days: Array<{ date: string; hr: number | null; temp: number | null; spO2: number | null; seizure: number }>;
   todos?: TodoLite[]; // Optional: ToDo情報を含める
   medicationSummary?: MedicationSummary; // Optional: 服薬統計
+  alertSummary?: AlertSummary; // Optional: アラート統計
 };
 
 // --- Optional: ToDo関連の要約スロット（将来の統合用のプレースホルダ） ---
@@ -24,6 +25,15 @@ export type MedicationSummary = {
   taken: number;
   missed: number;
   rate: number; // %
+};
+
+export type AlertSummary = {
+  warnDays: number;
+  criticalDays: number;
+  feverDays: number;
+  hypothermiaDays: number;
+  seizureDays: number;
+  hydrationLowDays: number;
 };
 
 export type SummaryResult = {
@@ -45,7 +55,7 @@ const SummarySchema = z.object({
 });
 
 function buildPrompt(report: MonthlyReportData) {
-  const { totals, ym, todos, medicationSummary } = report;
+  const { totals, ym, todos, medicationSummary, alertSummary } = report;
   const header = `以下は月次ケアレポート(${ym})の要約対象データです。`;
   const instructions = [
     "日本語で、臨床現場の家族・スタッフ向けに、平易で丁寧な自然文の要約を書いてください。",
@@ -81,15 +91,21 @@ function buildPrompt(report: MonthlyReportData) {
     compact.medications = medicationSummary;
   }
 
+  // アラートサマリがあれば含める
+  if (alertSummary) {
+    compact.alerts = alertSummary;
+  }
+
   return [
     "[SYSTEM] あなたは重症児者ケアの記録から安全で配慮のある自然言語要約を作成する専門家です。",
     "推測は避け、事実ベースで、否定的な表現は避けて前向きに書きます。",
     "数値は小数1桁までに丸め、単位は適切に省略しても構いません。",
     "",
     `[USER] ${header}`,
-  "要約方針:\n- バイタル平均(心拍/体温/SpO2)、発作頻度、全体傾向、注意点、推奨事項に触れる",
+    "要約方針:\n- バイタル平均(心拍/体温/SpO2)、発作頻度、全体傾向、注意点、推奨事項に触れる",
     todos && todos.length > 0 ? "- ToDoの状況（完了・未完了・期限切れ）も簡潔に含める" : "",
-  medicationSummary ? "- 服薬状況（総数/服薬済み/未服薬/服薬率）も簡潔に含める" : "",
+    medicationSummary ? "- 服薬状況（総数/服薬済み/未服薬/服薬率）も簡潔に含める" : "",
+    alertSummary ? "- アラート傾向（警告日数/重大日数/発熱/低体温/てんかん）も簡潔に含める" : "",
     "",
     "データ(JSON):",
     JSON.stringify(compact),

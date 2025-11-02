@@ -1,6 +1,8 @@
 import { monthlyStats } from "../../hooks/useDiary";
 import { db } from "../../lib/db";
 import type { MonthlyReportData } from "../langchain/agent";
+import { computeDailyAlerts } from "../alerts/computeDailyAlerts";
+import { summarizeAlerts, type AlertSummary } from "../alerts/alertSummary";
 
 export type MedicationSummary = {
   total: number;
@@ -16,7 +18,12 @@ function round1(n: number) {
 export async function generateMonthlyReport(
   ym: string,
   opts?: { userId?: string; serviceId?: string }
-): Promise<MonthlyReportData & { userId?: string; serviceId?: string; startDate: string; endDate: string; medicationSummary?: MedicationSummary }> {
+): Promise<MonthlyReportData & { userId?: string; serviceId?: string; startDate: string; endDate: string; medicationSummary?: MedicationSummary; alertSummary?: AlertSummary }> {
+  const userId = opts?.userId || 'default';
+  
+  // Compute and save alerts for this month
+  await computeDailyAlerts(ym, userId);
+  
   const daysRaw = await monthlyStats(ym);
   const entries = daysRaw.length;
   const seizureCount = daysRaw.reduce((s: number, d: any) => s + (d.seizure || 0), 0);
@@ -42,7 +49,10 @@ export async function generateMonthlyReport(
   const rate = total > 0 ? round1((taken / total) * 100) : 0;
   const medicationSummary: MedicationSummary | undefined = total > 0 ? { total, taken, missed, rate } : { total, taken, missed, rate };
 
-  const report: MonthlyReportData & { userId?: string; serviceId?: string; startDate: string; endDate: string; medicationSummary?: MedicationSummary } = {
+  // Alert summary
+  const alertSummary = await summarizeAlerts(ym, userId);
+
+  const report: MonthlyReportData & { userId?: string; serviceId?: string; startDate: string; endDate: string; medicationSummary?: MedicationSummary; alertSummary?: AlertSummary } = {
     ym,
     totals: {
       entries,
@@ -63,6 +73,7 @@ export async function generateMonthlyReport(
     startDate,
     endDate,
     medicationSummary,
+    alertSummary,
   };
 
   return report;

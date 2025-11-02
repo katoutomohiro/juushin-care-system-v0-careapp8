@@ -18,6 +18,7 @@
     "@edge-runtime/vm": "latest",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3",
+    "@langchain/openai": "^1.0.0",
     "@playwright/test": "latest",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
@@ -75,6 +76,7 @@
     "input-otp": "latest",
     "jiti": "latest",
     "jsdom": "latest",
+    "langchain": "^1.0.2",
     "less": "latest",
     "lightningcss": "latest",
     "lucide-react": "^0.454.0",
@@ -112,6 +114,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "15.5.5",
+    "fake-indexeddb": "^6.2.4",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

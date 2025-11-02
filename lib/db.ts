@@ -2,6 +2,20 @@ import Dexie, { Table } from 'dexie';
 import type { TodoItem } from '../schemas/todo';
 import type { Medication } from '../schemas/medication';
 
+export type AlertLevel = 'info' | 'warn' | 'critical';
+export type AlertType = 'vital' | 'seizure' | 'hydration' | 'sleep' | 'other';
+
+export interface Alert {
+  id: string;           // uuid
+  userId: string;       // 'default' など
+  date: string;         // YYYY-MM-DD
+  type: AlertType;
+  level: AlertLevel;
+  message: string;
+  metrics?: any;        // {tempMax: 38.2, seizures: 3} など
+  createdAt: number;    // Date.now()
+}
+
 export interface MedicalRecord {
   time: string;
   heartRate?: number;
@@ -35,6 +49,7 @@ export class DiaryDatabase extends Dexie {
   diaryEntries!: Table<DiaryEntry, string>;
   todos!: Table<TodoItem, string>;
   medications!: Table<Medication, string>;
+  alerts!: Table<Alert, string>;
 
   constructor() {
     super('DiaryDatabase');
@@ -53,6 +68,13 @@ export class DiaryDatabase extends Dexie {
       diaryEntries: 'id, date, createdAt, updatedAt',
       todos: 'id, completed, dueDate, priority, createdAt, updatedAt',
       medications: 'id, userId, date, time, taken'
+    });
+    // v4: add alerts table
+    this.version(4).stores({
+      diaryEntries: 'id, date, createdAt, updatedAt',
+      todos: 'id, completed, dueDate, priority, createdAt, updatedAt',
+      medications: 'id, userId, date, time, taken',
+      alerts: 'id, userId, date, type, level, createdAt'
     });
   }
 }

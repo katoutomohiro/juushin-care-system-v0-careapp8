@@ -171,3 +171,30 @@ describe("LLM prompt integration: medications", () => {
     expect(res.summary).toContain("服薬状況");
   });
 });
+
+describe("LLM prompt integration: alerts", () => {
+  it("includes alert summary in prompt when provided", async () => {
+    const sampleWithAlerts = {
+      ...sample,
+      alertSummary: {
+        warnDays: 3,
+        criticalDays: 1,
+        feverDays: 2,
+        hypothermiaDays: 1,
+        seizureDays: 2,
+        hydrationLowDays: 0,
+      },
+    } as any;
+
+    const inst: any = (ChatOpenAIMock as any).__instance;
+    inst.setMock(async (input: string) => {
+      expect(input).toContain("alerts");
+      expect(input).toContain("warnDays");
+      expect(input).toContain("criticalDays");
+      return { content: '{"summary":"アラート傾向も含む要約","highlights":["発熱2日","てんかん2日"]}' };
+    });
+
+    const res = await summarizeMonthlyReport(sampleWithAlerts);
+    expect(res.summary).toContain("アラート");
+  });
+});
