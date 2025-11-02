@@ -23,7 +23,7 @@ vi.mock("@langchain/openai", () => {
   return { ChatOpenAI: ChatOpenAIProxy };
 });
 
-import { summarizeMonthlyReport, summarizeTodosLocally } from "../../services/langchain/agent";
+import { summarizeMonthlyReport, summarizeTodosLocally, summarizeMedications } from "../../services/langchain/agent";
 import { ChatOpenAI as ChatOpenAIMock } from "@langchain/openai";
 
 const sample: MonthlyReportData = {
@@ -125,5 +125,49 @@ describe("summarizeTodosLocally", () => {
     expect(summary).toContain("完了0");
     expect(summary).toContain("未完了0");
     expect(summary).toContain("期限切れ 0 件");
+  });
+});
+
+describe("summarizeMedications", () => {
+  it("returns correct counts and rate for normal data", () => {
+    const meds = [
+      { taken: true },
+      { taken: false },
+      { taken: true },
+      { taken: false },
+    ];
+    const s = summarizeMedications(meds as any);
+    expect(s.total).toBe(4);
+    expect(s.taken).toBe(2);
+    expect(s.missed).toBe(2);
+    expect(typeof s.rate).toBe("number");
+    // 2/4 = 50%
+    expect(s.rate).toBe(50);
+  });
+
+  it("handles empty or null data", () => {
+    expect(summarizeMedications([])).toEqual({ total: 0, taken: 0, missed: 0, rate: 0 });
+    expect(summarizeMedications(null as any)).toEqual({ total: 0, taken: 0, missed: 0, rate: 0 });
+    expect(summarizeMedications(undefined as any)).toEqual({ total: 0, taken: 0, missed: 0, rate: 0 });
+  });
+});
+
+describe("LLM prompt integration: medications", () => {
+  it("includes medications summary in prompt when provided", async () => {
+    const sampleWithMed = {
+      ...sample,
+      medicationSummary: { total: 10, taken: 8, missed: 2, rate: 80 },
+    } as any;
+
+    const inst: any = (ChatOpenAIMock as any).__instance;
+    inst.setMock(async (input: string) => {
+      expect(input).toContain("medications");
+      expect(input).toContain("taken");
+      expect(input).toContain("missed");
+      return { content: '{"summary":"服薬状況も考慮した要約","highlights":["服薬率80%"]}' };
+    });
+
+    const res = await summarizeMonthlyReport(sampleWithMed);
+    expect(res.summary).toContain("服薬状況");
   });
 });

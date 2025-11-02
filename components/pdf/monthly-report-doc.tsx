@@ -1,5 +1,5 @@
 import React from "react";
-import { getAgentSummary, summarizeTodosLocally, type MonthlyReportData, type TodoLite } from "../../services/langchain/agent";
+import { getAgentSummary, summarizeTodosLocally, type MonthlyReportData } from "../../services/langchain/agent";
 
 // PDF表示用にUIの補助プロパティを任意で許可する拡張型
 export type MonthlyReportViewData = MonthlyReportData & {
@@ -17,6 +17,12 @@ export async function generateMonthlyReportPDF(reportData: MonthlyReportViewData
   // ToDoローカル要約（あれば）
   const todoSummary = reportData.todos && reportData.todos.length > 0
     ? summarizeTodosLocally(reportData.todos)
+    : null;
+
+  // 服薬サマリ（あれば整形）
+  const med = reportData.medicationSummary;
+  const medSummaryText = med
+    ? `総数 ${med.total} 件 / 服薬済み ${med.taken} 件 / 未服薬 ${med.missed} 件 / 服薬率 ${med.rate}%`
     : null;
 
   // 動的インポートで@react-pdf/rendererを読み込み、ビルド時の不要バンドルを回避
@@ -42,6 +48,10 @@ export async function generateMonthlyReportPDF(reportData: MonthlyReportViewData
       // ToDo要約（あれば表示）
       todoSummary ? React.createElement(Text, { style: { marginTop: 16, fontWeight: 700 } }, "📝 ToDo状況") : null,
       todoSummary ? React.createElement(Text, null, todoSummary) : null
+      ,
+      // 服薬状況（あれば表示）
+      medSummaryText ? React.createElement(Text, { style: { marginTop: 16, fontWeight: 700 } }, "💊 服薬状況") : null,
+      medSummaryText ? React.createElement(Text, null, medSummaryText) : null
     )
   );
 

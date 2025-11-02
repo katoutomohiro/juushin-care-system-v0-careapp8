@@ -65,44 +65,15 @@ export default function Monthly() {
   async function handleDownloadAIReport() {
     try {
       setDownloading(true);
-      const daysRaw = await monthlyStats(month);
-      const entries = daysRaw.length;
-      const seizureCount = daysRaw.reduce((s: number, d: any) => s + (d.seizure || 0), 0);
-      const avg = (arr: Array<number | null>) => {
-        const nums = arr.filter((v): v is number => typeof v === 'number');
-        if (nums.length === 0) return null;
-        const v = nums.reduce((a, b) => a + b, 0) / nums.length;
-        return Math.round(v * 10) / 10;
-      };
-      const reportData = {
-        ym: month,
-        totals: {
-          entries,
-          seizureCount,
-          avgHeartRate: avg(daysRaw.map((d: any) => d.hr)),
-          avgTemperature: avg(daysRaw.map((d: any) => d.temp)),
-          avgSpO2: avg(daysRaw.map((d: any) => d.spO2)),
-        },
-        days: daysRaw.map((d: any) => ({
-          date: d.date,
-          hr: d.hr,
-          temp: d.temp,
-          spO2: d.spO2,
-          seizure: d.seizure,
-        })),
-        // 表示用補助
-        userId,
-        serviceId,
-        startDate: `${month}-01`,
-        endDate: `${month}-31`,
-      } as any;
+      const { generateMonthlyReport } = await import('../../../services/reports/generateMonthlyReport');
+      const reportData = await generateMonthlyReport(month, { userId, serviceId });
 
       const { generateMonthlyReportPDF } = await import('../../../components/pdf/monthly-report-doc');
       const blob = await generateMonthlyReportPDF(reportData);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `monthly-report-ai-${month}.pdf`;
+  a.download = `monthly-report-ai-${month}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
