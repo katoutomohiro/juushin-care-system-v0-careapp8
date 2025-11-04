@@ -8,6 +8,7 @@
     "dev:ci": "PORT=3000 next dev",
     "dev:autosave": "node scripts/auto-commit.js",
     "lint": "eslint .",
+    "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "next start",
     "test": "vitest run",
