@@ -282,7 +282,7 @@ export default function WorldClassSoulCareApp() {
         variant: "default",
         title: "PDF プレビューを開きました",
       })
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "PDF プレビューの生成に失敗しました",
@@ -356,7 +356,7 @@ export default function WorldClassSoulCareApp() {
         variant: "default",
         title: "A4記録用紙を開きました",
       })
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "A4記録用紙の生成に失敗しました",
