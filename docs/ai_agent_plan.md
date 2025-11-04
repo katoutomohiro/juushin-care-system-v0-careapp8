@@ -156,3 +156,36 @@ As new agents and features are integrated, update this file. Each phase or major
 - Prompts or instructions for GitHub Copilot and v0 (or other tools) to execute.
 
 Maintaining a living plan ensures alignment across human developers and AI agents and helps us iteratively build the world's best care application for individuals with severe disabilities.
+
+---
+
+## プロジェクト概要（追加）
+
+医療的ケアが必要な重症心身障がい児者に対する世界最高峰アプリを目指し、施設職員や訪問介護員の業務負担軽減と情報共有を実現する。利用者の健康・心理状態をAIでモニタリングし、家族や医療者と連携できる機能を備える。
+
+## 統合すべき主要機能（追加）
+
+1. 一元的なケア記録・クラウド共有（サービス横断でバイタル、食事、排泄、服薬、リハビリ等を記録）
+2. 直感的な入力UI（音声入力・テンプレート・AI補助）
+3. AIによる健康状態と精神状態モニタリング（平常時との差異検知・異常アラート）
+4. データ可視化とレポート出力（月次・年次グラフ、PDFレポート）
+5. 家族・医療者との連携（家族用ポータル、医師連絡帳）
+6. 業務支援（シフト管理、請求連携、災害時オフライン閲覧）
+7. 発達支援・コミュニケーション支援（デジリハや意思表示ツールの統合）
+
+## 優先実装項目（追加）
+
+- 日誌記録の全サービスへの展開と表情・発作記録の統合
+- 利用者データモデルの統合とAPIリファクタリング
+- AIモニタリング基盤の設計・分析処理の実装
+- グラフ表示とレポート機能の追加
+
+## 開発の基本手順（追加）
+
+1. UI設計・UX改善
+2. データベース構造統合
+3. 日誌機能拡張（全サービス展開、表情・発作記録統合）
+4. AIモニタリング導入（統計評価→学習アルゴリズム）
+5. グラフとレポート機能（PDF出力）
+6. 家族・医療者ポータル
+7. テスト・E2E 自動化
