@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '../../lib/db';
 import { computeDailyAlerts } from '../../services/alerts/computeDailyAlerts';
 import { summarizeAlerts } from '../../services/alerts/alertSummary';
-import { ALERT_THRESHOLDS } from '../../services/alerts/constants';
-import { createEntry, updateEntry } from '../../hooks/useDiary';
+import { createEntry } from '../../hooks/useDiary';
 import { compareAlertsAndNotify } from '../../services/alerts/notify';
 
 describe('Alert computation', () => {
