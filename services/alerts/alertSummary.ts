@@ -1,4 +1,4 @@
-import { db, type Alert } from '../../lib/db';
+import { db } from '../../lib/db';
 
 export type AlertSummary = {
   warnDays: number;
