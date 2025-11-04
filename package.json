@@ -103,6 +103,7 @@
     "vaul": "latest",
     "vite": "latest",
     "vitest": "latest",
+    "web-push": "^3.6.7",
     "yaml": "latest",
     "zod": "^3.24.1"
   },
@@ -110,6 +111,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",

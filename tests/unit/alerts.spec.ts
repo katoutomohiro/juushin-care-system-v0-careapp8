@@ -4,6 +4,7 @@ import { computeDailyAlerts } from '../../services/alerts/computeDailyAlerts';
 import { summarizeAlerts } from '../../services/alerts/alertSummary';
 import { ALERT_THRESHOLDS } from '../../services/alerts/constants';
 import { createEntry, updateEntry } from '../../hooks/useDiary';
+import { compareAlertsAndNotify } from '../../services/alerts/notify';
 
 describe('Alert computation', () => {
   beforeEach(async () => {
@@ -28,7 +29,7 @@ describe('Alert computation', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    await computeDailyAlerts('2025-10', 'test-user');
+    await computeDailyAlerts('test-user', '2025-10');
 
     const alerts = await db.alerts.where('userId').equals('test-user').toArray();
     expect(alerts.length).toBeGreaterThan(0);
@@ -47,7 +48,7 @@ describe('Alert computation', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    await computeDailyAlerts('2025-10', 'test-user');
+    await computeDailyAlerts('test-user', '2025-10');
 
     const alerts = await db.alerts.where('userId').equals('test-user').toArray();
     const criticalFever = alerts.find(a => a.level === 'critical' && a.type === 'vital');
@@ -68,7 +69,7 @@ describe('Alert computation', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    await computeDailyAlerts('2025-10', 'test-user');
+    await computeDailyAlerts('test-user', '2025-10');
 
     const alerts = await db.alerts.where('userId').equals('test-user').toArray();
     const seizureAlert = alerts.find(a => a.type === 'seizure');
@@ -90,7 +91,7 @@ describe('Alert computation', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    await computeDailyAlerts('2025-10', 'test-user');
+    await computeDailyAlerts('test-user', '2025-10');
 
     const alerts = await db.alerts.where('userId').equals('test-user').toArray();
     const criticalSeizure = alerts.find(a => a.type === 'seizure' && a.level === 'critical');
@@ -108,7 +109,7 @@ describe('Alert computation', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    await computeDailyAlerts('2025-10', 'test-user');
+    await computeDailyAlerts('test-user', '2025-10');
 
     const alerts = await db.alerts.where('userId').equals('test-user').toArray();
     const hypoAlert = alerts.find(a => a.message.includes('低体温'));
@@ -365,44 +366,62 @@ describe('Alert filtering and sorting', () => {
 });
 
 describe('Alert notifications on save (S-04)', () => {
+  let showNotification: ReturnType<typeof vi.fn>;
+
   beforeEach(async () => {
     await db.alerts.clear();
     await db.diaryEntries.clear();
-    // Mock Notification & Service Worker
-    (globalThis as any).Notification = { permission: 'granted', requestPermission: () => Promise.resolve('granted') };
+
+    showNotification = vi.fn();
+
+    (globalThis as any).Notification = {
+      permission: 'granted',
+      requestPermission: () => Promise.resolve('granted'),
+    };
     (globalThis as any).navigator = {
       serviceWorker: {
-        ready: Promise.resolve({ showNotification: vi.fn() } as any)
-      }
+        ready: Promise.resolve({ showNotification } as any),
+      },
     } as any;
   });
 
   afterEach(async () => {
     await db.alerts.clear();
     await db.diaryEntries.clear();
+    showNotification.mockReset();
   });
 
   it('notifies once for new warn alert and does not duplicate on same-level recompute', async () => {
     const date = '2025-10-21';
-    // 1st save: temp 37.6 → warn expected
     await createEntry({ date, records: [{ time: '09:00', temperature: 37.6 }] });
-    const reg1: any = await (navigator as any).serviceWorker.ready;
-    expect(reg1.showNotification).toHaveBeenCalledTimes(1);
-    // 2nd save: another record but still warn (no upgrade) → no additional notify
+    expect(showNotification).toHaveBeenCalledTimes(1);
+
     await createEntry({ date, records: [{ time: '12:00', temperature: 37.7 }] });
-    const reg2: any = await (navigator as any).serviceWorker.ready;
-    expect(reg2.showNotification).toHaveBeenCalledTimes(1);
+    expect(showNotification).toHaveBeenCalledTimes(1);
   });
 
   it('notifies again when level upgrades to critical', async () => {
     const date = '2025-10-22';
-    // initial warn
     await createEntry({ date, records: [{ time: '08:00', temperature: 37.6 }] });
-    const reg1: any = await (navigator as any).serviceWorker.ready;
-    expect(reg1.showNotification).toHaveBeenCalledTimes(1);
-    // upgrade to critical
+    expect(showNotification).toHaveBeenCalledTimes(1);
+
     await createEntry({ date, records: [{ time: '13:00', temperature: 38.1 }] });
-    const reg2: any = await (navigator as any).serviceWorker.ready;
-    expect(reg2.showNotification).toHaveBeenCalledTimes(2);
+    expect(showNotification).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips info-level alerts when computing notifications', async () => {
+    const date = '2025-10-23';
+    await db.alerts.put({
+      id: 'info-alert',
+      userId: 'default',
+      date,
+      type: 'vital',
+      level: 'info',
+      message: 'Info level alert',
+      createdAt: Date.now(),
+    });
+
+    await compareAlertsAndNotify('default', date, []);
+    expect(showNotification).not.toHaveBeenCalled();
   });
 });

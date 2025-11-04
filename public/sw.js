@@ -12,20 +12,34 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] notificationclick');
+  const url = event.notification?.data?.url;
   event.notification.close();
-  const url = event.notification?.data?.url || '/alerts';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Focus existing window with same URL or open new one to the target URL
-      for (const client of clientList) {
-        if ('focus' in client) {
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(url);
-      }
-    })
-  );
+  if (url) {
+    event.waitUntil(clients.openWindow(url));
+  }
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (err) {
+    try {
+      payload = { body: event.data?.text() };
+    } catch {
+      payload = {};
+    }
+  }
+
+  const title = payload.title || 'Care App 通知';
+  const options = {
+    body: payload.body,
+    icon: payload.icon || '/icon-192.png',
+    badge: payload.badge || '/badge-96.png',
+    data: payload.data || {},
+    tag: payload.tag || 'care-app-alert',
+    requireInteraction: payload.requireInteraction ?? false,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });

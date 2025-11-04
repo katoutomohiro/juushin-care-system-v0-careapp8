@@ -24,6 +24,6 @@ export async function compareAlertsAndNotify(userId: string, date: string, prevA
     const title = a.level === 'critical' ? '【重大】アラート' : '【警告】アラート'
     const body = `${a.date} ${a.message}`
     const url = a.type === 'seizure' ? `/daily-log/seizure?date=${a.date}` : `/daily-log?date=${a.date}`
-    await notifyLocal({ title, body, data: { url, alertId: a.id, type: a.type, level: a.level } })
+    await notifyLocal({ title, body, data: { url } })
   }
 }

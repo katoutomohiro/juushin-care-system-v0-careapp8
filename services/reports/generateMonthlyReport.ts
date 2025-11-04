@@ -22,7 +22,7 @@ export async function generateMonthlyReport(
   const userId = opts?.userId || 'default';
   
   // Compute and save alerts for this month
-  await computeDailyAlerts(ym, userId);
+  await computeDailyAlerts(userId, ym);
   
   const daysRaw = await monthlyStats(ym);
   const entries = daysRaw.length;
