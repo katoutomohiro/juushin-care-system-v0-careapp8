@@ -7,7 +7,7 @@ export default function DiaryPage() {
   const [temperature, setTp] = useState<number | ''>('');
   const [spO2, setSpO2] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [_photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
