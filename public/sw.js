@@ -12,11 +12,32 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  const url = event.notification?.data?.url;
   event.notification.close();
-  if (url) {
-    event.waitUntil(clients.openWindow(url));
-  }
+  const target = event.notification?.data?.url || '/';
+
+  event.waitUntil(
+    (async () => {
+      try {
+        const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        const targetUrl = new URL(target, self.location.origin).href;
+
+        for (const client of windowClients) {
+          if (!client?.url) continue;
+          const clientUrl = new URL(client.url, self.location.origin).href;
+          if (clientUrl === targetUrl && typeof client.focus === 'function') {
+            await client.focus();
+            return;
+          }
+        }
+
+        if (typeof clients.openWindow === 'function') {
+          await clients.openWindow(target);
+        }
+      } catch (err) {
+        console.warn('[SW] notificationclick handler failed:', err);
+      }
+    })(),
+  );
 });
 
 self.addEventListener('push', (event) => {

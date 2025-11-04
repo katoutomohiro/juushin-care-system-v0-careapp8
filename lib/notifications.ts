@@ -6,7 +6,7 @@ const DEFAULT_TAG = "care-app-alert"
 const DEFAULT_USER_ID = "default"
 
 /**
- * Legacy helper – prefer ensurePermission for on-demand prompts.
+ * Legacy helper - prefer ensurePermission for on-demand prompts.
  */
 export async function requestPermission(): Promise<NotificationPermission> {
   if (typeof window === "undefined" || !("Notification" in window)) {
@@ -58,17 +58,65 @@ export async function registerServiceWorker(): Promise<void> {
   }
 }
 
+const NOTIFICATION_WINDOW_MS = 5 * 60 * 1000
+
+type NotificationHistory = {
+  time: number
+  levelPriority: number
+}
+
+const notificationSentHistory = new Map<string, NotificationHistory>()
+const LEVEL_PRIORITY: Record<string, number> = { critical: 3, warn: 2, info: 1 }
+
+function resolveLevelPriority(level?: string): number {
+  if (!level) return 0
+  return LEVEL_PRIORITY[level] ?? 0
+}
+
 export type LocalNotificationOptions = {
   title: string
   body?: string
-  data?: { url?: string }
+  url: string
+  type: string
+  date: string
+  userId?: string
+  level?: string
+  data?: Record<string, unknown>
 }
 
 /**
  * Show a local notification via Service Worker (fallbacks to toast).
  */
 export async function notifyLocal(opts: LocalNotificationOptions): Promise<void> {
-  const { title, body = "", data } = opts
+  const {
+    title,
+    body = "",
+    url,
+    type,
+    date,
+    userId = DEFAULT_USER_ID,
+    data,
+  } = opts
+
+  const key = `${type}:${date}:${userId}`
+  const now = Date.now()
+  const currentPriority = resolveLevelPriority(opts.level)
+  const previous = notificationSentHistory.get(key)
+
+  if (previous && now - previous.time < NOTIFICATION_WINDOW_MS && currentPriority <= previous.levelPriority) {
+    return
+  }
+
+  notificationSentHistory.set(key, { time: now, levelPriority: currentPriority })
+
+  const payload = {
+    ...(data ?? {}),
+    url,
+    type,
+    date,
+    userId,
+    level: opts.level,
+  }
 
   const canNotify =
     typeof window !== "undefined" &&
@@ -84,7 +132,7 @@ export async function notifyLocal(opts: LocalNotificationOptions): Promise<void>
         icon: DEFAULT_ICON,
         badge: DEFAULT_BADGE,
         tag: DEFAULT_TAG,
-        data: data ?? {},
+        data: payload,
         requireInteraction: false,
       })
       return
@@ -95,7 +143,7 @@ export async function notifyLocal(opts: LocalNotificationOptions): Promise<void>
 
   try {
     const { toast } = await import("sonner")
-    toast(`${title}${body ? ` – ${body}` : ""}`)
+    toast(`${title}${body ? ` - ${body}` : ""}`)
   } catch {
     console.log("[notifyLocal] fallback:", title, body)
   }

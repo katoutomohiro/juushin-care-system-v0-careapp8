@@ -1,29 +1,39 @@
-import { db, type Alert, type AlertLevel } from '../../lib/db'
-import { notifyLocal, ensurePermission } from '../../lib/notifications'
+import { db, type Alert, type AlertLevel } from "../../lib/db"
+import { notifyLocal, ensurePermission } from "../../lib/notifications"
 
 const levelPriority: Record<AlertLevel, number> = { info: 1, warn: 2, critical: 3 }
 
 function isNewOrUpgraded(prev: Alert[] = [], next: Alert): boolean {
-  const before = prev.find(p => p.id === next.id)
+  const before = prev.find((entry) => entry.id === next.id)
   if (!before) return true
   return (levelPriority[next.level] || 0) > (levelPriority[before.level] || 0)
 }
 
 /**
- * 保存後の指定日付に対するアラート差分を検出し、必要に応じてローカル通知を発火
+ * After saving, diff alerts for the day and trigger notifications when needed.
  */
 export async function compareAlertsAndNotify(userId: string, date: string, prevAlerts: Alert[]): Promise<void> {
-  // fetch latest alerts for the date
-  const latest = await db.alerts.where('userId').equals(userId).and(a => a.date === date).toArray()
-  const toNotify = latest.filter(a => (a.level === 'warn' || a.level === 'critical') && isNewOrUpgraded(prevAlerts, a))
+  const latest = await db.alerts.where("userId").equals(userId).and((alert) => alert.date === date).toArray()
+  const toNotify = latest.filter(
+    (alert) => (alert.level === "warn" || alert.level === "critical") && isNewOrUpgraded(prevAlerts, alert),
+  )
   if (toNotify.length === 0) return
 
-  const permitted = await ensurePermission().catch(() => false)
-  // even if not permitted, notifyLocal will fallback to toast
-  for (const a of toNotify) {
-    const title = a.level === 'critical' ? '【重大】アラート' : '【警告】アラート'
-    const body = `${a.date} ${a.message}`
-    const url = a.type === 'seizure' ? `/daily-log/seizure?date=${a.date}` : `/daily-log?date=${a.date}`
-    await notifyLocal({ title, body, data: { url } })
+  await ensurePermission().catch(() => false)
+
+  for (const alert of toNotify) {
+    const title = alert.level === "critical" ? "【重大】アラート" : "【警告】アラート"
+    const body = `${alert.date} ${alert.message}`
+    const url = alert.type === "seizure" ? `/daily-log/seizure?date=${alert.date}` : `/daily-log?date=${alert.date}`
+
+    await notifyLocal({
+      title,
+      body,
+      url,
+      type: alert.type,
+      date: alert.date,
+      userId,
+      level: alert.level,
+    })
   }
 }
