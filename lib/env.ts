@@ -1,35 +1,32 @@
-import 'server-only'
-
-/* Environment guard utilities (server-only intended) */
+import "server-only"
 
 function parseFloatEnv(name: string, def: number): number {
-  const raw = process.env[name];
-  if (!raw) return def;
-  const trimmed = raw.trim();
-  const num = Number(trimmed);
-  if (!Number.isFinite(num)) return def;
-  // 温度は一般的に 0.0〜2.0 程度を想定。過剰値は丸める。
-  if (name === 'LLM_TEMPERATURE') {
-    const clamped = Math.max(0, Math.min(num, 2));
-    return clamped;
+  const raw = process.env[name]
+  if (!raw) return def
+  const value = Number(raw.trim())
+  if (!Number.isFinite(value)) return def
+  if (name === "LLM_TEMPERATURE") {
+    return Math.max(0, Math.min(value, 2))
   }
-  return num;
+  return value
 }
 
 function parseIntEnv(name: string, def: number): number {
-  const raw = process.env[name];
-  if (!raw) return def;
-  const trimmed = raw.trim();
-  const num = Number.parseInt(trimmed, 10);
-  if (!Number.isFinite(num)) return def;
-  // シードは0以上の整数を想定
-  return Math.max(0, num);
+  const raw = process.env[name]
+  if (!raw) return def
+  const value = Number.parseInt(raw.trim(), 10)
+  if (!Number.isFinite(value)) return def
+  return Math.max(0, value)
 }
 
-export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-export const LLM_TEMPERATURE = parseFloatEnv('LLM_TEMPERATURE', 0.2);
-export const LLM_SEED = parseIntEnv('LLM_SEED', 123);
-export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-export const SUPABASE_URL = process.env.SUPABASE_URL || '';
-export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-export const NODE_ENV = process.env.NODE_ENV || 'development';
+export const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini"
+export const LLM_TEMPERATURE = parseFloatEnv("LLM_TEMPERATURE", 0.2)
+export const LLM_SEED = parseIntEnv("LLM_SEED", 123)
+export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ""
+export const SUPABASE_URL = process.env.SUPABASE_URL || ""
+export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+export const NODE_ENV = process.env.NODE_ENV || "development"
+
+export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
+export const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || ""
+export const VAPID_CONTACT = process.env.VAPID_CONTACT_EMAIL || process.env.VAPID_CONTACT || "mailto:admin@example.com"
