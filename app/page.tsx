@@ -293,6 +293,8 @@ export default function WorldClassSoulCareApp() {
     }
   }, [generateDailyLog, toast])
 
+  const [includeAlerts, setIncludeAlerts] = useState(false)
+
   const handleExcelExport = useCallback(async () => {
     try {
       setIsExporting(true)
@@ -300,7 +302,7 @@ export default function WorldClassSoulCareApp() {
       console.log("[v0] Starting CSV export with data:", { dailyLog, careEvents })
       console.time("[v0] CSV Export Handler")
 
-      await DailyLogExportService.exportToCsv(dailyLog, careEvents)
+      await DailyLogExportService.exportToCsv(dailyLog, careEvents, { includeAlerts })
 
       console.timeEnd("[v0] CSV Export Handler")
       console.log("[v0] CSV export completed successfully")
@@ -319,7 +321,7 @@ export default function WorldClassSoulCareApp() {
     } finally {
       setIsExporting(false)
     }
-  }, [generateDailyLog, dailyLog, careEvents, toast])
+  }, [generateDailyLog, dailyLog, careEvents, toast, includeAlerts])
 
   const handleA4RecordSheetPreview = useCallback(() => {
     setIsLoading(true)
@@ -650,6 +652,16 @@ export default function WorldClassSoulCareApp() {
                         {isLoading ? <LoadingSpinner size="sm" /> : "👁️"}
                         PDFプレビュー
                       </Button>
+                      <div className="flex items-center gap-3 flex-1">
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={includeAlerts}
+                            onChange={(e) => setIncludeAlerts(e.target.checked)}
+                          />
+                          アラート列を含める
+                        </label>
+                      </div>
                       <Button
                         variant="outline"
                         onClick={handleExcelExport}

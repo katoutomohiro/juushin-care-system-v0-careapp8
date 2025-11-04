@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { exportAsCsv, exportAsCsvV2, toCsvData, CsvColumn } from '@/lib/exporter/csv'
+import { exportAsCsv, exportAsCsvV2, toCsvData, type CsvColumn } from '@/lib/exporter/csv'
+import { alertCsvColumns } from '@/services/csv/alerts-csv'
 
 // Mock URL.createObjectURL for Node.js environment
 beforeEach(() => {
@@ -163,3 +164,38 @@ describe('exportAsCsvV2 (new column-driven API)', () => {
   })
 })
 
+describe('alert CSV columns integration', () => {
+  type BaseRow = {
+    date: string
+    user: string
+    alerts_critical_count?: number
+    alerts_warn_count?: number
+    latest_alert_titles?: string[]
+  }
+
+  const baseColumns: CsvColumn<BaseRow>[] = [
+    { key: 'date', header: 'date' },
+    { key: 'user', header: 'user' },
+  ]
+
+  it('keeps headers unchanged when alert columns are not included', () => {
+    const { headers } = toCsvData<BaseRow>([{ date: '2025-01-01', user: 'alice' }], baseColumns, {})
+    expect(headers).toEqual(['date', 'user'])
+  })
+
+  it('appends alert headers and values when requested', () => {
+    const columns = [...baseColumns, ...alertCsvColumns<BaseRow>()]
+    const row: BaseRow = {
+      date: '2025-01-01',
+      user: 'alice',
+      alerts_critical_count: 2,
+      alerts_warn_count: 1,
+      latest_alert_titles: ['A', 'B'],
+    }
+
+    const { headers, body } = toCsvData<BaseRow>([row], columns, {})
+
+    expect(headers).toEqual(['date', 'user', 'alerts_critical_count', 'alerts_warn_count', 'latest_alert_titles'])
+    expect(body[0]).toEqual(['2025-01-01', 'alice', '2', '1', 'A | B'])
+  })
+})

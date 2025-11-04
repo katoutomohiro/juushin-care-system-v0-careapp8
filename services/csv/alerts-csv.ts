@@ -1,3 +1,5 @@
+import type { CsvColumn } from "@/lib/exporter/csv"
+
 export type AlertCsvRow = {
   date: string
   alerts_critical_count: number
@@ -8,6 +10,8 @@ export type AlertCsvRow = {
 type SummarizeOptions = {
   latestLimit?: number
 }
+
+type AlertColumnFields = Pick<AlertCsvRow, "alerts_critical_count" | "alerts_warn_count" | "latest_alert_titles">
 
 export function summarizeAlertsForDate(
   alerts: Array<{ date: string; level: string; title?: string; message?: string; createdAt: number }>,
@@ -30,11 +34,14 @@ export function summarizeAlertsForDate(
   }
 }
 
-export function alertCsvColumns() {
+export function alertCsvColumns<T extends Partial<AlertColumnFields> = AlertColumnFields>(): CsvColumn<T>[] {
   return [
-    { key: "date", label: "date" },
-    { key: "alerts_critical_count", label: "alerts_critical_count" },
-    { key: "alerts_warn_count", label: "alerts_warn_count" },
-    { key: "latest_alert_titles", label: "latest_alert_titles" },
-  ] as const
+    { key: "alerts_critical_count", header: "alerts_critical_count" },
+    { key: "alerts_warn_count", header: "alerts_warn_count" },
+    {
+      key: "latest_alert_titles",
+      header: "latest_alert_titles",
+      map: (value: unknown) => (Array.isArray(value) ? value.join(" | ") : value ? String(value) : ""),
+    },
+  ]
 }
