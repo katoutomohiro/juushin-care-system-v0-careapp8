@@ -1,25 +1,9 @@
-import { z } from "zod";
-
-// Unified domain model (MVP)
-// Goal: provide a common shape across diary/journal/seizure without breaking existing code.
-// This file is additive and not wired globally yet.
+﻿import { z } from "zod";
 
 export const UnifiedCategoryEnum = z.enum([
-  "vitals",
-  "care",
-  "medical",
-  "communication",
-  "observation",
-  "seizure",
-  "nutrition",
-  "hydration",
-  "excretion",
-  "positioning",
-  "respiratory",
-  "skin_oral",
-  "swallowing",
-  "activity",
-  "other",
+  "vitals", "care", "medical", "communication", "observation",
+  "seizure", "nutrition", "hydration", "excretion", "positioning",
+  "respiratory", "skin_oral", "swallowing", "activity", "other",
 ]);
 
 export const UnifiedTag = z.string().min(1).max(50);
@@ -44,7 +28,7 @@ export const UnifiedSeizureInfo = z.object({
 });
 
 export const UnifiedRecord = z.object({
-  time: z.string(), // ISO HH:mm or ISO datetime
+  time: z.string(),
   notes: z.string().max(2000).optional(),
   vitals: UnifiedVitals.optional(),
   seizure: UnifiedSeizureInfo.optional(),
@@ -62,7 +46,7 @@ export const UnifiedEntrySchema = z.object({
   id: z.string(),
   userId: z.string().optional(),
   serviceId: z.string().optional(),
-  date: z.string(), // YYYY-MM-DD
+  date: z.string(),
   title: z.string().max(100).optional(),
   content: z.string().max(5000).optional(),
   category: UnifiedCategoryEnum.default("observation"),

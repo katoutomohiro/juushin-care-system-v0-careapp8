@@ -62,7 +62,7 @@ test.describe("Accessibility Tests", () => {
 
   test("should handle screen reader announcements", async ({ page }) => {
     // Check for live regions or announcements
-    const liveRegions = page.locator('[aria-live], [role="status"], [role="alert"]')
+    // const liveRegions = page.locator('[aria-live], [role="status"], [role="alert"]')
 
     // Open a form to trigger potential announcements
     const seizureButton = page

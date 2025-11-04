@@ -1,46 +1,42 @@
-import type { JournalEntry } from "../schemas/journal";
-import type { DiaryEntry as DexieDiaryEntry, MedicalRecord } from "./db";
-import { UnifiedEntrySchema, type UnifiedEntry, type UnifiedRecordT } from "../schemas/unified";
+﻿import type { DiaryEntry, MedicalRecord } from "../lib/db";
+import { UnifiedEntrySchema } from "../schemas/unified";
+import type { UnifiedEntry, UnifiedRecordT, UnifiedCategory } from "../schemas/unified";
 
-// Helper to ensure ISO date (YYYY-MM-DD)
-function toYmd(dateLike?: string): string {
-  if (!dateLike) return new Date().toISOString().slice(0, 10);
-  if (dateLike.length >= 10) return dateLike.slice(0, 10);
-  return dateLike;
-}
+export type JournalEntry = {
+  id: string;
+  date: string;
+  category: string;
+  data: Record<string, any>;
+};
 
-export function journalToUnified(j: JournalEntry, opts?: { id?: string; userId?: string; serviceId?: string }): UnifiedEntry {
-  const now = new Date().toISOString();
-  const u: UnifiedEntry = {
-    id: opts?.id || crypto.randomUUID(),
-    userId: opts?.userId,
-    serviceId: opts?.serviceId,
-    date: toYmd(j.timestamp),
-    title: j.title,
-    content: j.content,
-    category: (j.category as any) ?? "observation",
-    tags: j.tags || [],
-    records: [],
-    attachments: [],
-    editHistory: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-  return UnifiedEntrySchema.parse(u);
+export function journalToUnified(j: JournalEntry): UnifiedEntry {
+  const base = {
+    id: j.id,
+    date: j.date,
+    category: (j.category as UnifiedCategory) || "other",
+    records: [
+      {
+        time: j.date,
+        notes: JSON.stringify(j.data),
+      },
+    ],
+    createdAt: j.date,
+    updatedAt: j.date,
+  } as Partial<UnifiedEntry>;
+  return UnifiedEntrySchema.parse(base);
 }
 
 export function unifiedToJournal(u: UnifiedEntry): JournalEntry {
   return {
-    title: u.title || "",
-    content: u.content || "",
-    category: (u.category as any) ?? "observation",
-    timestamp: u.date,
-    tags: u.tags || [],
+    id: u.id,
+    date: u.date,
+    category: u.category,
+    data: u.records[0] ? JSON.parse(u.records[0].notes || "{}") : {},
   };
 }
 
-export function dexieDiaryToUnified(d: DexieDiaryEntry, opts?: { userId?: string; serviceId?: string }): UnifiedEntry {
-  const records: UnifiedRecordT[] = (d.records || []).map((r: MedicalRecord) => ({
+export function dexieDiaryToUnified(d: DiaryEntry, opts?: { userId?: string; serviceId?: string }): UnifiedEntry {
+  const records: UnifiedRecordT[] = d.records.map(r => ({
     time: r.time,
     notes: r.notes,
     vitals: {
@@ -48,45 +44,58 @@ export function dexieDiaryToUnified(d: DexieDiaryEntry, opts?: { userId?: string
       temperature: r.temperature,
       oxygenSaturation: r.oxygenSaturation,
     },
-    seizure: r.seizureType ? { seizureType: r.seizureType } : undefined,
+    seizure: r.seizureType ? {
+      seizureType: r.seizureType,
+    } : undefined,
     pee: r.pee,
     poo: r.poo,
   }));
+  
+  let category: UnifiedCategory = "other";
+  if (d.records.some(r => r.heartRate || r.temperature || r.oxygenSaturation)) category = "vitals";
+  else if (d.records.some(r => r.seizureType)) category = "seizure";
 
-  return UnifiedEntrySchema.parse({
+  const base = {
     id: d.id,
-    userId: opts?.userId,
-    serviceId: opts?.serviceId,
     date: d.date,
-    category: "observation",
+    category,
     records,
-    attachments: (d.photos || []).map(uri => ({ uri, type: "photo" as const })),
-    editHistory: d.editHistory || [],
+    attachments: (d.photos || []).map(uri => ({ type: "photo" as const, uri })),
+    editHistory: (d.editHistory || []).map(eh => ({
+      timestamp: eh.timestamp,
+      editor: eh.editor,
+      changes: eh.changes,
+    })),
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
-    encryptedData: d.encryptedData,
-  });
+    userId: opts?.userId,
+    serviceId: opts?.serviceId,
+  } as Partial<UnifiedEntry>;
+  return UnifiedEntrySchema.parse(base);
 }
 
-export function unifiedToDexieDiary(u: UnifiedEntry): DexieDiaryEntry {
-  const records: MedicalRecord[] = (u.records || []).map((r) => ({
+export function unifiedToDexieDiary(u: UnifiedEntry): DiaryEntry {
+  const records: MedicalRecord[] = u.records.map(r => ({
     time: r.time,
-    notes: r.notes,
     heartRate: r.vitals?.heartRate,
     temperature: r.vitals?.temperature,
     oxygenSaturation: r.vitals?.oxygenSaturation,
     seizureType: r.seizure?.seizureType,
+    notes: r.notes,
     pee: r.pee,
     poo: r.poo,
   }));
-
+  
   return {
     id: u.id,
     date: u.date,
     records,
-    photos: (u.attachments || []).filter(a => a.type === "photo").map(a => a.uri),
-    editHistory: u.editHistory,
-    encryptedData: u.encryptedData,
+    photos: u.attachments?.filter(a => a.type === "photo").map(a => a.uri),
+    editHistory: u.editHistory?.map(eh => ({
+      timestamp: eh.timestamp,
+      editor: eh.editor,
+      changes: eh.changes,
+    })),
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
   };

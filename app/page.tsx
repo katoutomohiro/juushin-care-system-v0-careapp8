@@ -282,7 +282,7 @@ export default function WorldClassSoulCareApp() {
         variant: "default",
         title: "PDF プレビューを開きました",
       })
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "PDF プレビューの生成に失敗しました",
@@ -293,6 +293,8 @@ export default function WorldClassSoulCareApp() {
     }
   }, [generateDailyLog, toast])
 
+  const [includeAlerts, setIncludeAlerts] = useState(false)
+
   const handleExcelExport = useCallback(async () => {
     try {
       setIsExporting(true)
@@ -300,7 +302,7 @@ export default function WorldClassSoulCareApp() {
       console.log("[v0] Starting CSV export with data:", { dailyLog, careEvents })
       console.time("[v0] CSV Export Handler")
 
-      await DailyLogExportService.exportToCsv(dailyLog, careEvents)
+      await DailyLogExportService.exportToCsv(dailyLog, careEvents, { includeAlerts })
 
       console.timeEnd("[v0] CSV Export Handler")
       console.log("[v0] CSV export completed successfully")
@@ -319,7 +321,7 @@ export default function WorldClassSoulCareApp() {
     } finally {
       setIsExporting(false)
     }
-  }, [generateDailyLog, dailyLog, careEvents, toast])
+  }, [generateDailyLog, dailyLog, careEvents, toast, includeAlerts])
 
   const handleA4RecordSheetPreview = useCallback(() => {
     setIsLoading(true)
@@ -354,7 +356,7 @@ export default function WorldClassSoulCareApp() {
         variant: "default",
         title: "A4記録用紙を開きました",
       })
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "A4記録用紙の生成に失敗しました",
@@ -577,6 +579,48 @@ export default function WorldClassSoulCareApp() {
           ))}
         </div>
 
+        {/* 🧪 試験機能 / AI支援セクション */}
+        <section aria-labelledby="ai-lab-section" className="space-y-4">
+          <h2 id="ai-lab-section" className="text-xl font-bold text-foreground">🧪 試験機能 / AI支援セクション</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ClickableCard
+              onClick={() => _router.push('/todos')}
+              className="group border-2 hover:border-primary/30 bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-primary"
+              particleColors={["#34d399", "#10b981", "#6ee7b7"]}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-white/60 text-2xl">📝</div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-semibold">ToDoリスト</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-emerald-700">チームのタスク管理と共有。優先度・期限・完了をシンプルに管理。</p>
+              </CardContent>
+            </ClickableCard>
+
+            <ClickableCard
+              onClick={() => _router.push('/diary/monthly')}
+              className="group border-2 hover:border-primary/30 bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-primary"
+              particleColors={["#38bdf8", "#0ea5e9", "#7dd3fc"]}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-white/60 text-2xl">📄</div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-semibold">月次AI要約PDF</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-sky-700">AI要約を含む月次PDFを生成・ダウンロード。対象月やIDはページ内で指定。</p>
+              </CardContent>
+            </ClickableCard>
+          </div>
+        </section>
+
         {currentView === "dashboard" ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -608,6 +652,16 @@ export default function WorldClassSoulCareApp() {
                         {isLoading ? <LoadingSpinner size="sm" /> : "👁️"}
                         PDFプレビュー
                       </Button>
+                      <div className="flex items-center gap-3 flex-1">
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={includeAlerts}
+                            onChange={(e) => setIncludeAlerts(e.target.checked)}
+                          />
+                          アラート列を含める
+                        </label>
+                      </div>
                       <Button
                         variant="outline"
                         onClick={handleExcelExport}

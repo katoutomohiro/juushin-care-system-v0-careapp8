@@ -1,63 +1,71 @@
-import type { MonthlyReportData } from '../../reports/generateMonthlyReport';
+import React from "react";
+import { getAgentSummary, summarizeTodosLocally, type MonthlyReportData } from "../../services/langchain/agent";
 
-interface MonthlyReportDocProps {
-  data: MonthlyReportData;
-}
+// PDF表示用にUIの補助プロパティを任意で許可する拡張型
+export type MonthlyReportViewData = MonthlyReportData & {
+  userName?: string;
+  startDate?: string;
+  endDate?: string;
+  userId?: string;
+  serviceId?: string;
+};
 
-export function MonthlyReportDoc({ data }: MonthlyReportDocProps) {
-  return (
-    <div className="bg-white p-8 max-w-4xl mx-auto print:shadow-none shadow-lg">
-      <div className="border-b border-gray-200 pb-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">月次レポート: {data.ym}</h1>
-        <p className="text-sm text-gray-600">重症心身障がい児者支援システム</p>
-      </div>
+// Async factory that builds a PDF Document for monthly report with AI summary section
+export async function generateMonthlyReportPDF(reportData: MonthlyReportViewData): Promise<Blob> {
+  const summary = await getAgentSummary(reportData);
+  
+  // ToDoローカル要約（あれば）
+  const todoSummary = reportData.todos && reportData.todos.length > 0
+    ? summarizeTodosLocally(reportData.todos)
+    : null;
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="text-gray-600 text-sm">記録件数</div>
-          <div className="text-2xl font-bold text-gray-900">{data.totals.entries}</div>
-        </div>
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="text-gray-600 text-sm">発作回数</div>
-          <div className="text-2xl font-bold text-rose-600">{data.totals.seizureCount}</div>
-        </div>
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="text-gray-600 text-sm">平均SpO2</div>
-          <div className="text-2xl font-bold text-emerald-600">{data.totals.avgSpO2 ?? '-'}%</div>
-        </div>
-      </div>
+  // 服薬サマリ（あれば整形）
+  const med = reportData.medicationSummary;
+  const medSummaryText = med
+    ? `総数 ${med.total} 件 / 服薬済み ${med.taken} 件 / 未服薬 ${med.missed} 件 / 服薬率 ${med.rate}%`
+    : null;
 
-      <div className="mb-8">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded">日別サマリー</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 border-b text-left">日付</th>
-                <th className="px-3 py-2 border-b text-right">HR</th>
-                <th className="px-3 py-2 border-b text-right">体温</th>
-                <th className="px-3 py-2 border-b text-right">SpO2</th>
-                <th className="px-3 py-2 border-b text-right">発作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.days.map((d) => (
-                <tr key={d.date} className="odd:bg-white even:bg-gray-50">
-                  <td className="px-3 py-2 border-b">{d.date}</td>
-                  <td className="px-3 py-2 border-b text-right">{d.hr ?? '-'}</td>
-                  <td className="px-3 py-2 border-b text-right">{d.temp ?? '-'}</td>
-                  <td className="px-3 py-2 border-b text-right">{d.spO2 ?? '-'}</td>
-                  <td className="px-3 py-2 border-b text-right">{d.seizure}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  // アラートサマリ（あれば整形）
+  const alert = reportData.alertSummary;
+  const alertSummaryText = alert
+    ? `・警告日数: ${alert.warnDays}日 / 重大日数: ${alert.criticalDays}日\n・発熱（≥37.5℃）: ${alert.feverDays}日 / 低体温（≤35.5℃）: ${alert.hypothermiaDays}日\n・てんかん発作日: ${alert.seizureDays}日\n・水分不足傾向: ${alert.hydrationLowDays}日`
+    : null;
 
-      <div className="border-t border-gray-200 pt-4 text-center text-xs text-gray-500">
-        生成日時: {new Date().toLocaleString('ja-JP')} | 重症心身障がい児者支援システム v1.0
-      </div>
-    </div>
+  // 動的インポートで@react-pdf/rendererを読み込み、ビルド時の不要バンドルを回避
+  const { Document, Page, Text, pdf } = await import("@react-pdf/renderer");
+
+  const doc = React.createElement(
+    Document,
+    null,
+    React.createElement(
+      Page,
+      { size: "A4" },
+      React.createElement(Text, null, "月次報告書"),
+      // 利用者名や期間など、呼び出し元で与えられる基本情報（任意）
+      React.createElement(Text, null, `氏名: ${reportData.userName ?? ""}`),
+      React.createElement(
+        Text,
+        null,
+        `期間: ${reportData.startDate ?? ""} 〜 ${reportData.endDate ?? ""}`
+      ),
+      // 既存の出力処理（省略）
+      React.createElement(Text, { style: { marginTop: 24, fontWeight: 700 } }, "🧠 AIによる要約"),
+      React.createElement(Text, null, summary),
+      // ToDo要約（あれば表示）
+      todoSummary ? React.createElement(Text, { style: { marginTop: 16, fontWeight: 700 } }, "📝 ToDo状況") : null,
+      todoSummary ? React.createElement(Text, null, todoSummary) : null
+      ,
+      // 服薬状況（あれば表示）
+      medSummaryText ? React.createElement(Text, { style: { marginTop: 16, fontWeight: 700 } }, "💊 服薬状況") : null,
+      medSummaryText ? React.createElement(Text, null, medSummaryText) : null
+      ,
+      // アラート状況（あれば表示）
+      alertSummaryText ? React.createElement(Text, { style: { marginTop: 16, fontWeight: 700 } }, "⚠️ アラート要約") : null,
+      alertSummaryText ? React.createElement(Text, null, alertSummaryText) : null
+    )
   );
+
+  // React PDFのレンダラでBlob生成
+  const blob = await pdf(doc).toBlob();
+  return blob;
 }
