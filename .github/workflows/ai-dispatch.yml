@@ -1,0 +1,300 @@
+﻿name: ai-dispatch
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  smoke-e2e:
+    if: contains(github.event.comment.body, '/agent smoke e2e')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate trusted sender
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sender = context.payload.comment.user.login;
+            const owner  = context.repo.owner;
+            /**
+             * Use Octokit REST client when available, but fall back to legacy path if needed.
+             * Add a secondary fallback to checkCollaborator to avoid hard failures.
+             */
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                // 204 means the user is a collaborator; treat as write-equivalent
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
+            if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
+              core.setFailed(`not trusted: ${sender}`);
+            }
+      - name: Touch to trigger e2e
+        run: |
+          ts=$(date +%Y%m%d-%H%M%S)
+          mkdir -p .chore/ci_touch
+          echo ok > ".chore/ci_touch/e2e_smoke_${ts}.txt"
+      - name: Create PR for smoke
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore(ci-touch): trigger e2e smoke"
+          title: "chore: e2e smoke via /agent"
+          body: "Auto-created by /agent. Label 'e2e-required' で E2E 実行＆Playwrightレポート保存。"
+          branch: chore/ci-touch-e2e
+          delete-branch: true
+          labels: e2e-required
+
+  plan-diary:
+    if: contains(github.event.comment.body, '/agent plan diary')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate trusted sender
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sender = context.payload.comment.user.login;
+            const owner  = context.repo.owner;
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
+            if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
+              core.setFailed(`not trusted: ${sender}`);
+            }
+      - name: Post design brief as comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.payload.issue.number;
+            const body = `## Diary feature design brief
+            
+            - Data models (Zod): DiaryEntry, MedicalRecord (vitals, excretion, oxygenSpO2, seizure types, meds times)
+            - UI (App Router):
+              - /diary: daily form (time-stamped inputs, notes, media placeholder)
+              - /diary/[id]: read/edit entry
+              - /diary/monthly: charts (Recharts) for vitals/seizure frequency, threshold alerts
+            - Storage: localStorage fallback now; IndexedDB (Dexie) planned, encrypted sync later
+            - Permissions: staff/guardian edit/addendum
+            - Acceptance: create→reload→monthly graph flow E2E; artifact report present
+            
+            Next: comment "/agent implement diary" to scaffold and open PR with e2e-required.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });
+
+  implement-diary:
+    if: contains(github.event.comment.body, '/agent implement diary')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate trusted sender
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sender = context.payload.comment.user.login;
+            const owner  = context.repo.owner;
+            let perm = { permission: 'none' };
+            try {
+              const api = (github.rest && github.rest.repos) ? github.rest.repos : github.repos;
+              const res = await api.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                username: sender
+              });
+              perm = res.data;
+            } catch (e) {
+              core.info(`permission check primary failed: ${e?.message || e}`);
+              try {
+                const res2 = await github.rest.repos.checkCollaborator({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  username: sender
+                });
+                if (res2.status === 204) perm = { permission: 'write' };
+              } catch (e2) {
+                core.info(`permission check fallback failed: ${e2?.message || e2}`);
+              }
+            }
+            if (!['admin','write','maintain'].includes(perm.permission) && sender !== owner) {
+              core.setFailed(`not trusted: ${sender}`);
+            }
+      - name: Prepare branch name
+        id: prep
+        run: |
+          echo "BRANCH_NAME=feat/diary-extended-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+      - name: Scaffold diary feature (minimal, app router)
+        run: |
+          set -e
+          mkdir -p schemas hooks app/diary app/diary/monthly app/diary/[id] tests/e2e db
+          cat > schemas/diary.ts << 'EOF'
+          import { z } from 'zod';
+          export const MedicalRecordSchema = z.object({
+            time: z.string(),
+            heartRate: z.number().int().nonnegative().optional(),
+            temperature: z.number().optional(),
+            oxygenSaturation: z.number().min(0).max(100).optional(),
+            seizureType: z.string().optional(),
+            medsAt: z.array(z.string()).optional(),
+            notes: z.string().optional(),
+            pee: z.boolean().optional(),
+            poo: z.boolean().optional(),
+          });
+          export const DiaryEntrySchema = z.object({
+            id: z.string(),
+            date: z.string(),
+            records: z.array(MedicalRecordSchema),
+          });
+          export type MedicalRecord = z.infer<typeof MedicalRecordSchema>;
+          export type DiaryEntry = z.infer<typeof DiaryEntrySchema>;
+          EOF
+
+          cat > hooks/useDiary.ts << 'EOF'
+          /* eslint-disable */
+          export type DiaryEntry = import('../schemas/diary').DiaryEntry;
+          export type MedicalRecord = import('../schemas/diary').MedicalRecord;
+          const KEY = 'diaryEntries';
+          const safeWindow: any = typeof window !== 'undefined' ? window : undefined;
+          function readAll(): DiaryEntry[] {
+            if (!safeWindow) return [];
+            try { return JSON.parse(safeWindow.localStorage.getItem(KEY) || '[]'); } catch { return []; }
+          }
+          function writeAll(list: DiaryEntry[]) {
+            if (!safeWindow) return;
+            safeWindow.localStorage.setItem(KEY, JSON.stringify(list));
+          }
+          export function createEntry(entry: DiaryEntry) {
+            const list = readAll();
+            const i = list.findIndex(e => e.id === entry.id);
+            if (i >= 0) list[i] = entry; else list.push(entry);
+            writeAll(list);
+          }
+          export function listEntries(): DiaryEntry[] { return readAll(); }
+          export function getEntry(id: string): DiaryEntry | undefined { return readAll().find(e => e.id === id); }
+          export function monthlyStats(ym: string) {
+            const list = readAll().filter(e => e.date.startsWith(ym));
+            const days = list.flatMap(e => e.records.map(r => ({ date: e.date, hr: r.heartRate ?? null, temp: r.temperature ?? null })));
+            return days;
+          }
+          EOF
+
+          cat > app/diary/page.tsx << 'EOF'
+          'use client';
+          import { useState } from 'react';
+          import { createEntry } from '../../hooks/useDiary';
+          export default function DiaryPage() {
+            const [heartRate, setHr] = useState<number | ''>('');
+            const [temperature, setTp] = useState<number | ''>('');
+            const [notes, setNotes] = useState('');
+            const onSave = () => {
+              const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? crypto.randomUUID() : String(Date.now());
+              const date = new Date().toISOString().slice(0,10);
+              const record = { time: new Date().toISOString(), heartRate: heartRate=== ''? undefined:Number(heartRate), temperature: temperature=== ''? undefined:Number(temperature), notes } as any;
+              createEntry({ id, date, records: [record] } as any);
+              alert('Saved');
+            };
+            return (
+              <div className="p-4 space-y-2">
+                <h1 className="text-xl font-bold">Diary</h1>
+                <label>Heart Rate <input value={heartRate} onChange={e=>setHr(e.target.value?Number(e.target.value):'')} type="number" className="border p-1"/></label>
+                <label>Temperature <input value={temperature} onChange={e=>setTp(e.target.value?Number(e.target.value):'')} type="number" className="border p-1"/></label>
+                <label>Notes <textarea value={notes} onChange={e=>setNotes(e.target.value)} className="border p-1"/></label>
+                <button onClick={onSave} className="bg-blue-600 text-white px-3 py-1">Save</button>
+              </div>
+            );
+          }
+          EOF
+
+          cat > app/diary/[id]/page.tsx << 'EOF'
+          export default function DiaryDetail() { return <div className="p-4">Diary detail</div>; }
+          EOF
+
+          cat > app/diary/monthly/page.tsx << 'EOF'
+          'use client';
+          import { monthlyStats } from '../../../hooks/useDiary';
+          import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+          export default function Monthly() {
+            const ym = new Date().toISOString().slice(0,7);
+            const data = monthlyStats(ym);
+            return (
+              <div className="p-4">
+                <h1 className="text-xl font-bold">Monthly Vitals</h1>
+                <div style={{width:'100%', height:300}}>
+                  <ResponsiveContainer>
+                    <LineChart data={data}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="hr" stroke="#8884d8" />
+                      <Line type="monotone" dataKey="temp" stroke="#82ca9d" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            );
+          }
+          EOF
+
+          cat > tests/e2e/diary.spec.ts << 'EOF'
+          import { test, expect } from '@playwright/test';
+          test('diary create and monthly chart', async ({ page }) => {
+            await page.goto('/diary');
+            await page.fill('input[type=number]:nth-of-type(1)', '80');
+            await page.fill('input[type=number]:nth-of-type(2)', '36.8');
+            await page.click('text=Save');
+            await page.waitForTimeout(300);
+            await page.goto('/diary/monthly');
+            await expect(page.locator('text=Monthly Vitals')).toBeVisible();
+          });
+          EOF
+
+      - name: Create PR for diary feature
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "feat(diary): minimal diary feature scaffold (schemas/hooks/pages/e2e)"
+          title: "feat: diary extended (scaffold)"
+          body: "Auto-created by /agent implement diary. Adds minimal diary schemas, app pages, hook and E2E."
+          branch: ${{ env.BRANCH_NAME }}
+          delete-branch: true
+          labels: e2e-required

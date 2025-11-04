@@ -108,7 +108,7 @@ function createWebTranscriber(opts: CreateTranscriberOptions = {}): Transcriber 
   recognition.onend = () => {
     try {
       recognition.start()
-    } catch (_) {
+    } catch {
       // 既に開始済みなら例外が出ることがあるが無視
     }
   }
@@ -117,7 +117,7 @@ function createWebTranscriber(opts: CreateTranscriberOptions = {}): Transcriber 
     start: () => {
       try {
         recognition.start()
-      } catch (e) {
+      } catch {
         // 二重開始防止
       }
     },
@@ -125,7 +125,7 @@ function createWebTranscriber(opts: CreateTranscriberOptions = {}): Transcriber 
       try {
         recognition.onend = null
         recognition.stop()
-      } catch (e) {
+      } catch {
         // ignore
       }
     },
