@@ -1,7 +1,7 @@
 // Service Worker for notifications (minimal skeleton)
 // Cache strategy and advanced features to be added in future iterations
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   console.log('[SW] install');
   self.skipWaiting();
 });
@@ -33,8 +33,8 @@ self.addEventListener('notificationclick', (event) => {
         if (typeof clients.openWindow === 'function') {
           await clients.openWindow(target);
         }
-      } catch (err) {
-        console.warn('[SW] notificationclick handler failed:', err);
+      } catch (_err) {
+        console.warn('[SW] notificationclick handler failed:', _err);
       }
     })(),
   );
@@ -44,7 +44,7 @@ self.addEventListener('push', (event) => {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
-  } catch (err) {
+  } catch {
     try {
       payload = { body: event.data?.text() };
     } catch {

@@ -61,7 +61,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
       DataStorageService.saveAppSettings(updatedSettings)
       setMessage({ type: "success", text: "設定を保存しました" })
       setTimeout(() => setMessage(null), 3000)
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "設定の保存に失敗しました" })
     }
   }
@@ -96,7 +96,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
         emergencyContact: { name: "", phone: "", relationship: "" },
       })
       setMessage({ type: "success", text: "利用者プロフィールを保存しました" })
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "プロフィールの保存に失敗しました" })
     }
   }
@@ -107,7 +107,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
         DataStorageService.deleteUserProfile(profileId)
         loadUserProfiles()
         setMessage({ type: "success", text: "プロフィールを削除しました" })
-      } catch (error) {
+      } catch {
         setMessage({ type: "error", text: "プロフィールの削除に失敗しました" })
       }
     }
