@@ -125,7 +125,7 @@ export async function summarizeMonthlyReport(
     const resp = await model.invoke(promptText);
     // respはAIMessageの可能性があるが、toString安全化
     raw = (resp as any)?.content ?? String(resp ?? "");
-  } catch (err) {
+  } catch {
     // ネットワークやAPIキーが無い等の例外時は、最低限のルールベース概要を返す
     const t = report.totals;
     const summary = `今月(${report.ym})は記録${t.entries}件、発作${t.seizureCount}回。平均HR ${
