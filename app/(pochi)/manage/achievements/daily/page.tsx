@@ -101,6 +101,7 @@ export default function DailyAchievementsPage() {
     ? {}
     : headerValidation.error.formErrors.fieldErrors
   const rowValidations = useMemo(() => rows.map((row) => rowSchema.safeParse(row)), [rows])
+  const isFormValid = headerValidation.success && rowValidations.every((result) => result.success)
 
   const summary = useMemo(() => {
     const totalUsers = rows.length
@@ -303,9 +304,17 @@ export default function DailyAchievementsPage() {
             <Button variant="outline" onClick={addRow}>
               行を追加
             </Button>
-            <Button onClick={downloadCsv}>CSVを出力</Button>
+            <Button onClick={downloadCsv} disabled={!isFormValid}>
+              CSVを出力
+            </Button>
           </div>
         </div>
+
+        {!isFormValid && (
+          <p className="text-sm text-muted-foreground" role="status">
+            入力内容に不足があります。すべてのフィールドを確認するとCSVを出力できます。
+          </p>
+        )}
 
         <div className="overflow-x-auto rounded-md border">
           <Table>
