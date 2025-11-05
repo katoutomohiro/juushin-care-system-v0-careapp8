@@ -1,17 +1,27 @@
 ## Overview
-Make `workflow_dispatch` runs of ai-dispatcher non-strict by default (warn-only), while keeping scheduled runs strict and failing when required secrets are missing.
+<!-- 変更内容の概要を記載してください -->
 
-## Changes
-- Add `workflow_dispatch` input `strict` (boolean, default false)
-- Add env flags for secrets presence (`HAS_OPENAI`, `HAS_SUPABASE_KEY`, `HAS_SUPABASE_URL`) and `STRICT`
-- Add warn-only step for manual non-strict runs when secrets are missing
-- Gate the Python ok-guard step to run only when `STRICT==true` or on `schedule`
+## チェックリスト
+- [ ] build / lint:strict / test グリーン
+- [ ] (pochi) 以外の差分なし
+- [ ] CSV(BOM/CRLF/0|1)出力OK
+- [ ] LSドラフトOK
+- [ ] a11y OK
 
-## Behavior
-- Manual run (workflow_dispatch):
-  - Default non-strict: missing secrets produce warnings; job succeeds
-  - With `strict: true`: behaves like scheduled audit (fails if secrets missing)
-- Scheduled run: strict by design; fails if required secrets are missing
+## スクリーンショット
+- Daily
+  - _スクリーンショットを貼付_
+- Users
+  - _スクリーンショットを貼付_
 
-## Rationale
-Reduces noise during manual tests while keeping nightly audit strict to catch misconfigurations. Aligns with WORKFLOW_BEST_PRACTICES.md guidance.
+## 手動ガード
+- [ ] main に Branch protection rule を作成 → Required status checks を有効化（build / lint:strict / test）
+
+## 運用メモ
+- PR運用（#137 は Draftのまま）
+
+## 追加メモ
+- PR-A: a11y/文言/軽微スタイル
+- PR-B: CSV importer（Zod で strict 受理、失敗行だけ再編集）
+- PR-C: Users の userSuggestions を既存Userから取得（型：{id,name}）
+- PR-D: 月次集計ビュー（ヘッダCSV × 明細CSVを連結してΣ）

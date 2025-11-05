@@ -1,4 +1,8 @@
-﻿name: ci
+﻿concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+name: ci
 
 on:
   pull_request:
@@ -20,10 +24,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-
-concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   build-test:
