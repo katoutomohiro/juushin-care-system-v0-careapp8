@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
       ...(ip ? [`http://${ip}:${DEV_PORT}`] : []),
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/achievements/daily",
+        destination: "/manage/achievements/daily",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
