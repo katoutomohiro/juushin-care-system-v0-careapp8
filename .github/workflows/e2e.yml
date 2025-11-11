@@ -20,7 +20,7 @@ jobs:
       group: e2e-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # pnpm -> node の順（pnpm先）
       - uses: pnpm/action-setup@v4
