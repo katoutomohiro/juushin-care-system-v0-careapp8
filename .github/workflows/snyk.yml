@@ -1,0 +1,26 @@
+name: Snyk Security Scan
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snyk/actions/setup@master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Snyk test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        uses: snyk/actions/node@master
+        with:
+          command: test
+          args: --severity-threshold=high
