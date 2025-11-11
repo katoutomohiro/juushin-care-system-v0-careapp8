@@ -1,0 +1,36 @@
+name: AI Code Review
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ['**']
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install openai
+      - name: Run AI review
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -f scripts/agent_review_autogen.py ]; then
+            python scripts/agent_review_autogen.py
+          else
+            echo "⚠️ scripts/agent_review_autogen.py not found, skipping AI review"
+          fi
+      - name: Upload review results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-review-results
+          path: |
+            ai-review-*.md
+            ai-review-*.json
+          retention-days: 30
