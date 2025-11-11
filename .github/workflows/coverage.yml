@@ -1,0 +1,32 @@
+name: Coverage
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    # For public repositories, Codecov does not require a token
+    # For private repositories, add CODECOV_TOKEN to Secrets
+    # permissions:
+    #   id-token: write  # Required for OIDC authentication (optional)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test -- --coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage-final.json
+          fail_ci_if_error: false
+          # token: ${{ secrets.CODECOV_TOKEN }}  # Required for private repos

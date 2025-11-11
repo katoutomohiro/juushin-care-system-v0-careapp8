@@ -1,0 +1,31 @@
+name: openai-smoketest
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install openai
+      - name: Call OpenAI /models
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          from openai import OpenAI
+          key = os.environ.get("OPENAI_API_KEY")
+          try:
+            client = OpenAI(api_key=key)
+            client.models.list()
+            print("✅ OpenAI key works.")
+          except Exception as e:
+            print("❌ OpenAI key check failed:", e)
+            sys.exit(1)
+          PY
