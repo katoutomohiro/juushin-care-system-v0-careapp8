@@ -26,7 +26,53 @@ function Get-PrInfo {
         }
         $normalized += [PSCustomObject]$check
     }
-    $prJson | Add-Member -NotePropertyName NormalizedChecks -NotePropertyValue $normalized -Force
+        # Build NormalizedChecks from Status API and Checks API for the PR HEAD SHA
+        try {
+            $slug = Get-RepoSlug
+            $owner = $slug.Owner
+            $repo  = $slug.Repo
+            $sha   = $prJson.headRefOid
+
+            $combined = @()
+
+            # Prefer check-runs (more precise), then fill with status contexts
+            try {
+                $cr = gh api "repos/$owner/$repo/commits/$sha/check-runs" 2>$null | ConvertFrom-Json
+                if ($cr -and $cr.check_runs) {
+                    foreach ($r in $cr.check_runs) {
+                        if (-not $r.name) { continue }
+                        $status = if ($r.status) { ($r.status.ToString()).ToUpper() } else { 'UNKNOWN' }
+                        $concl  = if ($r.conclusion) { ($r.conclusion.ToString()).ToUpper() } else { if ($status -eq 'COMPLETED') { 'NONE' } else { 'NONE' } }
+                        $url    = if ($r.details_url) { $r.details_url } else { '' }
+                        $combined += [pscustomobject]@{ Name = $r.name; Status = $status; Conclusion = $concl; Url = $url }
+                    }
+                }
+            } catch {}
+
+            try {
+                $st = gh api "repos/$owner/$repo/commits/$sha/status" 2>$null | ConvertFrom-Json
+                if ($st -and $st.statuses) {
+                    foreach ($s in $st.statuses) {
+                        if (-not $s.context) { continue }
+                        $state = ($s.state.ToString()).ToLower()
+                        $status = switch ($state) { 'pending' { 'PENDING' } default { 'COMPLETED' } }
+                        $concl  = switch ($state) { 'success' { 'SUCCESS' } 'failure' { 'FAILURE' } 'error' { 'FAILURE' } 'pending' { 'NONE' } default { 'NONE' } }
+                        $url    = if ($s.target_url) { $s.target_url } else { '' }
+                        $combined += [pscustomobject]@{ Name = $s.context; Status = $status; Conclusion = $concl; Url = $url }
+                    }
+                }
+            } catch {}
+
+            # Dedupe by Name, preferring first occurrence (check-runs come first)
+            $byName = @{}
+            foreach ($c in $combined) { if (-not $byName.ContainsKey($c.Name)) { $byName[$c.Name] = $c } }
+            $normalized = @()
+            foreach ($k in $byName.Keys) { $normalized += $byName[$k] }
+
+            $prJson | Add-Member -NotePropertyName NormalizedChecks -NotePropertyValue $normalized -Force
+        } catch {
+            # If anything fails, still return PR JSON without NormalizedChecks
+        }
     
     return $prJson
 }
