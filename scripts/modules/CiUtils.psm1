@@ -11,9 +11,23 @@ function Get-RepoSlug {
 
 function Get-PrInfo {
     param([Parameter(Mandatory=$true)][int]$Number)
-    $prJson = gh pr view $Number --json number,title,headRefName,baseRefName,state,mergeable,statusCheckRollup,headRefOid 2>$null | ConvertFrom-Json
+    $prJson = gh pr view $Number --json number,title,headRefName,baseRefName,state,mergeable,statusCheckRollup,headRefOid,isDraft 2>$null | ConvertFrom-Json
     if ($null -eq $prJson) { throw "PR #$Number not found" }
     if ($null -eq $prJson.statusCheckRollup) { $prJson | Add-Member -NotePropertyName statusCheckRollup -NotePropertyValue @() -Force }
+    
+    # Normalize statusCheckRollup to NormalizedChecks
+    $normalized = @()
+    foreach ($item in $prJson.statusCheckRollup) {
+        $check = @{
+            Name = if ($item.name) { $item.name } elseif ($item.context) { $item.context } else { "UNKNOWN" }
+            Status = if ($item.status) { $item.status } else { "UNKNOWN" }
+            Conclusion = if ($item.conclusion) { $item.conclusion } else { "NONE" }
+            Url = if ($item.detailsUrl) { $item.detailsUrl } elseif ($item.targetUrl) { $item.targetUrl } else { "" }
+        }
+        $normalized += [PSCustomObject]$check
+    }
+    $prJson | Add-Member -NotePropertyName NormalizedChecks -NotePropertyValue $normalized -Force
+    
     return $prJson
 }
 
