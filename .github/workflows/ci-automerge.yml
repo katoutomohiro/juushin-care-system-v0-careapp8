@@ -18,14 +18,19 @@ permissions:
 
 # PR ごとに単一路線にして多重動作を抑止
 concurrency:
-  group: ci-automerge-${{ github.event.pull_request.number || inputs.pr }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
-    # フォーク由来PRは安全のため除外
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    # フォーク由来PRは除外 + ux-readyラベル必須 + no-auto-mergeで非常停止
+    if: >
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+      (github.event_name == 'workflow_dispatch' || (
+        contains(fromJson(toJson(github.event.pull_request.labels)).*.name, 'ux-ready') &&
+        !contains(fromJson(toJson(github.event.pull_request.labels)).*.name, 'no-auto-merge')
+      ))
     timeout-minutes: 30
     
     steps:
