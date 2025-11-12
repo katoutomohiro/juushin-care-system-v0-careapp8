@@ -1,11 +1,11 @@
 version: 2
 updates:
+  # npm dependencies
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
+      interval: "daily"
+    open-pull-requests-limit: 5
     groups:
       minor-and-patch:
         update-types:
@@ -16,3 +16,10 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-major"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
