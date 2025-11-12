@@ -1,23 +1,31 @@
-name: CI Auto-Merge Operator
+name: ci-automerge
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'PR番号'
+      pr:
+        description: PR number
         required: true
-        type: number
+        type: string
 
+# 最小権限（必要十分）
 permissions:
-  contents: write
-  pull-requests: write
-  checks: read
+  contents: write          # マージで必要
+  pull-requests: write     # PR への書き込み（ステータス/マージ操作）
+  checks: read             # チェックの参照
+
+# PR ごとに単一路線にして多重動作を抑止
+concurrency:
+  group: ci-automerge-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
 
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
+    # フォーク由来PRは安全のため除外
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     timeout-minutes: 30
     
     steps:
@@ -38,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $pr = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            ${{ github.event.inputs.pr_number }}
+            "${{ inputs.pr }}"
           } else {
             ${{ github.event.pull_request.number }}
           }
@@ -71,7 +79,7 @@ jobs:
         if: failure()
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          issue-number: ${{ github.event.pull_request.number || inputs.pr }}
           body: |
             ## ⚠️ Auto-Merge Failed
             
