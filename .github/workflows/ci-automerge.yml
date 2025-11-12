@@ -1,0 +1,84 @@
+name: CI Auto-Merge Operator
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR番号'
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup GitHub CLI
+        run: |
+          gh --version
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Run Auto-Merge Operator
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $pr = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            ${{ github.event.inputs.pr_number }}
+          } else {
+            ${{ github.event.pull_request.number }}
+          }
+          
+          Write-Host "🚀 Starting auto-merge operator for PR #$pr"
+          
+          # モジュール読み込み
+          Import-Module ./scripts/modules/CiUtils.psm1 -Force
+          
+          # contextsチェック
+          if (-not (Test-RequiredContextsAttached -PrNumber $pr)) {
+            Write-Host "❌ Required contexts mismatch detected" -ForegroundColor Red
+            exit 2
+          }
+          
+          # 自動マージ実行
+          ./scripts/ci_automerge.ps1 -Pr $pr -TimeoutMinutes 25
+          
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ PR #$pr merged successfully" -ForegroundColor Green
+          } elseif ($LASTEXITCODE -eq 2) {
+            Write-Host "⚠️ Required contexts mismatch - manual fix required" -ForegroundColor Yellow
+            exit 1
+          } else {
+            Write-Host "❌ Auto-merge failed" -ForegroundColor Red
+            exit 1
+          }
+      
+      - name: Comment on Failure
+        if: failure()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          body: |
+            ## ⚠️ Auto-Merge Failed
+            
+            自動マージが失敗しました。以下を確認してください:
+            
+            - 🔍 必須チェックがすべて成功していますか？
+            - 🔍 required contextsと実際のチェック名が一致していますか？
+            - 🔍 PRがdraftになっていませんか？
+            
+            詳細は[ワークフロー実行ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})を確認してください。
