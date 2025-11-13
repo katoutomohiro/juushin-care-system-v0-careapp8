@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # base ブランチの最新を PR ブランチへマージ(またはrebase)する公式API
       - name: Update PR branch (merge base into head)
