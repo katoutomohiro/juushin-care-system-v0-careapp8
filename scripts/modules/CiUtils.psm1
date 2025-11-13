@@ -11,9 +11,69 @@ function Get-RepoSlug {
 
 function Get-PrInfo {
     param([Parameter(Mandatory=$true)][int]$Number)
-    $prJson = gh pr view $Number --json number,title,headRefName,baseRefName,state,mergeable,statusCheckRollup,headRefOid 2>$null | ConvertFrom-Json
+    $prJson = gh pr view $Number --json number,title,headRefName,baseRefName,state,mergeable,statusCheckRollup,headRefOid,isDraft 2>$null | ConvertFrom-Json
     if ($null -eq $prJson) { throw "PR #$Number not found" }
     if ($null -eq $prJson.statusCheckRollup) { $prJson | Add-Member -NotePropertyName statusCheckRollup -NotePropertyValue @() -Force }
+    
+    # Normalize statusCheckRollup to NormalizedChecks
+    $normalized = @()
+    foreach ($item in $prJson.statusCheckRollup) {
+        $check = @{
+            Name = if ($item.name) { $item.name } elseif ($item.context) { $item.context } else { "UNKNOWN" }
+            Status = if ($item.status) { $item.status } else { "UNKNOWN" }
+            Conclusion = if ($item.conclusion) { $item.conclusion } else { "NONE" }
+            Url = if ($item.detailsUrl) { $item.detailsUrl } elseif ($item.targetUrl) { $item.targetUrl } else { "" }
+        }
+        $normalized += [PSCustomObject]$check
+    }
+        # Build NormalizedChecks from Status API and Checks API for the PR HEAD SHA
+        try {
+            $slug = Get-RepoSlug
+            $owner = $slug.Owner
+            $repo  = $slug.Repo
+            $sha   = $prJson.headRefOid
+
+            $combined = @()
+
+            # Prefer check-runs (more precise), then fill with status contexts
+            try {
+                $cr = gh api "repos/$owner/$repo/commits/$sha/check-runs" 2>$null | ConvertFrom-Json
+                if ($cr -and $cr.check_runs) {
+                    foreach ($r in $cr.check_runs) {
+                        if (-not $r.name) { continue }
+                        $status = if ($r.status) { ($r.status.ToString()).ToUpper() } else { 'UNKNOWN' }
+                        $concl  = if ($r.conclusion) { ($r.conclusion.ToString()).ToUpper() } else { if ($status -eq 'COMPLETED') { 'NONE' } else { 'NONE' } }
+                        $url    = if ($r.details_url) { $r.details_url } else { '' }
+                        $combined += [pscustomobject]@{ Name = $r.name; Status = $status; Conclusion = $concl; Url = $url }
+                    }
+                }
+            } catch {}
+
+            try {
+                $st = gh api "repos/$owner/$repo/commits/$sha/status" 2>$null | ConvertFrom-Json
+                if ($st -and $st.statuses) {
+                    foreach ($s in $st.statuses) {
+                        if (-not $s.context) { continue }
+                        $state = ($s.state.ToString()).ToLower()
+                        $status = switch ($state) { 'pending' { 'PENDING' } default { 'COMPLETED' } }
+                        $concl  = switch ($state) { 'success' { 'SUCCESS' } 'failure' { 'FAILURE' } 'error' { 'FAILURE' } 'pending' { 'NONE' } default { 'NONE' } }
+                        $url    = if ($s.target_url) { $s.target_url } else { '' }
+                        $combined += [pscustomobject]@{ Name = $s.context; Status = $status; Conclusion = $concl; Url = $url }
+                    }
+                }
+            } catch {}
+
+            # Dedupe by Name, preferring first occurrence (check-runs come first)
+            $byName = @{}
+            foreach ($c in $combined) { if (-not $byName.ContainsKey($c.Name)) { $byName[$c.Name] = $c } }
+            $normalized = @()
+            foreach ($k in $byName.Keys) { $normalized += $byName[$k] }
+
+            $prJson | Add-Member -NotePropertyName NormalizedChecks -NotePropertyValue $normalized -Force
+        } catch {
+            # If anything fails, still return PR JSON without NormalizedChecks
+        }
+    
     return $prJson
 }
 

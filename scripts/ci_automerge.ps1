@@ -34,8 +34,17 @@ Write-Host "=== Validating Required Contexts ===" -ForegroundColor Cyan
 $ok = Test-RequiredContextsAttached -Owner $owner -Repo $repo -Branch $base -Sha $sha -RequiredContexts $required
 if (-not $ok) {
     Write-Host ""
+    # Show safe fix command using actual check-run names
+    $actualNames = Get-ActualCheckNames -Owner $owner -Repo $repo -Sha $sha
+    if ($actualNames -and $actualNames.Count -gt 0) {
+        Write-Host "  Suggested fix (update branch protection contexts to actual names):" -ForegroundColor Cyan
+        $cmdLines = @("gh api -X PUT repos/$owner/$repo/branches/$base/protection/required_status_checks/contexts")
+        foreach ($n in $actualNames) { $cmdLines += "  -f contexts[]=$n" }
+        $cmd = [string]::Join([Environment]::NewLine, $cmdLines)
+        Write-Host ""; Write-Host $cmd -ForegroundColor White; Write-Host ""
+    }
     Write-Host "  [EXIT] Required contexts mismatch detected." -ForegroundColor Red
-    Write-Host "  Action: Update branch protection contexts with the command above, then rerun this script." -ForegroundColor Yellow
+    Write-Host "  Action: Update branch protection contexts with the suggested command, then rerun this script." -ForegroundColor Yellow
     Write-Host ""
     exit 2
 }
@@ -180,7 +189,7 @@ try {
         
         # Get PR info
         try {
-            $prData = Get-PrInfo -Number $Pr
+            $prData = Get-PrInfo -Number $prNumber
         }
         catch {
             Write-Host "  [ERROR] Could not get PR info: $_" -ForegroundColor Red
@@ -333,12 +342,12 @@ try {
             if (-not $hasUnknownOrApp) {
                 # Try rerunning GitHub Actions first
                 try {
-                    $runs = List-ActionRunsForPr -HeadBranch $prData.headRefName
+                    $runs = Get-ActionRunsForPr -HeadBranch $prData.headRefName
                     
                     foreach ($run in $runs) {
                         if ($run.conclusion -eq 'failure' -or $run.conclusion -eq 'cancelled') {
                             Write-Host "    Rerunning: $($run.workflowName) (Run #$($run.databaseId))..." -ForegroundColor Yellow
-                            $success = Rerun-ActionRun -RunId $run.databaseId
+                            $success = Invoke-ActionRunRerun -RunId $run.databaseId
                             
                             if ($success) {
                                 Write-Host "      [OK] Rerun triggered" -ForegroundColor Green
