@@ -20,7 +20,7 @@ jobs:
       - name: Run i18n-reviewer
         run: python scripts/agent_run.py --topic "i18n translation review"
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: i18n-review
           path: artifacts/agent_reports/**

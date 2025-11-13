@@ -100,7 +100,7 @@ jobs:
           print("ok true")
           PY
       - name: Upload env hardening result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: agent_reports
           path: artifacts/agent_reports/env_hardening.json
