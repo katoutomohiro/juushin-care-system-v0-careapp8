@@ -68,7 +68,7 @@ jobs:
       # strict only for workflow_dispatch (manual); schedule is always treated as strict via job if-condition below
       STRICT: ${{ github.event_name == 'workflow_dispatch' && inputs.strict == true }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
