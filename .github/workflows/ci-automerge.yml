@@ -2,7 +2,7 @@ name: ci-automerge
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   workflow_dispatch:
     inputs:
       pr:
@@ -34,6 +34,14 @@ jobs:
     timeout-minutes: 30
     
     steps:
+      - name: Debug gating context
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "actor=${{ github.actor }}"
+          echo "head_ref=${{ github.head_ref }}"
+          echo "draft=${{ github.event.pull_request.draft }}"
+          echo "labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name' | paste -sd, -)"
+      
       - name: Checkout
         uses: actions/checkout@v4
         with:
