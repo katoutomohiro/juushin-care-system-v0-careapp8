@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install deps
@@ -20,7 +20,7 @@ jobs:
       - name: Run i18n-reviewer
         run: python scripts/agent_run.py --topic "i18n translation review"
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: i18n-review
           path: artifacts/agent_reports/**
