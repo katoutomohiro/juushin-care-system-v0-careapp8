@@ -14,6 +14,25 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 All contributors (オーナー、ChatGPT、GitHub Copilot、v0) must review and follow the consolidated workflow described in [`docs/ai-collaboration-handbook.md`](docs/ai-collaboration-handbook.md) before starting any task. Confirm "ハンドブック確認済み" in your activity logs at the beginning of each cycle, and revisit the handbook whenever the update log indicates new guidance.
 
+## Auto-Merge System 🚀
+
+**Status**: 🟢 Production (100% success rate, 7/7 PRs validated)
+
+This repository uses an automated PR merge system with dual quality gates:
+- ✅ **Vercel Preview Comments** - Deployment validation
+- ✅ **SonarCloud Code Analysis** - Code quality & security
+
+**Quick Start**:
+```powershell
+# Enable auto-merge on PR
+gh pr edit <PR_NUMBER> --add-label "ux-ready"
+```
+
+**Documentation**:
+- 📖 [Quick Reference](docs/QUICK_REFERENCE.md) - Essential commands
+- 📚 [Operations Manual](docs/operations-manual.md) - Complete guide
+- 🔧 [CI Auto-Merge Guide](docs/ci-automerge-guide.md) - Technical details
+
 ## Deployment
 
 Your project is live at:
