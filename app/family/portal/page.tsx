@@ -1,0 +1,83 @@
+import "server-only";
+import { createClient } from "@supabase/supabase-js";
+
+export default async function FamilyPortalPage() {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+  let todaySeizureCount = 0;
+  let seizureError: string | null = null;
+
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false },
+      });
+
+      // 今日の0:00〜23:59:59（日本時間）を計算
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+      const { data, error, count } = await supabase
+        .from("seizures")
+        .select("*", { count: "exact", head: true })
+        .gte("episode_at", startOfDay.toISOString())
+        .lte("episode_at", endOfDay.toISOString());
+
+      if (error) {
+        console.error("[FamilyPortal] Supabase seizure count error:", error);
+        seizureError = error.message;
+      } else {
+        todaySeizureCount = count || 0;
+      }
+    } catch (err) {
+      console.error("[FamilyPortal] Unexpected error fetching today's seizure count:", err);
+      seizureError = String(err);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6 p-4">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-bold">家族連携・デジタル連絡帳（構想中）</h1>
+        <p className="text-xs text-gray-600">
+          ※まだダミー画面です。将来、生活介護・放デイ・グループホーム・重度訪問介護の情報をまとめて家族へ共有する予定です。
+        </p>
+      </header>
+
+      {/* 今日の発作サマリーカード */}
+      <section className="rounded-lg border bg-white p-4 shadow-sm space-y-2">
+        <h2 className="text-base font-semibold flex items-center gap-2">📊 今日の発作サマリー</h2>
+        {seizureError ? (
+          <p className="text-sm text-gray-700">発作サマリーを取得できませんでした（サンプル表示のみ）</p>
+        ) : todaySeizureCount === 0 ? (
+          <p className="text-sm text-gray-700">本日の発作記録はありません</p>
+        ) : (
+          <p className="text-sm text-gray-700">本日の発作：{todaySeizureCount}件</p>
+        )}
+      </section>
+
+      <div className="space-y-4">
+        <section className="rounded-lg border bg-white p-4 shadow-sm space-y-2">
+          <h2 className="font-semibold flex items-center gap-2">🏠 日中の様子（生活介護・放デイ）</h2>
+          <p className="text-sm text-gray-700">
+            ここに、日中の活動・バイタル・発作・医療的ケアなどの記録を、家族向けに分かりやすく表示する予定です。
+          </p>
+        </section>
+        <section className="rounded-lg border bg-white p-4 shadow-sm space-y-2">
+          <h2 className="font-semibold flex items-center gap-2">🌙 夜間・在宅の様子（グループホーム・重度訪問介護）</h2>
+          <p className="text-sm text-gray-700">
+            ここに、グループホームや重度訪問介護の夜間の様子、自宅での体調などを共有する予定です。
+          </p>
+        </section>
+        <section className="rounded-lg border bg-white p-4 shadow-sm space-y-2">
+          <h2 className="font-semibold flex items-center gap-2">💬 保護者メッセージ／デジタル連絡帳</h2>
+          <p className="text-sm text-gray-700">
+            ここに、紙の連絡帳の代わりとなるメッセージ機能、既読管理、簡単なスタンプやコメントなどを実装していく予定です。
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}

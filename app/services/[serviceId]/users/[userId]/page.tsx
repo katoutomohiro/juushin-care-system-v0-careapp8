@@ -570,7 +570,7 @@ export default function UserDetailPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => setCurrentView("case-records")}
@@ -602,6 +602,23 @@ export default function UserDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     日々のケア記録（発作、バイタル、排泄など16種類）を記録・確認できます。
                   </p>
+                </CardContent>
+              </Card>
+              <Card
+                className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
+                onClick={() => {
+                  const encodedUser = encodeURIComponent(userId)
+                  router.push(`/services/${serviceId}/users/${encodedUser}/timeline`)
+                }}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
+                    <div className="p-2 bg-purple-100 rounded-lg text-2xl">🕒</div>
+                    タイムライン
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">この利用者の最近の発作イベントなどを時系列で確認します。</p>
                 </CardContent>
               </Card>
             </div>

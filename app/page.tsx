@@ -621,6 +621,66 @@ export default function WorldClassSoulCareApp() {
           </div>
         </section>
 
+        {/* 家族連携・事業所連携 セクション */}
+        <section aria-labelledby="family-link-section" className="space-y-4">
+          <h2 id="family-link-section" className="text-xl font-bold text-foreground">家族連携・事業所連携</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ClickableCard
+              onClick={() => _router.push('/family/portal')}
+              className="group border-2 hover:border-primary/30 bg-white text-gray-800 border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              particleColors={["#a5b4fc", "#93c5fd", "#ddd6fe"]}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-indigo-50 text-2xl">👨‍👩‍👧‍👦</div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-semibold">家族ポータル（β・ダミー）</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">家族向けの連絡帳/日中・夜間の様子共有の入口（構想）。</p>
+              </CardContent>
+            </ClickableCard>
+
+            <ClickableCard
+              onClick={() => _router.push('/timeline')}
+              className="group border-2 hover:border-primary/30 bg-white text-gray-800 border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              particleColors={["#fde68a", "#fca5a5", "#bfdbfe"]}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-yellow-50 text-2xl">🕒</div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-semibold">利用者タイムライン（ダミー）</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">生活介護・放デイ・GH・重訪を 1 本の時間軸に統合予定。</p>
+              </CardContent>
+            </ClickableCard>
+
+            <ClickableCard
+              onClick={() => _router.push('/plans/dashboard')}
+              className="group border-2 hover:border-primary/30 bg-white text-gray-800 border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              particleColors={["#86efac", "#93c5fd", "#fbcfe8"]}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-green-50 text-2xl">📊</div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-semibold">個別支援計画ダッシュボード（ダミー）</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">5領域ベースの目標・モニタリング・期限管理の入口。</p>
+              </CardContent>
+            </ClickableCard>
+          </div>
+        </section>
+
         {currentView === "dashboard" ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

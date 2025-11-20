@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { registerServiceWorker, subscribePush, unsubscribePush, getStoredSubscription } from "../lib/notifications"
 import type { PushSubscriptionRecord } from "../lib/db"
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {
+    // クライアントサイドのみで Service Worker を登録
     registerServiceWorker().catch((error) => {
       console.warn("[ServiceWorkerRegistration] registerServiceWorker failed:", error)
     })
@@ -24,11 +25,15 @@ export function PushSubscriptionButton({ userId = "default", className }: PushSu
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [record, setRecord] = useState<PushSubscriptionRecord | undefined>()
+  // Hydration error 対策：supported を state で管理し、初期値は false
+  const [supported, setSupported] = useState(false)
 
-  const supported = useMemo(
-    () => typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window,
-    [],
-  )
+  useEffect(() => {
+    // クライアントサイドでのみ Push 通知サポート判定
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window) {
+      setSupported(true)
+    }
+  }, [])
 
   useEffect(() => {
     if (!supported) return

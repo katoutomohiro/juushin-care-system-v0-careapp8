@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 
 type SeizureType = "強直間代" | "ピク付き" | "上視線" | "ミオクロニー" | "欠神" | "不明";
 
+const normalizeUuid = (value: string | null | undefined) => {
+  const v = (value ?? "").trim();
+  return v.length > 0 ? v : "00000000-0000-0000-0000-000000000000";
+};
+
 export default function NewSeizurePage() {
   const [episodeAt, setEpisodeAt] = useState<string>("");
   const [type, setType] = useState<SeizureType>("強直間代");
@@ -43,16 +48,18 @@ export default function NewSeizurePage() {
       const { supabase } = await import("@/lib/supabase/browsers");
       const { data: auth } = await supabase.auth.getUser();
       const reporterId = auth.user?.id;
-      if (!reporterId) {
-        setMsg("ログイン情報を取得できません。再ログインしてください。");
-        setLoading(false);
-        return;
-      }
-      if (!userId) {
-        setMsg("user_id が未指定です。");
-        setLoading(false);
-        return;
-      }
+      // TODO: 認証実装後に session チェックと厳密な RLS を復活させる
+      // MVP期間中は未ログインでも挿入試行するため、以下のガードをコメントアウト
+      // if (!reporterId) {
+      //   setMsg("ログイン情報を取得できません。再ログインしてください。");
+      //   setLoading(false);
+      //   return;
+      // }
+      // if (!userId) {
+      //   setMsg("user_id が未指定です。");
+      //   setLoading(false);
+      //   return;
+      // }
       if (!episodeAt) {
         setMsg("発作日時を入力してください。");
         setLoading(false);
@@ -67,12 +74,13 @@ export default function NewSeizurePage() {
           triggers: toTextArray(triggersRaw),
           interventions: toTextArray(interventionsRaw),
           note: note || null,
-          user_id: userId,
-          reporter_id: reporterId,
+          user_id: normalizeUuid(userId),
+          reporter_id: normalizeUuid(reporterId),
         },
       ]);
 
       if (error) {
+        console.error("seizures insert error", error);
         setMsg(`保存に失敗しました: ${error.message}`);
       } else {
         setMsg("保存しました。/seizures に一覧表示があります。");

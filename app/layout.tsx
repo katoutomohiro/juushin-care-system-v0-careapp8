@@ -1,8 +1,19 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { ServiceWorkerRegistration, PushSubscriptionButton } from "./service-worker-registration"
+import dynamic from "next/dynamic"
 import { UserProvider } from "@/contexts/user-context"
+
+// Hydration error 対策：Push 通知関連コンポーネントは SSR を無効化
+// ブラウザ API (navigator, window) に依存するため、クライアント側のみで読み込む
+const ServiceWorkerRegistration = dynamic(
+  () => import("./service-worker-registration").then((mod) => ({ default: mod.ServiceWorkerRegistration })),
+  { ssr: false }
+)
+const PushSubscriptionButton = dynamic(
+  () => import("./service-worker-registration").then((mod) => ({ default: mod.PushSubscriptionButton })),
+  { ssr: false }
+)
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
