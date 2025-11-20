@@ -10,11 +10,12 @@ export default async function TimelinePage({
 
   return (
     <UserTimeline
-      heading="利用者タイムライン（ダミー）"
+      heading="利用者タイムライン"
       showUserSelector={true}
       searchParamsUser={selectedUser}
-      // 現段階では selectedUser をそのまま userId に渡さない
-      // 将来的に selectedUser が UUID なら userId に渡す設計にする予定
+      // selectedUser が指定されていれば Supabase クエリに適用される
+      // 空文字の場合は undefined として全利用者を表示
+      userId={selectedUser || undefined}
     />
   );
 }
