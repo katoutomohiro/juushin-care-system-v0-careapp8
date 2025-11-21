@@ -8,9 +8,12 @@ export interface UserDetail {
   name: string;
   age: number;
   gender: string;
-  careLevel: string;
-  condition: string;
-  medicalCare: string;
+  careLevel: string; // 介護度（全介助など）
+  condition: string; // 基礎疾患一覧
+  medicalCare: string; // 医療ケア詳細
+  handbook?: string; // 療育手帳等
+  assist?: string; // 介助状況
+  disabilityType?: string; // 障害種別（区分）
   service: ServiceType[];
 }
 

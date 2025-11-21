@@ -421,8 +421,16 @@ export default function UserDetailPage() {
                     <p className="text-lg font-semibold">{displayName}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">ステータス</p>
-                    <p className="text-lg font-semibold">まってぃー</p>
+                    <p className="text-sm text-muted-foreground mb-1">手帳区分</p>
+                    <p className="text-lg font-semibold">{currentUserDetails.handbook || "不明"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">介助状況</p>
+                    <p className="text-lg font-semibold">{currentUserDetails.assist || currentUserDetails.careLevel || "不明"}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-muted-foreground mb-1">障害種別 / 区分</p>
+                    <p className="text-base leading-relaxed">{currentUserDetails.disabilityType || "不明"}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">サービス</p>

@@ -208,7 +208,17 @@ export default function ServiceUsersPage() {
                     </div>
                     <div className="flex-1">
                       <CardTitle className="text-lg font-semibold">{user}</CardTitle>
-                      <p className="text-sm text-muted-foreground">まってぃー</p>
+                      {(() => {
+                        const medical = details.medicalCare?.trim();
+                        const condition = details.condition?.trim();
+                        const summarySource = medical && medical !== "なし" ? medical : condition;
+                        const summary = summarySource
+                          ? summarySource.split("、").slice(0, 2).join("、")
+                          : "情報未設定";
+                        return (
+                          <p className="text-sm text-muted-foreground" title={summarySource}>{summary}{summarySource && summarySource.split("、").length > 2 ? "…" : ""}</p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </CardHeader>
