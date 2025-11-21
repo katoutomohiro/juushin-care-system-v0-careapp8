@@ -5,6 +5,9 @@
 
 import { UserDetail, updateAllUserServices, ServiceType } from "./user-service-allocation";
 
+// プロフィール抽出用（ケース記録で利用）
+export type UserProfileFields = Pick<UserDetail, 'age' | 'gender' | 'disabilityType' | 'condition' | 'medicalCare' | 'handbook' | 'assist'>
+
 // 統合されたユーザーデータ（年齢ベースでサービス自動配置）
 const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalService?: ServiceType[] }> = {
   // 生活介護 14名
@@ -297,34 +300,6 @@ const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalSer
     disabilityType: "重症心身障害児",
     originalService: ["after-school"]
   },
-  // サービスページにのみ存在する追加ユーザー（18歳未満も含む）
-  "M・S": {
-    name: "M・S",
-    age: 18,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "水頭症、脳原生上肢機能障害、脳原生上肢移動障害、側湾症",
-    medicalCare: "なし",
-    originalService: ["life-care"]
-  },
-  "M・O": {
-    name: "M・O",
-    age: 18,
-    gender: "女性", 
-    careLevel: "全介助",
-    condition: "脳原生上肢機能障害、脳原生上肢移動障害",
-    medicalCare: "胃ろう注入、吸引、IVH埋め込み",
-    originalService: ["life-care"]
-  },
-  "M・I": {
-    name: "M・I",
-    age: 17, // 18歳未満 → after-school に自動配置
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "慢性肺疾患、先天性性疾患、染色体異常、脳の形成不全、抗てんかん",
-    medicalCare: "鼻腔注入",
-    originalService: ["life-care"]
-  },
   "T・Y": {
     name: "T・Y", 
     age: 17, // 18歳未満 → after-school に自動配置
@@ -393,15 +368,6 @@ const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalSer
     name: "A・M",
     age: 11,
     gender: "女児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    originalService: ["after-school"]
-  },
-  "K・Y": {
-    name: "K・Y",
-    age: 10,
-    gender: "男児",
     careLevel: "全介助",
     condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
     medicalCare: "なし",

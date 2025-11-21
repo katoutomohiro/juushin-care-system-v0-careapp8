@@ -169,14 +169,13 @@ export default function UserDetailPage() {
     if (details) {
       return { ...details }
     }
-
     return {
       age: 0,
       gender: "不明",
       careLevel: "不明",
       condition: "情報なし",
       medicalCare: "情報なし",
-      service: [serviceId as ServiceType],
+      service: [serviceId] as ServiceType[],
       name: userId,
     }
   })
@@ -263,6 +262,11 @@ export default function UserDetailPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{displayName}</h1>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Button variant="secondary" size="sm" onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records`)}>
+                      ケース記録を見る
+                    </Button>
+                  </div>
                   <p className="text-sm text-muted-foreground">{service.name}</p>
                 </div>
               </div>
