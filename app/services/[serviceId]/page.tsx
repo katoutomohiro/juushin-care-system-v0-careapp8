@@ -10,209 +10,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { userDetails } from "@/lib/user-master-data"
+import { filterUsersByService, serviceConfig, ServiceType, calculateServicesForUser } from "@/lib/user-service-allocation"
 
-const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
-  "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
-  "after-school": { name: "放課後等デイサービス", icon: "🎓", color: "bg-green-50" },
-  "day-support": { name: "日中一時支援", icon: "⏰", color: "bg-orange-50" },
-  "group-home": { name: "グループホーム", icon: "🏠", color: "bg-purple-50" },
-  "home-care": { name: "重度訪問介護", icon: "🚑", color: "bg-red-50" },
-}
 
-const userDetails: {
-  [key: string]: {
-    age: number
-    gender: string
-    careLevel: string
-    condition: string
-    medicalCare: string
-    service: string[]
-  }
-} = {
-  "A・T": {
-    age: 36,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、遠視性弱視、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "I・K": {
-    age: 47,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、側湾症、体幹四肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "O・S": {
-    age: 40,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、体幹四肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "S・M": {
-    age: 43,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、脳炎後遺症、てんかん、精神遅滞、側湾症、両上下肢機能障害",
-    medicalCare: "吸引、腸瘻",
-    service: ["life-care"],
-  },
-  "N・M": {
-    age: 32,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "痙性四肢麻痺、重度知的障害、てんかん",
-    medicalCare: "胃ろう注入、エアウェイ装着、カフアシスト使用、吸引、吸入",
-    service: ["life-care"],
-  },
-  "W・M": {
-    age: 32,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳原生上肢機能障害、脳原生上肢移動障害、上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "S・Y": {
-    age: 41,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳原生上肢機能障害、脳原生上肢移動障害",
-    medicalCare: "鼻腔栄養注入",
-    service: ["life-care"],
-  },
-  "Y・K": {
-    age: 22,
-    gender: "男性",
-    careLevel: "全介助",
-    condition:
-      "二分脊椎症、水頭症、急性脳症後遺症、膀胱機能障害、両上下肢機能障害、体幹機能障害、自閉症スペクトラム障害",
-    medicalCare: "鼻腔チューブ使用、導尿",
-    service: ["life-care"],
-  },
-  "I・K2": {
-    age: 40,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、体幹四肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "O・M": {
-    age: 23,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、視覚障害（全盲）、難聴、網膜症、脳原生移動障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "U・S": {
-    age: 19,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "クリッペファイル症候群、高度難聴、気管狭窄症、両下肢機能障害",
-    medicalCare: "気管切開、気管内吸引、吸入、浣腸",
-    service: ["life-care"],
-  },
-  "I・T": {
-    age: 24,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺",
-    medicalCare: "胃ろう注入",
-    service: ["life-care"],
-  },
-  "M・S": {
-    age: 18,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "水頭症、脳原生上肢機能障害、脳原生上肢移動障害、側湾症",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "M・O": {
-    age: 18,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳原生上肢機能障害、脳原生上肢移動障害",
-    medicalCare: "胃ろう注入、吸引、IVH埋め込み",
-    service: ["life-care"],
-  },
-  "M・I": {
-    age: 17,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "慢性肺疾患、先天性性疾患、染色体異常、脳の形成不全、抗てんかん",
-    medicalCare: "鼻腔注入",
-    service: ["life-care"],
-  },
-  "T・Y": {
-    age: 17,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "K・M": {
-    age: 16,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "S・H": {
-    age: 16,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "R・N": {
-    age: 15,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "Y・T": {
-    age: 14,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "H・K": {
-    age: 13,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "N・S": {
-    age: 12,
-    gender: "男児",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-}
 
 export default function ServiceUsersPage() {
   const params = useParams()
   const router = useRouter()
-  const serviceId = params.serviceId as string
-  const service = welfareServices[serviceId]
+  const serviceId = params.serviceId as ServiceType
+  const service = serviceConfig[serviceId]
 
   const [users, setUsers] = useState<string[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -226,11 +33,9 @@ export default function ServiceUsersPage() {
   })
 
   useEffect(() => {
-    const filteredUsers = Object.entries(userDetails)
-      .filter(([_, details]) => details.service.includes(serviceId))
-      .map(([name, _]) => name)
-
-    setUsers(filteredUsers)
+    // 年齢ベースのフィルタリング適用
+    const filteredUsers = filterUsersByService(userDetails, serviceId).slice(0, 16)
+    setUsers(filteredUsers.map(([userId, _]) => userId))
   }, [serviceId])
 
   const handleAddUser = () => {
@@ -239,13 +44,17 @@ export default function ServiceUsersPage() {
       return
     }
 
+    // 年齢ベースでサービスを自動配置
+    const calculatedServices = calculateServicesForUser(newUser.age)
+    
     userDetails[newUser.name] = {
+      name: newUser.name,
       age: newUser.age,
       gender: newUser.gender,
       careLevel: newUser.careLevel,
       condition: newUser.condition,
       medicalCare: newUser.medicalCare,
-      service: [serviceId],
+      service: calculatedServices,
     }
 
     setUsers([...users, newUser.name])

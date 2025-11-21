@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DataStorageService } from "@/services/data-storage-service"
+import { userDetails } from "@/lib/user-master-data"
+import { type UserDetail, type ServiceType } from "@/lib/user-service-allocation"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -153,127 +155,6 @@ const dailyLogCategories = [
   },
 ]
 
-type UserDetail = {
-  age: number
-  gender: string
-  careLevel: string
-  condition: string
-  medicalCare: string
-  service: string[]
-  name: string
-}
-
-const userDetails: Record<string, UserDetail> = {
-  "A・T": {
-    name: "A・T",
-    age: 36,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、てんかん、遠視性弱視、側湾症、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "I・K": {
-    name: "I・K",
-    age: 47,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、側湾症、体幹四肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "O・S": {
-    name: "O・S",
-    age: 42,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "S・M": {
-    name: "S・M",
-    age: 38,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "N・M": {
-    name: "N・M",
-    age: 45,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "W・M": {
-    name: "W・M",
-    age: 51,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "S・Y": {
-    name: "S・Y",
-    age: 39,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "Y・K": {
-    name: "Y・K",
-    age: 44,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "I・K2": {
-    name: "I・K",
-    age: 35,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "O・M": {
-    name: "O・M",
-    age: 48,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "U・S": {
-    name: "U・S",
-    age: 41,
-    gender: "女性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-  "I・T": {
-    name: "I・T",
-    age: 37,
-    gender: "男性",
-    careLevel: "全介助",
-    condition: "脳性麻痺、知的障害、てんかん、両上下肢機能障害",
-    medicalCare: "なし",
-    service: ["life-care"],
-  },
-}
-
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -295,7 +176,7 @@ export default function UserDetailPage() {
       careLevel: "不明",
       condition: "情報なし",
       medicalCare: "情報なし",
-      service: [serviceId],
+      service: [serviceId as ServiceType],
       name: userId,
     }
   })
@@ -328,7 +209,7 @@ export default function UserDetailPage() {
         careLevel: "不明",
         condition: "情報なし",
         medicalCare: "情報なし",
-        service: [serviceId],
+        service: [serviceId as ServiceType],
         name: displayName,
       }
 
@@ -357,7 +238,8 @@ export default function UserDetailPage() {
       }
     }
 
-    userDetails[userId] = { ...editedUser, name: newName }
+    // Note: ユーザー詳細の永続化は将来のバージョンで実装予定
+    // userDetails[userId] = { ...editedUser, name: newName }
     setDisplayName(newName)
     setIsEditDialogOpen(false)
   }
