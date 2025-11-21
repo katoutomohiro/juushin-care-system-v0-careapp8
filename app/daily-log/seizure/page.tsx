@@ -10,6 +10,7 @@ import { DropdownField } from "@/components/log/DropdownField"
 import { toDatetimeLocal } from "@/lib/datetime"
 import { SEIZURE_TYPES, TRIGGERS, INTERVENTION_OPTIONS } from "@/config/options/seizure"
 import { saveSeizureLog } from "@/lib/persistence/seizure"
+import { insertSeizureToPublic } from "@/lib/seizures"
 import { toast } from "sonner"
 
 function SeizureForm() {
@@ -29,7 +30,6 @@ function SeizureForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const newErrors: { occurredAt?: string; seizureType?: string } = {}
     if (!occurredAt) newErrors.occurredAt = "記録時刻は必須です"
     if (!seizureType) newErrors.seizureType = "発作種別は必須です"
@@ -53,6 +53,29 @@ function SeizureForm() {
         serviceId: serviceId || null,
         userId: userId || null,
       })
+      // 付加処理: public.seizures にも追記（失敗してもフォーム保存は成功扱い）
+      try {
+        // reporter_id を取得（未ログイン時は null → ヘルパー側でダミーUUID化）
+        const { supabase } = await import("@/lib/supabase/browsers")
+        const { data: auth } = await supabase.auth.getUser()
+        const reporterId = auth.user?.id ?? null
+
+        const result = await insertSeizureToPublic({
+          episode_at: new Date(occurredAt).toISOString(),
+          type: seizureType || "不明",
+          duration_seconds: duration ? Number(duration) : null,
+          triggers: trigger ? [trigger] : [],
+          interventions: intervention ? [intervention] : [],
+          note: note || null,
+          user_id: userId,
+          reporter_id: reporterId,
+        })
+        if (!result.ok) {
+          console.error("[daily-log → seizures] insert failed:", result.error)
+        }
+      } catch (err) {
+        console.error("[daily-log → seizures] unexpected error:", err)
+      }
       try { toast.success("保存しました") } catch { alert("保存しました") }
       router.push("/daily-log")
     } catch (error) {
