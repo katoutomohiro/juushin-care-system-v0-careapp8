@@ -33,8 +33,8 @@ export default function ServiceUsersPage() {
   })
 
   useEffect(() => {
-    // 年齢ベースのフィルタリング適用
-    const filteredUsers = filterUsersByService(userDetails, serviceId).slice(0, 16)
+    // 年齢ベースのフィルタリング適用（全ユーザー表示）
+    const filteredUsers = filterUsersByService(userDetails, serviceId)
     setUsers(filteredUsers.map(([userId, _]) => userId))
   }, [serviceId])
 

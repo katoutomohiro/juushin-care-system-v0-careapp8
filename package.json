@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=chromium",
-    "test:e2e:all": "playwright test"
+    "test:e2e:all": "playwright test",
+    "verify:users": "tsx scripts/verify-user-distribution.ts"
   },
   "dependencies": {
     "@edge-runtime/vm": "latest",

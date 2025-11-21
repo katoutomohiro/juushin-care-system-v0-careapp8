@@ -3,10 +3,10 @@
  * 両ファイルの情報を統合し、一元管理する
  */
 
-import { UserDetail, updateAllUserServices } from "./user-service-allocation";
+import { UserDetail, updateAllUserServices, ServiceType } from "./user-service-allocation";
 
 // 統合されたユーザーデータ（年齢ベースでサービス自動配置）
-const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalService?: string[] }> = {
+const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalService?: ServiceType[] }> = {
   "A・T": {
     name: "A・T",
     age: 36,
@@ -150,7 +150,80 @@ const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalSer
     careLevel: "全介助", 
     condition: "脳原生上肢機能障害、脳原生上肢移動障害",
     medicalCare: "なし",
-    originalService: ["life-care"]
+    originalService: ["after-school"]
+  },
+  // 18歳未満のユーザーを追加（放課後等デイサービス用）
+  "K・M": {
+    name: "K・M",
+    age: 16,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "S・H": {
+    name: "S・H",
+    age: 16,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "R・N": {
+    name: "R・N",
+    age: 15,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "Y・T": {
+    name: "Y・T",
+    age: 14,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "H・K": {
+    name: "H・K",
+    age: 13,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "N・S": {
+    name: "N・S",
+    age: 12,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "A・M": {
+    name: "A・M",
+    age: 11,
+    gender: "女児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
+  },
+  "K・Y": {
+    name: "K・Y",
+    age: 10,
+    gender: "男児",
+    careLevel: "全介助",
+    condition: "脳性麻痺、てんかん、側湾症、両上下肢機能障害",
+    medicalCare: "なし",
+    originalService: ["after-school"]
   },
   // Group homeやhome-care のサンプルユーザーも追加（18歳以上）
   "G・H1": {
@@ -197,6 +270,52 @@ const rawUserDetails: Record<string, Omit<UserDetail, 'service'> & { originalSer
     condition: "脳性麻痺、知的障害",
     medicalCare: "なし", 
     originalService: ["group-home"]
+  },
+  // 重度訪問介護のユーザーを追加（18歳以上）
+  "H・C1": {
+    name: "H・C1",
+    age: 27,
+    gender: "男性",
+    careLevel: "全介助",
+    condition: "脳性麻痺、重度知的障害、てんかん",
+    medicalCare: "気管切開、人工呼吸器、吸引",
+    originalService: ["home-care"]
+  },
+  "H・C2": {
+    name: "H・C2",
+    age: 31,
+    gender: "女性",
+    careLevel: "全介助",
+    condition: "脳性麻痺、重度知的障害",
+    medicalCare: "胃ろう注入、吸引",
+    originalService: ["home-care"]
+  },
+  "H・C3": {
+    name: "H・C3",
+    age: 24,
+    gender: "男性",
+    careLevel: "全介助",
+    condition: "脳性麻痺、重度知的障害、てんかん",
+    medicalCare: "人工呼吸器、吸引、吸入",
+    originalService: ["home-care"]
+  },
+  "H・C4": {
+    name: "H・C4",
+    age: 28,
+    gender: "女性",
+    careLevel: "全介助",
+    condition: "脳性麻痺、重度知的障害",
+    medicalCare: "気管切開、吸引",
+    originalService: ["home-care"]
+  },
+  "H・C5": {
+    name: "H・C5",
+    age: 33,
+    gender: "男性",
+    careLevel: "全介助",
+    condition: "脳性麻痺、重度知的障害、てんかん",
+    medicalCare: "胃ろう注入、人工呼吸器、吸引",
+    originalService: ["home-care"]
   }
 };
 
@@ -210,11 +329,11 @@ for (const [userId, rawUser] of Object.entries(rawUserDetails)) {
     careLevel: rawUser.careLevel,
     condition: rawUser.condition,
     medicalCare: rawUser.medicalCare,
-    service: [], // 後で計算
+    service: rawUser.originalService ?? [], // originalServiceを保持
   };
 }
 
-// 年齢ベースの配置を適用
+// 年齢ベースの配置を適用（既存サービスを考慮）
 export const userDetails = updateAllUserServices(processedUserDetails);
 
 // 後方互換性のためのヘルパー
