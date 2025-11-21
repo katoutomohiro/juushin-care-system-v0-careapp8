@@ -48,9 +48,11 @@ for (const [service, users] of Object.entries(serviceDistribution)) {
 
 console.log('\n🔍 詳細チェック:');
 
-// 生活介護: 18歳以上全員
-const lifeCareExpected = ageStats.over18.length;
+// 生活介護: 18歳以上から group-home と home-care を除いた人数
 const lifeCareActual = serviceDistribution["life-care"].length;
+const groupHomeActual = serviceDistribution["group-home"].length;
+const homeCareActual = serviceDistribution["home-care"].length;
+const lifeCareExpected = ageStats.over18.length - groupHomeActual - homeCareActual;
 console.log(`  生活介護: ${lifeCareActual}人 / 期待値: ${lifeCareExpected}人 ${lifeCareActual === lifeCareExpected ? '✅' : '❌'}`);
 
 // 放課後等デイサービス: 18歳未満全員
@@ -63,12 +65,10 @@ const daySupportExpected = ageStats.under18.length + ageStats.over18.length;
 const daySupportActual = serviceDistribution["day-support"].length;
 console.log(`  日中一時支援: ${daySupportActual}人 / 期待値: ${daySupportExpected}人 ${daySupportActual === daySupportExpected ? '✅' : '❌'}`);
 
-// グループホーム: 18歳以上で5人
-const groupHomeActual = serviceDistribution["group-home"].length;
+// グループホーム: 固定5人
 console.log(`  グループホーム: ${groupHomeActual}人 / 期待値: 5人 ${groupHomeActual === 5 ? '✅' : '❌'}`);
 
-// 重度訪問介護: 18歳以上で5人
-const homeCareActual = serviceDistribution["home-care"].length;
+// 重度訪問介護: 固定5人
 console.log(`  重度訪問介護: ${homeCareActual}人 / 期待値: 5人 ${homeCareActual === 5 ? '✅' : '❌'}`);
 
 console.log('\n📝 サービス別ユーザー一覧:\n');
@@ -85,7 +85,7 @@ for (const [service, users] of Object.entries(serviceDistribution)) {
 // 検証エラーチェック
 let hasErrors = false;
 
-// 18歳未満がlife-careに含まれていないかチェック
+// 18歳未満が life-care に含まれていないかチェック
 for (const userId of ageStats.under18) {
   if (serviceDistribution["life-care"].includes(userId)) {
     console.error(`❌ エラー: ${userId} (${userDetails[userId].age}歳) が生活介護に含まれています`);
@@ -93,7 +93,7 @@ for (const userId of ageStats.under18) {
   }
 }
 
-// 18歳以上がafter-schoolに含まれていないかチェック
+// 18歳以上が after-school に含まれていないかチェック
 for (const userId of ageStats.over18) {
   if (serviceDistribution["after-school"].includes(userId)) {
     console.error(`❌ エラー: ${userId} (${userDetails[userId].age}歳) が放課後等デイサービスに含まれています`);

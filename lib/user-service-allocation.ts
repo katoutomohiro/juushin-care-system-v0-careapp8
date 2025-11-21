@@ -24,20 +24,22 @@ export interface UserDetail {
  */
 export function calculateServicesForUser(age: number, existingServices: ServiceType[] = []): ServiceType[] {
   const services: ServiceType[] = [];
-  
+
   // 年齢ベースの基本配置
   if (age >= 18) {
-    services.push("life-care");
+    // グループホーム / 重度訪問介護利用者は生活介護に重複させない
+    if (!existingServices.includes("group-home") && !existingServices.includes("home-care")) {
+      services.push("life-care");
+    }
   } else {
     services.push("after-school");
   }
-  
+
   // 全員が利用可能
   services.push("day-support");
-  
-  // 18歳以上のみのサービス
+
+  // 18歳以上のみのサービス（既存サービス継続）
   if (age >= 18) {
-    // 既存でgroup-home, home-careがあれば継続
     if (existingServices.includes("group-home")) {
       services.push("group-home");
     }
@@ -45,7 +47,7 @@ export function calculateServicesForUser(age: number, existingServices: ServiceT
       services.push("home-care");
     }
   }
-  
+
   return services;
 }
 
