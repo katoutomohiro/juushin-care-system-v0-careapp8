@@ -112,7 +112,7 @@ export default function CaseRecordClient({ userId, serviceId, date, userName, pr
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || "保存に失敗しました")
+      if (!res.ok || json?.ok === false) throw new Error(json.error || "保存に失敗しました")
       setMessage("ケース記録を保存しました")
     } catch (e: any) {
       setMessage(e.message || "保存に失敗しました")

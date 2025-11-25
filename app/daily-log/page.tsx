@@ -1,18 +1,13 @@
-import { UserDailyLogTimeline } from "./_components/user-daily-log-timeline";
+import { userDetails } from "@/lib/user-master-data"
+import DailyLogPageClient from "./_components/daily-log-page-client"
 
 export default async function DailyLogPage({
   searchParams,
 }: {
-  searchParams: { user?: string };
+  searchParams: { user?: string }
 }) {
-  const selectedUser = searchParams.user || undefined;
+  const users = Object.entries(userDetails).map(([id, detail]) => ({ id, name: detail.name }))
+  const initialUserId = searchParams.user || (users.length ? users[0].id : "")
 
-  return (
-    <UserDailyLogTimeline
-      heading="日誌タイムライン（全体）"
-      showUserSelector={true}
-      searchParamsUser={selectedUser}
-      userId={selectedUser}
-    />
-  );
+  return <DailyLogPageClient users={users} initialUserId={initialUserId} />
 }
