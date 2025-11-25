@@ -1,21 +1,58 @@
-import { NextResponse } from 'next/server'
-import { upsertCaseRecordFromDailyLog } from '@/lib/case-records'
-import { userDetails } from '@/lib/user-master-data'
+import { NextResponse } from "next/server"
+import {
+  buildATCaseRecordContentFromDailyLog,
+  resolveCaseRecordTemplate,
+  upsertCaseRecordContent,
+  upsertCaseRecordFromDailyLog,
+  type ATCaseRecordContent,
+} from "@/lib/case-records"
+import { userDetails } from "@/lib/user-master-data"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { userId, serviceType, recordDate, dailyLog } = body
-    if (!userId || !serviceType || !recordDate) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const { userId, serviceType, recordDate, dailyLog, careEvents, content, template, source } = body
+
+    if (!userId || !serviceType || !recordDate || (!content && !dailyLog && !careEvents)) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
-    if (!userDetails[userId]) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const detail = userDetails[userId]
+    if (!detail) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
-    await upsertCaseRecordFromDailyLog(userId, serviceType, recordDate, dailyLog)
-    return NextResponse.json({ ok: true })
+    const headerOverrides = {
+      userName: detail.name,
+      age: detail.age ? String(detail.age) : "",
+      sex: detail.gender || "",
+      serviceName: serviceType,
+    }
+
+    const resolvedTemplate = template || resolveCaseRecordTemplate(userId)
+    const resolvedContent =
+      content ||
+      buildATCaseRecordContentFromDailyLog({
+        recordDate,
+        dailyLog,
+        careEvents,
+        userId,
+        headerOverrides,
+      })
+
+    const row =
+      source === "manual" || content
+        ? await upsertCaseRecordContent({
+            userId,
+            serviceType,
+            recordDate,
+            content: resolvedContent as ATCaseRecordContent,
+            template: resolvedTemplate,
+            source: source || "manual",
+          })
+        : await upsertCaseRecordFromDailyLog(userId, serviceType, recordDate, dailyLog, careEvents, headerOverrides)
+
+    return NextResponse.json({ ok: true, content: row.content })
   } catch (e: any) {
-    console.error('[case-records/upsert] error', e)
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 })
+    console.error("[case-records/upsert] error", e)
+    return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 })
   }
 }

@@ -1,22 +1,22 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
-import ClickableCard from "@/components/clickable-card"
-import { formUrl } from "@/lib/url"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DataStorageService } from "@/services/data-storage-service"
+import { Textarea } from "@/components/ui/textarea"
+import ClickableCard from "@/components/clickable-card"
+import { formUrl } from "@/lib/url"
 import { userDetails } from "@/lib/user-master-data"
-import { type UserDetail, type ServiceType } from "@/lib/user-service-allocation"
+import { DataStorageService } from "@/services/data-storage-service"
+import type { ServiceType, UserDetail } from "@/lib/user-service-allocation"
 
-const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
+const welfareServices: Record<ServiceType, { name: string; icon: string; color: string }> = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
   "after-school": { name: "放課後等デイサービス", icon: "🎓", color: "bg-green-50" },
   "day-support": { name: "日中一時支援", icon: "⏰", color: "bg-orange-50" },
@@ -25,161 +25,46 @@ const welfareServices: { [key: string]: { name: string; icon: string; color: str
 }
 
 const dailyLogCategories = [
-  {
-    id: "seizure",
-    name: "発作記録",
-    icon: "⚡",
-    color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
-    iconBg: "bg-red-100 text-red-600",
-    description: "発作の種類・時間・対応を記録",
-  },
-  {
-    id: "expression",
-    name: "表情・反応",
-    icon: "😊",
-    color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
-    iconBg: "bg-amber-100 text-amber-600",
-    description: "表情や反応の変化を記録",
-  },
-  {
-    id: "vitals",
-    name: "バイタル",
-    icon: "❤️",
-    color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
-    iconBg: "bg-rose-100 text-rose-600",
-    description: "体温・血圧・脈拍を記録",
-  },
-  {
-    id: "hydration",
-    name: "水分補給",
-    icon: "💧",
-    color: "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100",
-    iconBg: "bg-sky-100 text-sky-600",
-    description: "水分摂取量・方法を記録",
-  },
-  {
-    id: "excretion",
-    name: "排泄",
-    icon: "🚽",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
-    iconBg: "bg-emerald-100 text-emerald-600",
-    description: "排尿・排便の状況を記録",
-  },
-  {
-    id: "activity",
-    name: "活動",
-    icon: "🏃",
-    color: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100",
-    iconBg: "bg-violet-100 text-violet-600",
-    description: "日常活動・リハビリを記録",
-  },
-  {
-    id: "skin_oral_care",
-    name: "皮膚・口腔ケア",
-    icon: "🛡️",
-    color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100",
-    iconBg: "bg-indigo-100 text-indigo-600",
-    description: "皮膚状態・口腔ケアを記録",
-  },
-  {
-    id: "tube_feeding",
-    name: "経管栄養",
-    icon: "🍽️",
-    color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100",
-    iconBg: "bg-orange-100 text-orange-600",
-    description: "経管栄養の実施状況を記録",
-  },
-  {
-    id: "respiratory",
-    name: "呼吸管理",
-    icon: "🫁",
-    color: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100",
-    iconBg: "bg-cyan-100 text-cyan-600",
-    description: "呼吸状態・人工呼吸器管理を記録",
-  },
-  {
-    id: "positioning",
-    name: "体位変換・姿勢管理",
-    icon: "🔄",
-    color: "bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100",
-    iconBg: "bg-lime-100 text-lime-600",
-    description: "体位変換・姿勢調整を記録",
-  },
-  {
-    id: "swallowing",
-    name: "摂食嚥下管理",
-    icon: "🍽️",
-    color: "bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100",
-    iconBg: "bg-pink-100 text-pink-600",
-    description: "嚥下機能・誤嚥リスク管理を記録",
-  },
-  {
-    id: "infection-prevention",
-    name: "感染予防管理",
-    icon: "🛡️",
-    color: "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100",
-    iconBg: "bg-yellow-100 text-yellow-600",
-    description: "感染兆候・予防策実施を記録",
-  },
-  {
-    id: "communication",
-    name: "コミュニケーション支援",
-    icon: "💬",
-    color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100",
-    iconBg: "bg-purple-100 text-purple-600",
-    description: "意思疎通・支援機器使用を記録",
-  },
-  {
-    id: "medication",
-    name: "服薬管理",
-    icon: "💊",
-    color: "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100",
-    iconBg: "bg-teal-100 text-teal-600",
-    description: "処方薬の服薬状況・副作用・効果の記録",
-  },
-  {
-    id: "therapy",
-    name: "リハビリテーション",
-    icon: "🏃‍♂️",
-    color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100",
-    iconBg: "bg-indigo-100 text-indigo-600",
-    description: "理学療法・作業療法・言語療法の実施記録",
-  },
-  {
-    id: "family-communication",
-    name: "家族連携",
-    icon: "👨‍👩‍👧‍👦",
-    color: "bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100",
-    iconBg: "bg-pink-100 text-pink-600",
-    description: "家族との情報共有・相談・支援計画の調整",
-  },
+  { id: "seizure", name: "発作記録", icon: "⚡", color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100", iconBg: "bg-red-100 text-red-600", description: "発作の種類・時間・対応を記録" },
+  { id: "expression", name: "表情・反応", icon: "😊", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100", iconBg: "bg-amber-100 text-amber-600", description: "表情・反応や声かけへの様子を記録" },
+  { id: "vitals", name: "バイタル", icon: "🌡️", color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100", iconBg: "bg-rose-100 text-rose-600", description: "体温・脈拍・血圧などのバイタルを記録" },
+  { id: "respiratory", name: "呼吸状態", icon: "💨", color: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100", iconBg: "bg-cyan-100 text-cyan-600", description: "呼吸状態や酸素投与の状況を記録" },
+  { id: "hydration", name: "水分補給", icon: "💧", color: "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100", iconBg: "bg-sky-100 text-sky-600", description: "水分量・方法・姿勢などを記録" },
+  { id: "swallowing", name: "嚥下・食事", icon: "🍚", color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100", iconBg: "bg-orange-100 text-orange-600", description: "嚥下や食事時の様子・姿勢を記録" },
+  { id: "tubeFeeding", name: "経管栄養", icon: "🧴", color: "bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100", iconBg: "bg-lime-100 text-lime-600", description: "経管栄養の内容・量・様子を記録" },
+  { id: "mealTubeFeeding", name: "経管食事", icon: "🥣", color: "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100", iconBg: "bg-teal-100 text-teal-600", description: "経管での食事メニューや介助の様子" },
+  { id: "excretion", name: "排泄", icon: "🚾", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100", iconBg: "bg-emerald-100 text-emerald-600", description: "排尿・排便の回数や性状を記録" },
+  { id: "positioning", name: "体位交換・ポジショニング", icon: "🛏️", color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100", iconBg: "bg-indigo-100 text-indigo-600", description: "体位交換やポジショニングの実施内容" },
+  { id: "skinOralCare", name: "スキン・口腔ケア", icon: "🧼", color: "bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100", iconBg: "bg-pink-100 text-pink-600", description: "スキンケアや口腔ケアの実施記録" },
+  { id: "infectionPrevention", name: "感染予防", icon: "🛡️", color: "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100", iconBg: "bg-slate-100 text-slate-600", description: "感染予防処置の内容を記録" },
+  { id: "activity", name: "活動・余暇", icon: "🎨", color: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100", iconBg: "bg-violet-100 text-violet-600", description: "活動内容・参加状況を記録" },
+  { id: "communication", name: "コミュニケーション", icon: "💬", color: "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100", iconBg: "bg-yellow-100 text-yellow-600", description: "意思疎通の様子や声掛けへの反応" },
+  { id: "transportation", name: "送迎・移動", icon: "🚌", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100", iconBg: "bg-amber-100 text-amber-600", description: "送迎や移動時の記録" },
 ]
 
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const serviceId = params.serviceId as string
+
+  const serviceId = params.serviceId as ServiceType
   const userId = decodeURIComponent(params.userId as string)
   const service = welfareServices[serviceId]
 
-  const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
+  const storedDetail = userDetails[userId]
+  const fallbackUser: UserDetail = {
+    name: userId,
+    age: 0,
+    gender: "不明",
+    careLevel: "不明",
+    condition: "特記事項なし",
+    medicalCare: "特記事項なし",
+    service: [serviceId],
+  }
+
+  const [currentView, setCurrentView] = useState<"overview" | "daily-logs">("overview")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editedUser, setEditedUser] = useState<UserDetail>(() => {
-    const details = userDetails[userId]
-    if (details) {
-      return { ...details }
-    }
-    return {
-      age: 0,
-      gender: "不明",
-      careLevel: "不明",
-      condition: "情報なし",
-      medicalCare: "情報なし",
-      service: [serviceId] as ServiceType[],
-      name: userId,
-    }
-  })
-  const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
+  const [editedUser, setEditedUser] = useState<UserDetail>(storedDetail ? { ...storedDetail } : { ...fallbackUser })
+  const [displayName, setDisplayName] = useState(() => storedDetail?.name ?? userId)
   const [currentDate, setCurrentDate] = useState<string>("")
 
   useEffect(() => {
@@ -199,18 +84,10 @@ export default function UserDetailPage() {
     )
   }, [])
 
-  const storedUserDetails = userDetails[userId]
-  const currentUserDetails: UserDetail = storedUserDetails
-    ? { ...storedUserDetails, name: displayName }
-    : {
-        age: 0,
-        gender: "不明",
-        careLevel: "不明",
-        condition: "情報なし",
-        medicalCare: "情報なし",
-        service: [serviceId as ServiceType],
-        name: displayName,
-      }
+  const currentUserDetails: UserDetail = useMemo(
+    () => (storedDetail ? { ...storedDetail, name: displayName } : { ...editedUser, name: displayName }),
+    [storedDetail, editedUser, displayName],
+  )
 
   const handleSaveUser = () => {
     const oldName = displayName
@@ -237,8 +114,6 @@ export default function UserDetailPage() {
       }
     }
 
-    // Note: ユーザー詳細の永続化は将来のバージョンで実装予定
-    // userDetails[userId] = { ...editedUser, name: newName }
     setDisplayName(newName)
     setIsEditDialogOpen(false)
   }
@@ -254,20 +129,20 @@ export default function UserDetailPage() {
               </Button>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-xl">
-                  {currentUserDetails.gender === "男性" || currentUserDetails.gender === "男児"
-                    ? "👨"
-                    : currentUserDetails.gender === "女性" || currentUserDetails.gender === "女児"
-                      ? "👩"
-                      : "👤"}
+                  {currentUserDetails.gender === "男性" ? "👨" : currentUserDetails.gender === "女性" ? "👩" : "👤"}
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{displayName}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <Button variant="secondary" size="sm" onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records`)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records`)}
+                    >
                       ケース記録を見る
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">{service.name}</p>
+                  <p className="text-sm text-muted-foreground">{service?.name ?? serviceId}</p>
                 </div>
               </div>
             </div>
@@ -291,12 +166,8 @@ export default function UserDetailPage() {
                 </CardTitle>
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
-                    >
-                      ✏️ 編集
+                    <Button variant="outline" size="sm" onClick={() => setEditedUser({ ...currentUserDetails })}>
+                      ✏ 編集
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
@@ -332,10 +203,7 @@ export default function UserDetailPage() {
                         <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
                           性別
                         </Label>
-                        <Select
-                          value={editedUser.gender}
-                          onValueChange={(value) => setEditedUser({ ...editedUser, gender: value })}
-                        >
+                        <Select value={editedUser.gender} onValueChange={(value) => setEditedUser({ ...editedUser, gender: value })}>
                           <SelectTrigger className="bg-white border-gray-300">
                             <SelectValue placeholder="性別を選択" />
                           </SelectTrigger>
@@ -345,12 +213,6 @@ export default function UserDetailPage() {
                             </SelectItem>
                             <SelectItem value="女性" className="hover:bg-pink-50 cursor-pointer py-3 text-base">
                               女性
-                            </SelectItem>
-                            <SelectItem value="男児" className="hover:bg-blue-50 cursor-pointer py-3 text-base">
-                              男児
-                            </SelectItem>
-                            <SelectItem value="女児" className="hover:bg-pink-50 cursor-pointer py-3 text-base">
-                              女児
                             </SelectItem>
                             <SelectItem value="不明" className="hover:bg-gray-50 cursor-pointer py-3 text-base">
                               不明
@@ -379,6 +241,9 @@ export default function UserDetailPage() {
                             <SelectItem value="見守り" className="hover:bg-green-50 cursor-pointer py-3 text-base">
                               見守り
                             </SelectItem>
+                            <SelectItem value="不明" className="hover:bg-gray-50 cursor-pointer py-3 text-base">
+                              不明
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -405,7 +270,7 @@ export default function UserDetailPage() {
                           value={editedUser.medicalCare || ""}
                           onChange={(e) => setEditedUser({ ...editedUser, medicalCare: e.target.value })}
                           rows={3}
-                          placeholder="医療ケア内容を入力してください（なしの場合は「なし」と入力）"
+                          placeholder="医療ケア概要を入力してください（なしの場合は「なし」）"
                         />
                       </div>
                     </div>
@@ -425,20 +290,8 @@ export default function UserDetailPage() {
                     <p className="text-lg font-semibold">{displayName}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">手帳区分</p>
-                    <p className="text-lg font-semibold">{currentUserDetails.handbook || "不明"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">介助状況</p>
-                    <p className="text-lg font-semibold">{currentUserDetails.assist || currentUserDetails.careLevel || "不明"}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-muted-foreground mb-1">障害種別 / 区分</p>
-                    <p className="text-base leading-relaxed">{currentUserDetails.disabilityType || "不明"}</p>
-                  </div>
-                  <div>
                     <p className="text-sm text-muted-foreground mb-1">サービス</p>
-                    <p className="text-lg font-semibold">{service.name}</p>
+                    <p className="text-lg font-semibold">{service?.name ?? serviceId}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">年齢</p>
@@ -467,7 +320,10 @@ export default function UserDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => setCurrentView("case-records")}
+                onClick={() => {
+                  const encodedUser = encodeURIComponent(userId)
+                  router.push(`/services/${serviceId}/users/${encodedUser}/case-records`)
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
@@ -476,9 +332,7 @@ export default function UserDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    利用者の総合的なケース記録、支援計画、過去の履歴を確認できます。
-                  </p>
+                  <p className="text-sm text-muted-foreground">ケース記録の入力・確認はこちら</p>
                 </CardContent>
               </Card>
 
@@ -493,11 +347,10 @@ export default function UserDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    日々のケア記録（発作、バイタル、排泄など16種類）を記録・確認できます。
-                  </p>
+                  <p className="text-sm text-muted-foreground">日誌（発作・バイタル・排泄など）入力・履歴</p>
                 </CardContent>
               </Card>
+
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
@@ -512,27 +365,11 @@ export default function UserDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">この利用者の最近の発作イベントなどを時系列で確認します。</p>
+                  <p className="text-sm text-muted-foreground">最近の記録を時系列で確認</p>
                 </CardContent>
               </Card>
             </div>
           </>
-        )}
-
-        {currentView === "case-records" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">ケース記録</h2>
-              <Button variant="outline" onClick={() => setCurrentView("overview")}>
-                ← 戻る
-              </Button>
-            </div>
-            <Card className="shadow-lg">
-              <CardContent className="py-12 text-center">
-                <p className="text-lg text-muted-foreground">ケース記録機能は準備中です</p>
-              </CardContent>
-            </Card>
-          </div>
         )}
 
         {currentView === "daily-logs" && (
@@ -544,9 +381,9 @@ export default function UserDetailPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {dailyLogCategories.map((category) => (
-                  <ClickableCard
+                <ClickableCard
                   key={category.id}
                   onClick={() => {
                     router.push(formUrl(category.id, serviceId, userId))

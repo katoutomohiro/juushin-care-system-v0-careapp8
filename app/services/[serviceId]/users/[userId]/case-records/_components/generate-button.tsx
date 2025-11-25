@@ -1,10 +1,17 @@
 "use client"
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 
-interface Props { userId: string; serviceType: string; date: string }
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import type { ATCaseRecordContent } from "@/lib/case-records"
 
-export default function GenerateCaseRecordButton({ userId, serviceType, date }: Props) {
+interface Props {
+  userId: string
+  serviceType: string
+  date: string
+  onGenerated?: (content: ATCaseRecordContent) => void
+}
+
+export default function GenerateCaseRecordButton({ userId, serviceType, date, onGenerated }: Props) {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
 
@@ -12,17 +19,22 @@ export default function GenerateCaseRecordButton({ userId, serviceType, date }: 
     setLoading(true)
     setStatus(null)
     try {
-      // ローカルストレージから日誌相当データを取得（MVP: 仮仕様）
-      const dailyLogRaw = localStorage.getItem('dailyLog')
+      const dailyLogRaw = typeof window !== "undefined" ? localStorage.getItem("dailyLog") : null
+      const careEventsRaw = typeof window !== "undefined" ? localStorage.getItem("careEvents") : null
       const dailyLog = dailyLogRaw ? JSON.parse(dailyLogRaw) : null
-      const res = await fetch('/api/case-records/upsert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, serviceType, recordDate: date, dailyLog }),
+      const careEvents = careEventsRaw ? JSON.parse(careEventsRaw) : []
+
+      const res = await fetch("/api/case-records/upsert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, serviceType, recordDate: date, dailyLog, careEvents, source: "daily-log" }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || '生成に失敗しました')
-      setStatus('ケース記録を生成しました。再読込してください。')
+      if (!res.ok) throw new Error(json.error || "生成に失敗しました")
+      if (json.content?.data) {
+        onGenerated?.(json.content.data as ATCaseRecordContent)
+      }
+      setStatus("ケース記録を生成しました。読み込み済みです。")
     } catch (e: any) {
       setStatus(e.message)
     } finally {
@@ -33,7 +45,7 @@ export default function GenerateCaseRecordButton({ userId, serviceType, date }: 
   return (
     <div className="space-y-2">
       <Button size="sm" variant="secondary" disabled={loading} onClick={handleGenerate}>
-        {loading ? '生成中…' : '日誌からケース記録を生成'}
+        {loading ? "生成中…" : "日誌からケース記録を生成"}
       </Button>
       {status && <p className="text-xs text-muted-foreground">{status}</p>}
     </div>
