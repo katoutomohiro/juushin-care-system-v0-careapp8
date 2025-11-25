@@ -4,6 +4,7 @@ export interface CareEvent {
   timestamp: string
   userId: string
   time: string
+  serviceId?: string
   notes?: string
   [key: string]: any
 }

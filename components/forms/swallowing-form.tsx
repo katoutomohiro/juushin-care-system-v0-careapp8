@@ -9,7 +9,6 @@ import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
 import { Label } from "@/components/ui/label"
 import CareFormLayout from "@/components/care-form-layout"
-import { DataStorageService } from "@/services/data-storage-service"
 
 interface SwallowingFormData {
   time: string
@@ -62,7 +61,6 @@ export function SwallowingForm({ selectedUser: _selectedUser, onSubmit, onCancel
     }
 
     onSubmit(careEvent)
-    DataStorageService.saveCareEvent(careEvent)
   }
 
   const setCurrentTime = () => {

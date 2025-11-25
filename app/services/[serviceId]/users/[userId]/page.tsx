@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -376,9 +377,19 @@ export default function UserDetailPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">日誌記録 - {displayName}</h2>
-              <Button variant="outline" onClick={() => setCurrentView("overview")}>
-                ← 戻る
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" asChild>
+                  <Link
+                    href={`/services/${serviceId}/users/${encodeURIComponent(userId)}/daily-logs`}
+                    prefetch={false}
+                  >
+                    全ての日誌を見る
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={() => setCurrentView("overview")}>
+                  ← 戻る
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

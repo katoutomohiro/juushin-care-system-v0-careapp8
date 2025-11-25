@@ -9,7 +9,6 @@ import { ClickableDropdown } from "@/components/clickable-dropdown"
 import { NumberSelector } from "@/components/number-selector"
 import { Label } from "@/components/ui/label"
 import CareFormLayout from "@/components/care-form-layout"
-import { DataStorageService } from "@/services/data-storage-service"
 
 interface InfectionPreventionFormData {
   time: string
@@ -58,7 +57,6 @@ export function InfectionPreventionForm({ selectedUser: _selectedUser, onSubmit,
     }
 
     onSubmit(careEvent)
-    DataStorageService.saveCareEvent(careEvent)
   }
 
   const setCurrentTime = () => {

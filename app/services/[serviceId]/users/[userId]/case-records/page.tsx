@@ -33,7 +33,13 @@ async function CaseRecordHistory({
   serviceId: string
   activeDate: string
 }) {
-  const dates = await fetchCaseRecordDates({ userId, serviceType: serviceId })
+  let dates: string[] = []
+  try {
+    dates = await fetchCaseRecordDates({ userId, serviceType: serviceId })
+  } catch (e) {
+    console.error("[CaseRecordHistory] failed to load dates", e)
+    dates = []
+  }
   if (!dates.length) return null
   return (
     <div className="rounded-lg border bg-card/60 p-3">

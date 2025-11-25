@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { NowButton } from "@/components/NowButton"
 import { SEIZURE_TYPES } from "@/app/(records)/options"
-import { DataStorageService } from "@/services/data-storage-service"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import CareFormLayout from "@/components/care-form-layout"
@@ -192,7 +191,7 @@ export function SeizureForm({ selectedUser, onSubmit, onCancel }: SeizureFormPro
     console.log("[v0] Seizure form submitted with data:", formData)
 
     try {
-      const careEvent = await DataStorageService.saveCareEvent({
+      const careEvent = {
         eventType: "seizure",
         timestamp: new Date().toISOString(),
         userId: selectedUser, // Use actual selected user instead of hardcoded value
@@ -212,7 +211,7 @@ export function SeizureForm({ selectedUser, onSubmit, onCancel }: SeizureFormPro
         observedSymptoms: formData.observedSymptoms,
         measurementIssues: formData.measurementIssues,
         notes: formData.notes || "",
-      })
+      }
 
       onSubmit(careEvent)
 

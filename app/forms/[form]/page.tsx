@@ -57,6 +57,10 @@ export default function FormPage() {
   }, [serviceId, selectedUser])
 
   const handleSubmit = (data: any) => {
+    if (!selectedUser || !serviceId) {
+      alert("利用者またはサービスが指定されていません。もう一度お試しください。")
+      return
+    }
     const timestamp =
       data?.timestamp ||
       (data?.time ? `${new Date().toISOString().slice(0, 10)}T${data.time}:00` : new Date().toISOString())
@@ -66,7 +70,7 @@ export default function FormPage() {
       eventType: formKey,
       timestamp,
       time: data?.time || new Date(timestamp).toISOString().slice(11, 16),
-      userId: selectedUser || data?.userId || "",
+      userId: selectedUser,
       serviceId,
     })
 
