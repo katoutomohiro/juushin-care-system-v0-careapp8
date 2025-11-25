@@ -104,6 +104,7 @@ const caseRecordTemplateByUserId: Record<string, CaseRecordTemplate> = {
 const VITAL_ROW_COUNT = 6
 const HYDRATION_ROW_COUNT = 6
 const ELIMINATION_ROW_COUNT = 3
+const HISTORY_DAYS_DEFAULT = 365
 
 function normalizeDate(date: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date
@@ -286,6 +287,101 @@ function buildEliminationRows(events: any[]): ATCaseRecordEliminationRow[] {
   return rows
 }
 
+function buildFrontEliminationSlots(events: any[]): string[] {
+  const excretion = events.filter((ev) => ev.eventType === "excretion")
+  const slots: string[] = []
+  excretion.slice(0, ELIMINATION_ROW_COUNT).forEach((ev) => {
+    const time = formatEventTime(ev)
+    const urine = ev.excretionType === "urine" ? "尿◯" : ev.urineCharacteristics ? `尿:${ev.urineCharacteristics}` : ""
+    const stool = ev.excretionType === "stool" ? "便◯" : ev.stoolCharacteristics ? `便:${ev.stoolCharacteristics}` : ""
+    const method = ev.excretionMethod || ""
+    const note = ev.notes || ev.excretionState || ev.observedSymptoms || ""
+    const line = [time, urine, stool, method, note].filter(Boolean).join(" / ")
+    slots.push(line)
+  })
+  while (slots.length < ELIMINATION_ROW_COUNT) slots.push("")
+  if (slots.every((s) => !s)) {
+    slots[0] = buildExcretionSummary(events)
+  }
+  return slots.slice(0, ELIMINATION_ROW_COUNT)
+}
+
+function buildRespiratoryNote(events: any[]) {
+  const respiratoryEvents = events.filter((ev) => ev.eventType === "respiratory")
+  if (!respiratoryEvents.length) return ""
+  return respiratoryEvents
+    .slice(0, 3)
+    .map((ev) => {
+      const parts = [
+        formatEventTime(ev),
+        ev.breathingPattern || ev.respiratoryStatus,
+        ev.oxygenTherapy && `O2:${ev.oxygenTherapy}`,
+        ev.oxygenSaturation && `SpO2 ${ev.oxygenSaturation}%`,
+        ev.respiratoryRate && `呼吸数${ev.respiratoryRate}`,
+        ev.notes || ev.note,
+      ].filter(Boolean)
+      return parts.join(" / ")
+    })
+    .join(" | ")
+}
+
+function buildActivityNote(events: any[], kinds: string[]) {
+  const activityEvents = events.filter((ev) => kinds.includes(ev.eventType))
+  if (!activityEvents.length) return ""
+  return activityEvents
+    .slice(0, 4)
+    .map((ev) => {
+      const parts = [
+        formatEventTime(ev),
+        ev.activityType || ev.activityCategory || ev.program || ev.expression || ev.content || ev.transportType,
+        ev.description || ev.reaction || ev.observedSymptoms || ev.assistanceLevel,
+        ev.note || ev.notes,
+      ].filter(Boolean)
+      return parts.join(" / ")
+    })
+    .join(" | ")
+}
+
+function buildFrontFromCareEvents(params: {
+  events: any[]
+  base: ATCaseRecordFront
+}): ATCaseRecordFront {
+  const { events, base } = params
+  const hydrationSummary = buildFrontHydrationSummary(events)
+  const eliminationSlots = buildFrontEliminationSlots(events)
+  const activityNote = buildActivityNote(events, ["activity", "communication", "transportation"])
+  const expressionNote = buildActivityNote(events, ["expression"])
+
+  return {
+    ...base,
+    hydration1: hydrationSummary[0] || base.hydration1,
+    hydration2: hydrationSummary[1] || base.hydration2,
+    hydration3: hydrationSummary[2] || base.hydration3,
+    hydration4: hydrationSummary[3] || base.hydration4,
+    hydration5: hydrationSummary[4] || base.hydration5,
+    hydration6: hydrationSummary[5] || base.hydration6,
+    elimination1: eliminationSlots[0] || base.elimination1,
+    elimination2: eliminationSlots[1] || base.elimination2,
+    elimination3: eliminationSlots[2] || base.elimination3,
+    activityDetail: activityNote || base.activityDetail,
+    specialNote: expressionNote ? `${expressionNote}${base.specialNote ? ` / ${base.specialNote}` : ""}` : base.specialNote,
+  }
+}
+
+function buildBackFromCareEvents(events: any[], base: ATCaseRecordBack): ATCaseRecordBack {
+  const respiratoryNote = buildRespiratoryNote(events)
+  const activityNote = buildActivityNote(events, ["activity", "communication", "transportation"])
+  const other = [base.otherNote, respiratoryNote, activityNote].filter(Boolean).join(" | ")
+
+  return {
+    vitalRows: buildVitalRows(events),
+    hydrationRows: buildHydrationRows(events),
+    eliminationRows: buildEliminationRows(events),
+    seizureNote: buildSeizureSummary(events) || base.seizureNote,
+    otherNote: other,
+  }
+}
+
 export function getDefaultATCaseRecordContent(
   recordDate: string,
   headerOverrides?: Partial<Pick<ATCaseRecordFront, "userName" | "serviceName" | "serviceTime" | "age" | "sex" | "recorder">>,
@@ -364,41 +460,29 @@ export function buildATCaseRecordContentFromDailyLog(params: {
   const isoDate = normalizeDate(recordDate)
   const events = filterEventsForDate(careEvents, isoDate, userId)
 
-  const hydrationSummary = buildFrontHydrationSummary(events)
-  const eliminationSummary = buildExcretionSummary(events)
-
   const defaults = getDefaultATCaseRecordContent(isoDate, headerOverrides)
+  const frontWithDailyLog: ATCaseRecordFront = {
+    ...defaults.front,
+    lunch: dailyLog?.meals?.lunch?.text || defaults.front.lunch,
+    snack: dailyLog?.meals?.snack?.text || defaults.front.snack,
+    dinner: dailyLog?.meals?.dinner?.text || defaults.front.dinner,
+    breakfast: dailyLog?.meals?.breakfast?.text || defaults.front.breakfast,
+    bathing: dailyLog?.bathing || defaults.front.bathing,
+    task1Note: dailyLog?.task1 || defaults.front.task1Note,
+    task2Note: dailyLog?.task2 || defaults.front.task2Note,
+    task3Note: dailyLog?.task3 || defaults.front.task3Note,
+    activityDetail: dailyLog?.activityDetail || defaults.front.activityDetail,
+    specialNote: dailyLog?.notes || dailyLog?.specialNotes || defaults.front.specialNote,
+    restraint: dailyLog?.wheelchairRestraint || defaults.front.restraint,
+    recorder: dailyLog?.recorder || defaults.front.recorder,
+  }
 
   return {
-    front: {
-      ...defaults.front,
-      hydration1: hydrationSummary[0] || defaults.front.hydration1,
-      hydration2: hydrationSummary[1] || defaults.front.hydration2,
-      hydration3: hydrationSummary[2] || defaults.front.hydration3,
-      hydration4: hydrationSummary[3] || defaults.front.hydration4,
-      hydration5: hydrationSummary[4] || defaults.front.hydration5,
-      hydration6: hydrationSummary[5] || defaults.front.hydration6,
-      elimination1: eliminationSummary || defaults.front.elimination1,
-      lunch: dailyLog?.meals?.lunch?.text || defaults.front.lunch,
-      snack: dailyLog?.meals?.snack?.text || defaults.front.snack,
-      dinner: dailyLog?.meals?.dinner?.text || defaults.front.dinner,
-      breakfast: dailyLog?.meals?.breakfast?.text || defaults.front.breakfast,
-      bathing: dailyLog?.bathing || defaults.front.bathing,
-      task1Note: dailyLog?.task1 || defaults.front.task1Note,
-      task2Note: dailyLog?.task2 || defaults.front.task2Note,
-      task3Note: dailyLog?.task3 || defaults.front.task3Note,
-      activityDetail: dailyLog?.activityDetail || defaults.front.activityDetail,
-      specialNote: dailyLog?.notes || dailyLog?.specialNotes || defaults.front.specialNote,
-      restraint: dailyLog?.wheelchairRestraint || defaults.front.restraint,
-      recorder: dailyLog?.recorder || defaults.front.recorder,
-    },
-    back: {
-      vitalRows: buildVitalRows(events),
-      hydrationRows: buildHydrationRows(events),
-      eliminationRows: buildEliminationRows(events),
-      seizureNote: buildSeizureSummary(events),
-      otherNote: dailyLog?.otherMessage || "",
-    },
+    front: buildFrontFromCareEvents({ events, base: frontWithDailyLog }),
+    back: buildBackFromCareEvents(events, {
+      ...defaults.back,
+      otherNote: dailyLog?.otherMessage || defaults.back.otherNote,
+    }),
   }
 }
 
@@ -482,4 +566,27 @@ export async function upsertCaseRecordFromDailyLog(
     template,
     source: "daily-log",
   })
+}
+
+export async function fetchCaseRecordDates(params: {
+  userId: string
+  serviceType: string
+  days?: number
+}): Promise<string[]> {
+  const { userId, serviceType, days = HISTORY_DAYS_DEFAULT } = params
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data, error } = await supabaseCaseRecords
+    .from("case_records")
+    .select("record_date")
+    .eq("user_id", userId)
+    .eq("service_type", serviceType)
+    .eq("section", "content")
+    .gte("record_date", since.toISOString().slice(0, 10))
+    .order("record_date", { ascending: false })
+
+  if (error) throw error
+  const dates = (data || []).map((row: any) => row.record_date as string).filter(Boolean)
+  const unique = Array.from(new Set(dates))
+  return unique
 }

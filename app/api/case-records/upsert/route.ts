@@ -13,13 +13,14 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { userId, serviceType, recordDate, dailyLog, careEvents, content, template, source } = body
 
-    if (!userId || !serviceType || !recordDate || (!content && !dailyLog && !careEvents)) {
+    if (!userId || !serviceType) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
     const detail = userDetails[userId]
     if (!detail) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
+    const targetDate = recordDate || new Date().toISOString().slice(0, 10)
     const headerOverrides = {
       userName: detail.name,
       age: detail.age ? String(detail.age) : "",
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     const resolvedContent =
       content ||
       buildATCaseRecordContentFromDailyLog({
-        recordDate,
+        recordDate: targetDate,
         dailyLog,
         careEvents,
         userId,
@@ -43,12 +44,12 @@ export async function POST(req: Request) {
         ? await upsertCaseRecordContent({
             userId,
             serviceType,
-            recordDate,
+            recordDate: targetDate,
             content: resolvedContent as ATCaseRecordContent,
             template: resolvedTemplate,
             source: source || "manual",
           })
-        : await upsertCaseRecordFromDailyLog(userId, serviceType, recordDate, dailyLog, careEvents, headerOverrides)
+        : await upsertCaseRecordFromDailyLog(userId, serviceType, targetDate, dailyLog, careEvents, headerOverrides)
 
     return NextResponse.json({ ok: true, content: row.content })
   } catch (e: any) {

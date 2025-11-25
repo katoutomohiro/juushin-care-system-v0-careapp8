@@ -2,6 +2,7 @@ import { format } from "date-fns"
 import { userDetails } from "@/lib/user-master-data"
 import { buildUserProfileFromUserDetail } from "@/types/user-profile"
 import {
+  fetchCaseRecordDates,
   fetchStructuredCaseRecord,
   getDefaultATCaseRecordContent,
   resolveCaseRecordTemplate,
@@ -12,6 +13,50 @@ import CaseRecordClient from "./_components/case-record-client"
 interface PageProps {
   params: { serviceId: string; userId: string }
   searchParams?: { date?: string }
+}
+
+function formatDateLabel(dateStr: string) {
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" })
+  } catch {
+    return dateStr
+  }
+}
+
+async function CaseRecordHistory({
+  userId,
+  serviceId,
+  activeDate,
+}: {
+  userId: string
+  serviceId: string
+  activeDate: string
+}) {
+  const dates = await fetchCaseRecordDates({ userId, serviceType: serviceId })
+  if (!dates.length) return null
+  return (
+    <div className="rounded-lg border bg-card/60 p-3">
+      <div className="text-sm font-semibold mb-2">過去1年のケース記録</div>
+      <div className="flex flex-wrap gap-2">
+        {dates.map((d) => {
+          const href = `/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records?date=${d}`
+          const isActive = d === activeDate
+          return (
+            <a
+              key={d}
+              href={href}
+              className={`rounded-md border px-3 py-1 text-sm transition ${
+                isActive ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+              }`}
+            >
+              {formatDateLabel(d)}
+            </a>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 function normalizeContent(data: any, base: ATCaseRecordContent): ATCaseRecordContent {
@@ -72,7 +117,8 @@ export default async function CaseRecordsPage({ params, searchParams }: PageProp
   const initialContent: ATCaseRecordContent = normalizeContent(persistedContent, baseContent)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      <CaseRecordHistory userId={userId} serviceId={serviceId} activeDate={dateStr} />
       <CaseRecordClient
         userId={userId}
         serviceId={serviceId}
