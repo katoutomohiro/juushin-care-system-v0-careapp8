@@ -4,15 +4,17 @@ import { buildUserProfileFromUserDetail } from "@/types/user-profile"
 import {
   fetchCaseRecordDates,
   fetchStructuredCaseRecord,
-  getDefaultATCaseRecordContent,
+  normalizeATCaseRecordContent,
   resolveCaseRecordTemplate,
   type ATCaseRecordContent,
 } from "@/lib/case-records"
+import { listStaffMembers } from "@/lib/staff"
+import { AT_STAFF_FALLBACK_OPTIONS, SERVICE_LABELS } from "@/lib/case-record-constants"
 import CaseRecordClient from "./_components/case-record-client"
 
 interface PageProps {
-  params: { serviceId: string; userId: string }
-  searchParams?: { date?: string }
+  params: Promise<{ serviceId: string; userId: string }>
+  searchParams?: Promise<{ date?: string }>
 }
 
 function formatDateLabel(dateStr: string) {
@@ -65,45 +67,13 @@ async function CaseRecordHistory({
   )
 }
 
-function normalizeContent(data: any, base: ATCaseRecordContent): ATCaseRecordContent {
-  if (data?.front && data?.back) {
-    return {
-      front: { ...base.front, ...data.front, date: base.front.date },
-      back: { ...base.back, ...data.back },
-    }
-  }
-
-  const legacy = data || {}
-  return {
-    front: {
-      ...base.front,
-      breakfast: legacy.meals?.breakfast?.text || "",
-      lunch: legacy.meals?.lunch?.text || "",
-      snack: legacy.meals?.snack?.text || "",
-      dinner: legacy.meals?.dinner?.text || "",
-      hydration1: legacy.meals?.totalWaterIntakeMl ? `総水分 ${legacy.meals.totalWaterIntakeMl}ml` : "",
-      elimination1: legacy.elimination || "",
-      bathing: legacy.bathing || "",
-      task1Note: legacy.task1 || "",
-      task2Note: legacy.task2 || "",
-      task3Note: legacy.task3 || "",
-      activityDetail: legacy.activityDetail || "",
-      specialNote: legacy.specialNote || "",
-      restraint: legacy.wheelchairRestraint || "",
-      recorder: legacy.recorder || base.front.recorder,
-    },
-    back: {
-      ...base.back,
-      seizureNote: legacy.seizures || "",
-      otherNote: legacy.otherMessage || legacy.hydrationNote || "",
-    },
-  }
-}
 
 export default async function CaseRecordsPage({ params, searchParams }: PageProps) {
-  const { serviceId } = params
-  const userId = decodeURIComponent(params.userId)
-  const dateStr = searchParams?.date || format(new Date(), "yyyy-MM-dd")
+  const resolvedParams = await params
+  const { serviceId } = resolvedParams
+  const userId = decodeURIComponent(resolvedParams.userId)
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const dateStr = resolvedSearchParams?.date || format(new Date(), "yyyy-MM-dd")
   const detail = userDetails[userId]
   if (!detail) {
     return <div className="p-6">利用者が見つかりません</div>
@@ -115,24 +85,27 @@ export default async function CaseRecordsPage({ params, searchParams }: PageProp
     userName: detail.name,
     age: profile.age ? String(profile.age) : "",
     sex: profile.gender || "",
-    serviceName: serviceId,
+    serviceName: SERVICE_LABELS[serviceId] || serviceId,
   }
-  const baseContent = getDefaultATCaseRecordContent(dateStr, headerDefaults)
   const existingRow = await fetchStructuredCaseRecord(userId, serviceId, dateStr).catch(() => null)
   const persistedContent = existingRow?.content?.template === template ? existingRow.content.data : null
-  const initialContent: ATCaseRecordContent = normalizeContent(persistedContent, baseContent)
+  const initialContent: ATCaseRecordContent = normalizeATCaseRecordContent(persistedContent, dateStr, headerDefaults)
+  const historySection = await CaseRecordHistory({ userId, serviceId, activeDate: dateStr })
+  let staffOptions: { id: string; name: string }[] = []
+  try {
+    const staff = await listStaffMembers({ activeOnly: true })
+    staffOptions = (staff || []).map((s) => ({ id: s.id, name: s.name }))
+  } catch (e) {
+    console.error("[CaseRecordsPage] failed to load staff members", e)
+  }
+  if (!staffOptions.length) {
+    staffOptions = AT_STAFF_FALLBACK_OPTIONS
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-      <CaseRecordHistory userId={userId} serviceId={serviceId} activeDate={dateStr} />
-      <CaseRecordClient
-        userId={userId}
-        serviceId={serviceId}
-        date={dateStr}
-        userName={detail.name}
-        profile={profile}
-        initialContent={initialContent}
-      />
+      {historySection}
+      <CaseRecordClient userId={userId} serviceId={serviceId} initialContent={initialContent} staffOptions={staffOptions} />
     </div>
   )
 }

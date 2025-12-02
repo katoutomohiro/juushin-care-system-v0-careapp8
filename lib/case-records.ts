@@ -1,8 +1,19 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { AT_SERVICE_TIME_OPTIONS } from "./case-record-constants"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-export const supabaseCaseRecords = createClient(supabaseUrl, supabaseKey)
+let supabaseCaseRecords: SupabaseClient | null = null
+
+function getSupabaseCaseRecords() {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("SupabaseのURLまたはキーが設定されていません")
+  }
+  if (!supabaseCaseRecords) {
+    supabaseCaseRecords = createClient(supabaseUrl, supabaseKey)
+  }
+  return supabaseCaseRecords
+}
 
 export type CaseRecordTemplate = "AT"
 
@@ -30,6 +41,13 @@ export type ATCaseRecordEliminationRow = {
   note: string
 }
 
+export type ATCaseRecordTransport = {
+  ghArrivalTime: string
+  officeArrivalTime: string
+  officeDepartureTime: string
+  ghReturnTime: string
+}
+
 export type ATCaseRecordBack = {
   vitalRows: ATCaseRecordVitalRow[]
   hydrationRows: ATCaseRecordHydrationRow[]
@@ -40,12 +58,21 @@ export type ATCaseRecordBack = {
 
 export type ATCaseRecordFront = {
   date: string
+  year: string
+  month: string
+  day: string
+  weekday: string
   serviceName: string
   serviceTime: string
+  serviceTimeSlot?: string
+  staffId?: string | null
+  staffName?: string | null
   userName: string
   age: string
   sex: string
-  recorder: string
+  transport: ATCaseRecordTransport
+  transportTime?: string
+  transportDetail?: string
   breakfast: string
   hydration1: string
   hydration2: string
@@ -76,6 +103,10 @@ export type ATCaseRecordContent = {
   front: ATCaseRecordFront
   back: ATCaseRecordBack
 }
+
+type ATCaseRecordHeaderOverrides = Partial<
+  Pick<ATCaseRecordFront, "userName" | "serviceName" | "serviceTime" | "serviceTimeSlot" | "age" | "sex">
+>
 
 export type CaseRecordContentEnvelope = {
   template: CaseRecordTemplate
@@ -113,6 +144,18 @@ function normalizeDate(date: string): string {
   return parsed.toISOString().slice(0, 10)
 }
 
+function getDateParts(date: string) {
+  const normalized = normalizeDate(date)
+  const d = new Date(normalized)
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+  return {
+    year: normalized.slice(0, 4),
+    month: normalized.slice(5, 7),
+    day: normalized.slice(8, 10),
+    weekday: weekdays[d.getDay()] ?? "",
+  }
+}
+
 function pickTemplate(userId?: string): CaseRecordTemplate {
   return (userId && caseRecordTemplateByUserId[userId]) || "AT"
 }
@@ -121,11 +164,12 @@ export function resolveCaseRecordTemplate(userId?: string): CaseRecordTemplate {
   return pickTemplate(userId)
 }
 
-function filterEventsForDate(events: any[] | undefined, recordDate: string, userId?: string) {
+function filterEventsForDate(events: any[] | undefined, recordDate: string, userId?: string, serviceId?: string) {
   if (!Array.isArray(events)) return []
   const isoDate = normalizeDate(recordDate)
   return events.filter((ev) => {
     if (userId && ev.userId && ev.userId !== userId) return false
+    if (serviceId && ev.serviceId && ev.serviceId !== serviceId) return false
     const ts: string | undefined = ev.timestamp || ev.ts || ev.time
     if (!ts) return false
     const guessed = new Date(ts)
@@ -146,6 +190,21 @@ function formatEventTime(ev: any) {
   const d = new Date(ts)
   if (!Number.isNaN(d.getTime())) return d.toISOString().slice(11, 16)
   if (typeof ev.time === "string") return ev.time
+  return ""
+}
+
+function formatTransportClock(raw?: string) {
+  if (!raw) return ""
+  if (typeof raw === "string") {
+    const trimmed = raw.trim()
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})/)
+    if (match) {
+      const hour = match[1].padStart(2, "0")
+      return `${hour}:${match[2]}`
+    }
+  }
+  const parsed = new Date(raw)
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(11, 16)
   return ""
 }
 
@@ -342,6 +401,91 @@ function buildActivityNote(events: any[], kinds: string[]) {
     .join(" | ")
 }
 
+const TRANSPORT_ROUTE_LABEL: Record<string, string> = {
+  "home-to-facility": "自宅↔事業所",
+  "facility-to-home": "事業所↔自宅",
+  "school-to-facility": "学校↔事業所",
+  "facility-to-school": "事業所↔学校",
+  other: "その他",
+}
+
+function normalizeTransport(base?: ATCaseRecordTransport): ATCaseRecordTransport {
+  return {
+    ghArrivalTime: base?.ghArrivalTime || "",
+    officeArrivalTime: base?.officeArrivalTime || "",
+    officeDepartureTime: base?.officeDepartureTime || "",
+    ghReturnTime: base?.ghReturnTime || "",
+  }
+}
+
+function buildTransportFields(events: any[], baseTransport?: ATCaseRecordTransport) {
+  const transportEvents = events.filter((ev) => ev.eventType === "transportation")
+  const base = normalizeTransport(baseTransport)
+  if (!transportEvents.length) return { transportTime: "", transportDetail: "", transportTimes: base }
+
+  const inboundDepartures: string[] = []
+  const inboundArrivals: string[] = []
+  const outboundDepartures: string[] = []
+  const outboundArrivals: string[] = []
+
+  transportEvents.forEach((ev) => {
+    const route: string = ev.route || ev.transportRoute || ""
+    const departure = formatTransportClock(ev.departureTime || ev.departure || ev.startTime || ev.time)
+    const arrival = formatTransportClock(ev.arrivalTime || ev.arrival || ev.endTime)
+    const isToFacility = route.includes("to-facility")
+    const isFromFacility = route.startsWith("facility-to")
+    if (isToFacility) {
+      if (departure) inboundDepartures.push(departure)
+      if (arrival) inboundArrivals.push(arrival)
+    }
+    if (isFromFacility) {
+      if (departure) outboundDepartures.push(departure)
+      if (arrival) outboundArrivals.push(arrival)
+    }
+  })
+
+  const earliest = (list: string[]) => (list.length ? [...list].sort()[0] : "")
+  const latest = (list: string[]) => (list.length ? [...list].sort().slice(-1)[0] : "")
+
+  const transportTimes: ATCaseRecordTransport = {
+    ghArrivalTime: earliest(inboundDepartures) || base.ghArrivalTime,
+    officeArrivalTime: earliest(inboundArrivals) || base.officeArrivalTime,
+    officeDepartureTime: latest(outboundDepartures) || base.officeDepartureTime,
+    ghReturnTime: latest(outboundArrivals) || base.ghReturnTime,
+  }
+
+  const referenceEvent =
+    transportEvents.find((ev) => (ev.route || "").includes("to-facility")) || transportEvents[0]
+  const routeLabel = referenceEvent?.route ? TRANSPORT_ROUTE_LABEL[referenceEvent.route] || referenceEvent.route : ""
+  const detailParts = [
+    routeLabel,
+    referenceEvent?.vehicle,
+    referenceEvent?.driver && `運転: ${referenceEvent.driver}`,
+    referenceEvent?.companion && `付添: ${referenceEvent.companion}`,
+    referenceEvent?.physicalCondition,
+    referenceEvent?.emotionalState,
+    referenceEvent?.incidents,
+    referenceEvent?.notes || referenceEvent?.note,
+  ]
+    .filter(Boolean)
+    .map((p) => String(p))
+
+  const transportTime =
+    (transportTimes.ghArrivalTime && transportTimes.ghReturnTime
+      ? `${transportTimes.ghArrivalTime}〜${transportTimes.ghReturnTime}`
+      : "") ||
+    [formatTransportClock(referenceEvent?.departureTime || referenceEvent?.time), formatTransportClock(referenceEvent?.arrivalTime)]
+      .filter(Boolean)
+      .join("〜") ||
+    formatEventTime(referenceEvent)
+
+  return {
+    transportTime,
+    transportDetail: detailParts.join(" / "),
+    transportTimes,
+  }
+}
+
 function buildFrontFromCareEvents(params: {
   events: any[]
   base: ATCaseRecordFront
@@ -351,6 +495,7 @@ function buildFrontFromCareEvents(params: {
   const eliminationSlots = buildFrontEliminationSlots(events)
   const activityNote = buildActivityNote(events, ["activity", "communication", "transportation"])
   const expressionNote = buildActivityNote(events, ["expression"])
+  const transport = buildTransportFields(events, base.transport)
 
   return {
     ...base,
@@ -365,6 +510,9 @@ function buildFrontFromCareEvents(params: {
     elimination3: eliminationSlots[2] || base.elimination3,
     activityDetail: activityNote || base.activityDetail,
     specialNote: expressionNote ? `${expressionNote}${base.specialNote ? ` / ${base.specialNote}` : ""}` : base.specialNote,
+    transport: transport.transportTimes,
+    transportTime: transport.transportTime || base.transportTime,
+    transportDetail: transport.transportDetail || base.transportDetail,
   }
 }
 
@@ -382,20 +530,42 @@ function buildBackFromCareEvents(events: any[], base: ATCaseRecordBack): ATCaseR
   }
 }
 
+function mergeRowsWithTemplate<T extends Record<string, string>>(template: T[], incoming?: T[]): T[] {
+  const rows = Array.isArray(incoming) ? incoming : []
+  return template.map((row, idx) => ({ ...row, ...(rows[idx] || {}) }))
+}
+
 export function getDefaultATCaseRecordContent(
   recordDate: string,
-  headerOverrides?: Partial<Pick<ATCaseRecordFront, "userName" | "serviceName" | "serviceTime" | "age" | "sex" | "recorder">>,
+  headerOverrides?: ATCaseRecordHeaderOverrides,
 ): ATCaseRecordContent {
   const date = normalizeDate(recordDate)
+  const dateParts = getDateParts(date)
+  const defaultServiceTime = headerOverrides?.serviceTimeSlot || headerOverrides?.serviceTime || AT_SERVICE_TIME_OPTIONS[0] || ""
+  const defaultTransport: ATCaseRecordTransport = {
+    ghArrivalTime: "",
+    officeArrivalTime: "",
+    officeDepartureTime: "",
+    ghReturnTime: "",
+  }
   return {
     front: {
       date,
+      year: dateParts.year,
+      month: dateParts.month,
+      day: dateParts.day,
+      weekday: dateParts.weekday,
       serviceName: headerOverrides?.serviceName || "",
-      serviceTime: headerOverrides?.serviceTime || "",
+      serviceTime: defaultServiceTime,
+      serviceTimeSlot: headerOverrides?.serviceTimeSlot || defaultServiceTime,
+      staffId: null,
+      staffName: null,
       userName: headerOverrides?.userName || "",
       age: headerOverrides?.age || "",
       sex: headerOverrides?.sex || "",
-      recorder: headerOverrides?.recorder || "",
+      transport: defaultTransport,
+      transportTime: "",
+      transportDetail: "",
       breakfast: "",
       hydration1: "",
       hydration2: "",
@@ -449,16 +619,83 @@ export function getDefaultATCaseRecordContent(
   }
 }
 
+function normalizeLegacyATContent(legacy: any, base: ATCaseRecordContent): ATCaseRecordContent {
+  return {
+    front: {
+      ...base.front,
+      breakfast: legacy.meals?.breakfast?.text || "",
+      lunch: legacy.meals?.lunch?.text || "",
+      snack: legacy.meals?.snack?.text || "",
+      dinner: legacy.meals?.dinner?.text || "",
+      hydration1: legacy.meals?.totalWaterIntakeMl ? `総水分:${legacy.meals.totalWaterIntakeMl}ml` : "",
+      elimination1: legacy.elimination || "",
+      bathing: legacy.bathing || "",
+      task1Note: legacy.task1 || "",
+      task2Note: legacy.task2 || "",
+      task3Note: legacy.task3 || "",
+      activityDetail: legacy.activityDetail || "",
+      specialNote: legacy.specialNote || "",
+      restraint: legacy.wheelchairRestraint || "",
+    },
+    back: {
+      ...base.back,
+      seizureNote: legacy.seizures || "",
+      otherNote: legacy.otherMessage || legacy.hydrationNote || "",
+    },
+  }
+}
+
+export function normalizeATCaseRecordContent(
+  data: any,
+  recordDate: string,
+  headerOverrides?: ATCaseRecordHeaderOverrides,
+): ATCaseRecordContent {
+  const base = getDefaultATCaseRecordContent(recordDate, headerOverrides)
+  if (!data) return base
+
+  if (!(data.front && data.back)) {
+    return normalizeLegacyATContent(data, base)
+  }
+
+  const mergedTransport = normalizeTransport(data.front.transport || base.front.transport)
+  const mergedFront: ATCaseRecordFront = {
+    ...base.front,
+    ...data.front,
+    date: base.front.date,
+    year: data.front.year || base.front.year,
+    month: data.front.month || base.front.month,
+    day: data.front.day || base.front.day,
+    weekday: data.front.weekday || base.front.weekday,
+    transport: mergedTransport,
+  }
+
+  if (!mergedFront.serviceName) mergedFront.serviceName = base.front.serviceName
+  mergedFront.serviceTimeSlot = mergedFront.serviceTimeSlot || mergedFront.serviceTime || base.front.serviceTimeSlot
+  mergedFront.serviceTime =
+    mergedFront.serviceTime || mergedFront.serviceTimeSlot || base.front.serviceTimeSlot || base.front.serviceTime
+
+  const mergedBack: ATCaseRecordBack = {
+    ...base.back,
+    ...data.back,
+    vitalRows: mergeRowsWithTemplate(base.back.vitalRows, data.back.vitalRows),
+    hydrationRows: mergeRowsWithTemplate(base.back.hydrationRows, data.back.hydrationRows),
+    eliminationRows: mergeRowsWithTemplate(base.back.eliminationRows, data.back.eliminationRows),
+  }
+
+  return { front: mergedFront, back: mergedBack }
+}
+
 export function buildATCaseRecordContentFromDailyLog(params: {
   recordDate: string
   dailyLog?: any
   careEvents?: any[]
   userId?: string
-  headerOverrides?: Partial<Pick<ATCaseRecordFront, "userName" | "serviceName" | "serviceTime" | "age" | "sex" | "recorder">>
+  serviceType?: string
+  headerOverrides?: ATCaseRecordHeaderOverrides
 }): ATCaseRecordContent {
-  const { recordDate, dailyLog, careEvents, userId, headerOverrides } = params
+  const { recordDate, dailyLog, careEvents, userId, serviceType, headerOverrides } = params
   const isoDate = normalizeDate(recordDate)
-  const events = filterEventsForDate(careEvents, isoDate, userId)
+  const events = filterEventsForDate(careEvents, isoDate, userId, serviceType)
 
   const defaults = getDefaultATCaseRecordContent(isoDate, headerOverrides)
   const frontWithDailyLog: ATCaseRecordFront = {
@@ -474,7 +711,6 @@ export function buildATCaseRecordContentFromDailyLog(params: {
     activityDetail: dailyLog?.activityDetail || defaults.front.activityDetail,
     specialNote: dailyLog?.notes || dailyLog?.specialNotes || defaults.front.specialNote,
     restraint: dailyLog?.wheelchairRestraint || defaults.front.restraint,
-    recorder: dailyLog?.recorder || defaults.front.recorder,
   }
 
   return {
@@ -491,13 +727,17 @@ export async function fetchCaseRecordByDate(
   serviceType: string,
   recordDate: string,
 ): Promise<CaseRecordRow[]> {
-  const { data, error } = await supabaseCaseRecords
+  const supabase = getSupabaseCaseRecords()
+  const { data, error } = await supabase
     .from("case_records")
     .select("*")
     .eq("user_id", userId)
     .eq("service_type", serviceType)
     .eq("record_date", normalizeDate(recordDate))
-  if (error) throw error
+  if (error) {
+    console.error("[case-records] fetchCaseRecordByDate failed", error)
+    throw error
+  }
   return data || []
 }
 
@@ -506,7 +746,8 @@ export async function fetchStructuredCaseRecord(
   serviceType: string,
   recordDate: string,
 ): Promise<CaseRecordRow | null> {
-  const { data, error } = await supabaseCaseRecords
+  const supabase = getSupabaseCaseRecords()
+  const { data, error } = await supabase
     .from("case_records")
     .select("*")
     .eq("user_id", userId)
@@ -516,7 +757,10 @@ export async function fetchStructuredCaseRecord(
     .limit(1)
     .maybeSingle()
 
-  if (error) throw error
+  if (error) {
+    console.error("[case-records] fetchStructuredCaseRecord failed", error)
+    throw error
+  }
   return data || null
 }
 
@@ -530,6 +774,14 @@ export async function upsertCaseRecordContent(params: {
 }): Promise<CaseRecordRow> {
   const { userId, serviceType, recordDate, content } = params
   const template = params.template || pickTemplate(userId)
+  const normalizedFront: ATCaseRecordFront = {
+    ...content.front,
+    date: normalizeDate(recordDate),
+    serviceTimeSlot: content.front.serviceTimeSlot || content.front.serviceTime,
+    serviceTime: content.front.serviceTime || content.front.serviceTimeSlot || "",
+    transport: normalizeTransport(content.front.transport),
+  }
+  const normalizedContent: ATCaseRecordContent = { ...content, front: normalizedFront }
   const payload: CaseRecordRow = {
     user_id: userId,
     service_type: serviceType,
@@ -537,14 +789,18 @@ export async function upsertCaseRecordContent(params: {
     section: "content",
     item_key: template,
     item_value: undefined,
-    content: { template, data: { ...content, front: { ...content.front, date: normalizeDate(recordDate) } } },
+    content: { template, data: normalizedContent },
     template,
     source: params.source || "manual",
     updated_at: new Date().toISOString(),
   }
 
-  const { data, error } = await supabaseCaseRecords.from("case_records").upsert(payload).select().maybeSingle()
-  if (error) throw error
+  const supabase = getSupabaseCaseRecords()
+  const { data, error } = await supabase.from("case_records").upsert(payload).select().maybeSingle()
+  if (error) {
+    console.error("[case-records] upsertCaseRecordContent failed", error)
+    throw error
+  }
   return data as CaseRecordRow
 }
 
@@ -554,10 +810,17 @@ export async function upsertCaseRecordFromDailyLog(
   recordDate: string,
   dailyLog: any,
   careEvents?: any[],
-  headerOverrides?: Partial<Pick<ATCaseRecordFront, "userName" | "serviceName" | "serviceTime" | "age" | "sex" | "recorder">>,
+  headerOverrides?: ATCaseRecordHeaderOverrides,
 ): Promise<CaseRecordRow> {
   const template = pickTemplate(userId)
-  const content = buildATCaseRecordContentFromDailyLog({ recordDate, dailyLog, careEvents, userId, headerOverrides })
+  const content = buildATCaseRecordContentFromDailyLog({
+    recordDate,
+    dailyLog,
+    careEvents,
+    userId,
+    serviceType,
+    headerOverrides,
+  })
   return upsertCaseRecordContent({
     userId,
     serviceType,
@@ -576,7 +839,8 @@ export async function fetchCaseRecordDates(params: {
   const { userId, serviceType, days = HISTORY_DAYS_DEFAULT } = params
   const since = new Date()
   since.setDate(since.getDate() - days)
-  const { data, error } = await supabaseCaseRecords
+  const supabase = getSupabaseCaseRecords()
+  const { data, error } = await supabase
     .from("case_records")
     .select("record_date")
     .eq("user_id", userId)

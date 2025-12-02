@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import type { ReactElement } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { ActivityForm } from "@/components/forms/activity-form"
 import { CommunicationForm } from "@/components/forms/communication-form"
@@ -19,7 +20,7 @@ import { TubeFeedingForm } from "@/components/forms/tube-feeding-form"
 import { VitalsForm } from "@/components/forms/vitals-form"
 import { DataStorageService } from "@/services/data-storage-service"
 
-type FormComponent = (props: { selectedUser: string; onSubmit: (data: any) => void; onCancel: () => void }) => JSX.Element
+type FormComponent = (props: { selectedUser: string; onSubmit: (data: any) => void; onCancel: () => void }) => ReactElement
 
 const FORM_COMPONENTS: Record<string, FormComponent> = {
   seizure: SeizureForm,

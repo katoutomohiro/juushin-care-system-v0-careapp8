@@ -3,15 +3,18 @@ import { UserDailyLogTimeline } from "@/app/daily-log/_components/user-daily-log
 export default async function UserDailyLogsPage({
   params,
 }: {
-  params: { serviceId: string; userId: string }
+  params: Promise<{ serviceId: string; userId: string }>
 }) {
-  const { userId } = params
+  const resolvedParams = await params
+  const decodedUserId = decodeURIComponent(resolvedParams.userId)
+  const { serviceId } = resolvedParams
 
   return (
     <UserDailyLogTimeline
-      heading={`${decodeURIComponent(userId)} - 日誌タイムライン`}
-      userId={userId}
-      showUserSelector={false}
+      heading={`${decodedUserId} - 日誌タイムライン`}
+      userId={decodedUserId}
+      serviceId={serviceId}
+      viewAllHref={`/daily-log?user=${encodeURIComponent(decodedUserId)}&service=${serviceId}`}
     />
   )
 }

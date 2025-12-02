@@ -1,98 +1,63 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { buildTimelineEvents, type TimelineEvent } from "@/lib/care-event-timeline"
+import { DataStorageService } from "@/services/data-storage-service"
 
 interface UserDailyLogTimelineProps {
   userId?: string
+  serviceId?: string
   heading?: string
+  limit?: number
+  viewAllHref?: string
 }
 
-type LogEvent = {
-  id: string
-  timestamp: string
-  category: string
-  icon: string
-  description: string
-  color: string
-}
-
-export function UserDailyLogTimeline({ userId, heading = "日誌タイムライン" }: UserDailyLogTimelineProps) {
-  const [logEvents, setLogEvents] = useState<LogEvent[]>([])
+export function UserDailyLogTimeline({
+  userId,
+  serviceId,
+  heading = "日誌タイムライン",
+  limit = 10,
+  viewAllHref,
+}: UserDailyLogTimelineProps) {
+  const [logEvents, setLogEvents] = useState<TimelineEvent[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const supabaseConfig = useMemo(
-    () => ({
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-    }),
-    [],
-  )
+  const resolvedViewAllHref = useMemo(() => {
+    if (viewAllHref) return viewAllHref
+    if (userId) {
+      const params = new URLSearchParams({ user: userId })
+      if (serviceId) params.set("service", serviceId)
+      return `/daily-log?${params.toString()}`
+    }
+    return "/daily-log"
+  }, [serviceId, userId, viewAllHref])
+
+  const loadEvents = useCallback(() => {
+    try {
+      const allEvents = DataStorageService.getAllCareEvents()
+      const timeline = buildTimelineEvents(allEvents, { userId, serviceId, limit })
+      setLogEvents(timeline)
+      setErrorMessage(null)
+    } catch (e: any) {
+      console.error("[UserDailyLogTimeline] failed to load care events", e)
+      setErrorMessage(e?.message || "日誌の取得に失敗しました")
+    }
+  }, [limit, serviceId, userId])
 
   useEffect(() => {
-    async function load() {
-      if (!supabaseConfig.url || !supabaseConfig.key) {
-        setErrorMessage("Supabase 設定がありません")
-        return
-      }
-      const supabase = createClient(supabaseConfig.url, supabaseConfig.key, { auth: { persistSession: false } })
-      const events: LogEvent[] = []
+    loadEvents()
+  }, [loadEvents])
 
-      try {
-        let seizureQuery = supabase
-          .from("seizure_logs")
-          .select("id, recorded_at, seizure_type, duration_seconds, note")
-          .order("recorded_at", { ascending: false })
-          .limit(5)
-        if (userId) seizureQuery = seizureQuery.eq("user_id", userId)
-        const { data: seizures, error: seizureError } = await seizureQuery
-        if (seizureError) throw seizureError
-        seizures?.forEach((s: any) => {
-          events.push({
-            id: `seizure-${s.id}`,
-            timestamp: s.recorded_at,
-            category: "発作記録",
-            icon: "⚡",
-            description: `${s.seizure_type || "発作"} / ${s.duration_seconds || "不明"}秒${s.note ? ` - ${s.note}` : ""}`,
-            color: "bg-red-50 border-red-200",
-          })
-        })
-      } catch (err: any) {
-        console.error("[UserDailyLogTimeline] seizure fetch error", err)
-        setErrorMessage(err?.message || "発作記録の取得に失敗しました")
+  useEffect(() => {
+    const handler = (event: StorageEvent) => {
+      if (event.key === "careEvents") {
+        loadEvents()
       }
-
-      try {
-        let expressionQuery = supabase
-          .from("expression_logs")
-          .select("id, recorded_at, expression_type, note")
-          .order("recorded_at", { ascending: false })
-          .limit(5)
-        if (userId) expressionQuery = expressionQuery.eq("user_id", userId)
-        const { data: expressions, error: expressionError } = await expressionQuery
-        if (expressionError) throw expressionError
-        expressions?.forEach((e: any) => {
-          events.push({
-            id: `expression-${e.id}`,
-            timestamp: e.recorded_at,
-            category: "表情・反応",
-            icon: "😊",
-            description: `${e.expression_type || "表情"}${e.note ? ` - ${e.note}` : ""}`,
-            color: "bg-amber-50 border-amber-200",
-          })
-        })
-      } catch (err: any) {
-        console.error("[UserDailyLogTimeline] expression fetch error", err)
-        setErrorMessage((prev) => prev || err?.message || "表情・反応記録の取得に失敗しました")
-      }
-
-      events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      setLogEvents(events.slice(0, 10))
     }
-
-    load()
-  }, [supabaseConfig, userId])
+    window.addEventListener("storage", handler)
+    return () => window.removeEventListener("storage", handler)
+  }, [loadEvents])
 
   const displayEvents = logEvents
 
@@ -100,7 +65,7 @@ export function UserDailyLogTimeline({ userId, heading = "日誌タイムライ�
     <div className="space-y-6">
       <header className="flex items-center justify-between border-b pb-4">
         <h2 className="text-xl font-bold">{heading}</h2>
-        <Link href="/daily-log" className="rounded-lg bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200">
+        <Link href={resolvedViewAllHref} className="rounded-lg bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200">
           全ての日誌を見る
         </Link>
       </header>
@@ -112,7 +77,7 @@ export function UserDailyLogTimeline({ userId, heading = "日誌タイムライ�
       {displayEvents.length === 0 && !errorMessage && (
         <div className="rounded-lg border bg-gray-50 p-8 text-center">
           <p className="text-gray-600">表示できる日誌がありません</p>
-          <p className="mt-2 text-sm text-gray-500">発作・表情の記録を入力するとここに表示されます</p>
+          <p className="mt-2 text-sm text-gray-500">発作や表情などの記録を追加するとここに表示されます。</p>
         </div>
       )}
 
@@ -138,7 +103,7 @@ export function UserDailyLogTimeline({ userId, heading = "日誌タイムライ�
 
       <div className="rounded-lg border bg-blue-50 p-4 text-sm text-blue-800">
         <p className="font-semibold">ヒント: 日誌の記録について</p>
-        <p className="mt-1">発作・表情の記録はタイムラインに集約されます。詳細は各フォームから入力してください。</p>
+        <p className="mt-1">記録は時系列で表示されます。入力後にページを開き直すと最新の内容が反映されます。</p>
       </div>
     </div>
   )

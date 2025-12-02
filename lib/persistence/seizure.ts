@@ -23,32 +23,36 @@ function getSupabase() {
 export async function saveSeizureLog(log: Omit<SeizureLog, "id" | "createdAt">): Promise<SeizureLog> {
   const supabase = getSupabase()
   if (supabase) {
-    const { data, error } = await supabase
-      .from("seizure_logs")
-      .insert({
-        service_id: log.serviceId ?? null,
-        user_id: log.userId ?? null,
-        occurred_at: log.occurredAt,
-        seizure_type: log.seizureType,
-        duration: log.duration ?? null,
-        trigger: log.trigger ?? null,
-        intervention: log.intervention ?? null,
-        note: log.note ?? null,
-      })
-      .select()
-      .single()
-    if (error) throw new Error(`Supabase insert failed: ${error.message}`)
-    return {
-      id: data.id,
-      serviceId: data.service_id,
-      userId: data.user_id,
-      occurredAt: data.occurred_at,
-      seizureType: data.seizure_type,
-      duration: data.duration,
-      trigger: data.trigger,
-      intervention: data.intervention,
-      note: data.note,
-      createdAt: data.created_at,
+    try {
+      const { data, error } = await supabase
+        .from("seizure_logs")
+        .insert({
+          service_id: log.serviceId ?? null,
+          user_id: log.userId ?? null,
+          occurred_at: log.occurredAt,
+          seizure_type: log.seizureType,
+          duration: log.duration ?? null,
+          trigger: log.trigger ?? null,
+          intervention: log.intervention ?? null,
+          note: log.note ?? null,
+        })
+        .select()
+        .single()
+      if (error) throw error
+      return {
+        id: data.id,
+        serviceId: data.service_id,
+        userId: data.user_id,
+        occurredAt: data.occurred_at,
+        seizureType: data.seizure_type,
+        duration: data.duration,
+        trigger: data.trigger,
+        intervention: data.intervention,
+        note: data.note,
+        createdAt: data.created_at,
+      }
+    } catch (error) {
+      console.warn("[seizure] Supabase insert failed, falling back to localStorage", error)
     }
   }
 
@@ -89,39 +93,43 @@ export async function listSeizureLogs(params: SeizureListParams = {}): Promise<S
   } = params
 
   if (supabase) {
-    let query = supabase
-      .from("seizure_logs")
-      .select("id, service_id, user_id, occurred_at, seizure_type, duration, trigger, intervention, note, created_at")
-      .order("occurred_at", { ascending: false })
-      .range(offset, offset + limit - 1)
+    try {
+      let query = supabase
+        .from("seizure_logs")
+        .select("id, service_id, user_id, occurred_at, seizure_type, duration, trigger, intervention, note, created_at")
+        .order("occurred_at", { ascending: false })
+        .range(offset, offset + limit - 1)
 
-    if (start) query = query.gte("occurred_at", start)
-    if (end) query = query.lte("occurred_at", end)
-    if (seizureType) query = query.eq("seizure_type", seizureType)
-    if (serviceId) query = query.eq("service_id", serviceId)
-    if (userId) query = query.eq("user_id", userId)
-    if (keyword && keyword.trim()) {
-      const k = `%${keyword.trim()}%`
-      query = query.or(
-        `seizure_type.ilike.${k},trigger.ilike.${k},intervention.ilike.${k},note.ilike.${k}`,
-      )
+      if (start) query = query.gte("occurred_at", start)
+      if (end) query = query.lte("occurred_at", end)
+      if (seizureType) query = query.eq("seizure_type", seizureType)
+      if (serviceId) query = query.eq("service_id", serviceId)
+      if (userId) query = query.eq("user_id", userId)
+      if (keyword && keyword.trim()) {
+        const k = `%${keyword.trim()}%`
+        query = query.or(
+          `seizure_type.ilike.${k},trigger.ilike.${k},intervention.ilike.${k},note.ilike.${k}`,
+        )
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        serviceId: d.service_id,
+        userId: d.user_id,
+        occurredAt: d.occurred_at,
+        seizureType: d.seizure_type,
+        duration: d.duration,
+        trigger: d.trigger,
+        intervention: d.intervention,
+        note: d.note,
+        createdAt: d.created_at,
+      }))
+    } catch (error) {
+      console.warn("[seizure] Supabase list failed, falling back to localStorage", error)
     }
-
-    const { data, error } = await query
-    if (error) throw new Error(`Supabase list failed: ${error.message}`)
-
-    return (data || []).map((d: any) => ({
-      id: d.id,
-      serviceId: d.service_id,
-      userId: d.user_id,
-      occurredAt: d.occurred_at,
-      seizureType: d.seizure_type,
-      duration: d.duration,
-      trigger: d.trigger,
-      intervention: d.intervention,
-      note: d.note,
-      createdAt: d.created_at,
-    }))
   }
 
   // localStorage path
@@ -151,24 +159,28 @@ export async function listSeizureLogs(params: SeizureListParams = {}): Promise<S
 export async function getSeizureLog(id: string): Promise<SeizureLog | null> {
   const supabase = getSupabase()
   if (supabase) {
-    const { data, error } = await supabase
-      .from("seizure_logs")
-      .select("id, service_id, user_id, occurred_at, seizure_type, duration, trigger, intervention, note, created_at")
-      .eq("id", id)
-      .single()
-    if (error) throw new Error(`Supabase get failed: ${error.message}`)
-    if (!data) return null
-    return {
-      id: data.id,
-      serviceId: data.service_id,
-      userId: data.user_id,
-      occurredAt: data.occurred_at,
-      seizureType: data.seizure_type,
-      duration: data.duration,
-      trigger: data.trigger,
-      intervention: data.intervention,
-      note: data.note,
-      createdAt: data.created_at,
+    try {
+      const { data, error } = await supabase
+        .from("seizure_logs")
+        .select("id, service_id, user_id, occurred_at, seizure_type, duration, trigger, intervention, note, created_at")
+        .eq("id", id)
+        .single()
+      if (error) throw error
+      if (!data) return null
+      return {
+        id: data.id,
+        serviceId: data.service_id,
+        userId: data.user_id,
+        occurredAt: data.occurred_at,
+        seizureType: data.seizure_type,
+        duration: data.duration,
+        trigger: data.trigger,
+        intervention: data.intervention,
+        note: data.note,
+        createdAt: data.created_at,
+      }
+    } catch (error) {
+      console.warn("[seizure] Supabase get failed, falling back to localStorage", error)
     }
   }
 
@@ -183,33 +195,37 @@ export async function updateSeizureLog(
 ): Promise<SeizureLog> {
   const supabase = getSupabase()
   if (supabase) {
-    const { data, error } = await supabase
-      .from("seizure_logs")
-      .update({
-        service_id: patch.serviceId ?? undefined,
-        user_id: patch.userId ?? undefined,
-        occurred_at: patch.occurredAt ?? undefined,
-        seizure_type: patch.seizureType ?? undefined,
-        duration: patch.duration ?? undefined,
-        trigger: patch.trigger ?? undefined,
-        intervention: patch.intervention ?? undefined,
-        note: patch.note ?? undefined,
-      })
-      .eq("id", id)
-      .select()
-      .single()
-    if (error) throw new Error(`Supabase update failed: ${error.message}`)
-    return {
-      id: data.id,
-      serviceId: data.service_id,
-      userId: data.user_id,
-      occurredAt: data.occurred_at,
-      seizureType: data.seizure_type,
-      duration: data.duration,
-      trigger: data.trigger,
-      intervention: data.intervention,
-      note: data.note,
-      createdAt: data.created_at,
+    try {
+      const { data, error } = await supabase
+        .from("seizure_logs")
+        .update({
+          service_id: patch.serviceId ?? undefined,
+          user_id: patch.userId ?? undefined,
+          occurred_at: patch.occurredAt ?? undefined,
+          seizure_type: patch.seizureType ?? undefined,
+          duration: patch.duration ?? undefined,
+          trigger: patch.trigger ?? undefined,
+          intervention: patch.intervention ?? undefined,
+          note: patch.note ?? undefined,
+        })
+        .eq("id", id)
+        .select()
+        .single()
+      if (error) throw error
+      return {
+        id: data.id,
+        serviceId: data.service_id,
+        userId: data.user_id,
+        occurredAt: data.occurred_at,
+        seizureType: data.seizure_type,
+        duration: data.duration,
+        trigger: data.trigger,
+        intervention: data.intervention,
+        note: data.note,
+        createdAt: data.created_at,
+      }
+    } catch (error) {
+      console.warn("[seizure] Supabase update failed, falling back to localStorage", error)
     }
   }
 
@@ -226,9 +242,13 @@ export async function updateSeizureLog(
 export async function deleteSeizureLog(id: string): Promise<void> {
   const supabase = getSupabase()
   if (supabase) {
-    const { error } = await supabase.from("seizure_logs").delete().eq("id", id)
-    if (error) throw new Error(`Supabase delete failed: ${error.message}`)
-    return
+    try {
+      const { error } = await supabase.from("seizure_logs").delete().eq("id", id)
+      if (error) throw error
+      return
+    } catch (error) {
+      console.warn("[seizure] Supabase delete failed, falling back to localStorage", error)
+    }
   }
   const existing = localStorage.getItem("seizureLogs")
   const logs: SeizureLog[] = existing ? JSON.parse(existing) : []

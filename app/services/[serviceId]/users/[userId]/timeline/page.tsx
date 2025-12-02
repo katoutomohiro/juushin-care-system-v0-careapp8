@@ -1,36 +1,25 @@
-import "server-only";
-import { UserTimeline } from "@/app/timeline/_components/user-timeline";
-
-interface UserTimelinePageProps {
-  params: {
-    serviceId: string;
-    userId: string;
-  };
-}
+import "server-only"
+import { UserTimeline } from "@/app/timeline/_components/user-timeline"
 
 /**
  * /services/[serviceId]/users/[userId]/timeline
  *
- * 特定の利用者に絞られたタイムラインを表示するページ。
- *
- * 前提:
- * - /services/[serviceId]/users/[userId] の [userId] が
- *   public.seizures.user_id と一致する設計
- * - 現時点で一致していなくても、DB側を揃えれば動く
- *
- * 現段階:
- * - serviceId はまだ使わず、userId の発作記録だけに絞ったタイムラインを表示
- * - 将来、サービスごとの絞り込みが必要になったら拡張予定
+ * ����̗��p�҂ɍi�����^�C�����C����\������y�[�W�B
+ * serviceId �͏����̊g���p�ɕێ����Ă����B
  */
-export default async function UserTimelinePage({ params }: UserTimelinePageProps) {
-  const { userId } = params;
-  // serviceId は将来の拡張用に残しておく
+export default async function UserTimelinePage({
+  params,
+}: {
+  params: Promise<{ serviceId: string; userId: string }>
+}) {
+  const resolvedParams = await params
+  const userId = decodeURIComponent(resolvedParams.userId)
 
-  return (
-    <UserTimeline
-      heading="利用者タイムライン（サービス内ビュー）"
-      showUserSelector={false}
-      userId={userId}
-    />
-  );
+  const timeline = await UserTimeline({
+    heading: "���p�҃^�C�����C���i�T�[�r�X�ʃr���[�j",
+    showUserSelector: false,
+    userId,
+  })
+
+  return timeline
 }

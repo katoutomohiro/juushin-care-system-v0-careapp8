@@ -47,6 +47,7 @@ export default function DailyLogPageClient({ users, initialUserId }: Props) {
           onChange={(e) => handleChangeUser(e.target.value)}
           className="mt-2 w-full rounded border px-3 py-2 text-sm"
         >
+          <option value="">全ての利用者</option>
           {userOptions.map((u) => (
             <option key={u.id} value={u.id}>
               {u.name}
@@ -55,7 +56,7 @@ export default function DailyLogPageClient({ users, initialUserId }: Props) {
         </select>
       </div>
 
-      <UserDailyLogTimeline heading="直近の記録" showUserSelector={false} userId={selectedUser} />
+      <UserDailyLogTimeline heading="直近の記録" userId={selectedUser || undefined} />
     </div>
   )
 }

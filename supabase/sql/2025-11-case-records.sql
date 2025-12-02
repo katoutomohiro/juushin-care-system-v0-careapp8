@@ -1,4 +1,6 @@
 -- case_records テーブル作成 (MVP A・T 用、後に全利用者へ拡張)
+-- NEXT_PUBLIC_SUPABASE_URL が指す Supabase プロジェクトの SQL Editor で一度だけ実行してください。
+-- ケース記録保存・表示（Excel手入力含む）で使用します。
 CREATE TABLE IF NOT EXISTS public.case_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL, -- 既存ユーザーID (例: 'A・T')

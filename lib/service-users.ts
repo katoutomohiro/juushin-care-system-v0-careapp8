@@ -1,0 +1,164 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { createServerSupabaseClient } from "./supabase/server"
+
+// service_users defaults representation (camelCase on app side, snake_case in DB)
+export type ServiceUserDefaults = {
+  userId: string
+  name?: string
+  serviceType?: string | null
+  defaultMainStaffId?: string | null
+  defaultSubStaffIds?: string[] | null
+  defaultServiceStartTime?: string | null
+  defaultServiceEndTime?: string | null
+  defaultTotalServiceMinutes?: number | null
+  defaultDayServiceAmStartTime?: string | null
+  defaultDayServiceAmEndTime?: string | null
+  defaultDayServicePmStartTime?: string | null
+  defaultDayServicePmEndTime?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+type ServiceUserDefaultsPayload = Omit<
+  ServiceUserDefaults,
+  "userId" | "name" | "serviceType" | "created_at" | "updated_at"
+>
+
+function getSupabaseServiceUsers(client?: SupabaseClient) {
+  return client ?? createServerSupabaseClient()
+}
+
+function toNullIfEmpty<T extends string | number | null | undefined>(v: T): T | null {
+  if (v === "" || v === undefined) return null as any
+  return (v as any) ?? null
+}
+
+function normalizeSubStaffIds(input: {
+  defaultSubStaffIds?: string[] | null
+  defaultSubStaffId?: string | null
+  default_sub_staff_ids?: string[] | null
+  default_sub_staff_id?: string | null
+}) {
+  const ids =
+    input.defaultSubStaffIds ??
+    input.default_sub_staff_ids ??
+    (input.defaultSubStaffId ? [input.defaultSubStaffId] : undefined) ??
+    (input.default_sub_staff_id ? [input.default_sub_staff_id] : undefined)
+  if (!ids) return null
+  const filtered = ids.map((v) => toNullIfEmpty(v)).filter(Boolean) as string[]
+  return filtered.length ? filtered : null
+}
+
+export function normalizeServiceUserDefaults(
+  input: Partial<ServiceUserDefaults> | null | undefined,
+  fallback?: { userId: string; name?: string; serviceType?: string | null },
+): ServiceUserDefaults {
+  return {
+    userId: input?.userId ?? (input as any)?.user_id ?? fallback?.userId ?? "",
+    name: input?.name ?? fallback?.name ?? "",
+    serviceType: input?.serviceType ?? (input as any)?.service_type ?? fallback?.serviceType ?? null,
+    defaultMainStaffId: toNullIfEmpty(input?.defaultMainStaffId ?? (input as any)?.default_main_staff_id),
+    defaultSubStaffIds: normalizeSubStaffIds(input as any),
+    defaultServiceStartTime:
+      toNullIfEmpty(input?.defaultServiceStartTime ?? (input as any)?.default_service_start_time),
+    defaultServiceEndTime: toNullIfEmpty(input?.defaultServiceEndTime ?? (input as any)?.default_service_end_time),
+    defaultTotalServiceMinutes:
+      input?.defaultTotalServiceMinutes ?? (input as any)?.default_total_service_minutes ?? null,
+    defaultDayServiceAmStartTime:
+      toNullIfEmpty(input?.defaultDayServiceAmStartTime ?? (input as any)?.default_day_service_am_start_time),
+    defaultDayServiceAmEndTime:
+      toNullIfEmpty(input?.defaultDayServiceAmEndTime ?? (input as any)?.default_day_service_am_end_time),
+    defaultDayServicePmStartTime:
+      toNullIfEmpty(input?.defaultDayServicePmStartTime ?? (input as any)?.default_day_service_pm_start_time),
+    defaultDayServicePmEndTime:
+      toNullIfEmpty(input?.defaultDayServicePmEndTime ?? (input as any)?.default_day_service_pm_end_time),
+    created_at: (input as any)?.created_at,
+    updated_at: (input as any)?.updated_at,
+  }
+}
+
+function mapRow(row: any): ServiceUserDefaults {
+  return normalizeServiceUserDefaults({
+    userId: row?.user_id ?? row?.id,
+    name: row?.name,
+    serviceType: row?.service_type,
+    defaultMainStaffId: row?.default_main_staff_id,
+    defaultSubStaffIds: row?.default_sub_staff_ids,
+    defaultServiceStartTime: row?.default_service_start_time,
+    defaultServiceEndTime: row?.default_service_end_time,
+    defaultTotalServiceMinutes: row?.default_total_service_minutes,
+    defaultDayServiceAmStartTime: row?.default_day_service_am_start_time,
+    defaultDayServiceAmEndTime: row?.default_day_service_am_end_time,
+    defaultDayServicePmStartTime: row?.default_day_service_pm_start_time,
+    defaultDayServicePmEndTime: row?.default_day_service_pm_end_time,
+    created_at: row?.created_at,
+    updated_at: row?.updated_at,
+  })
+}
+
+function isMissingTable(code: string | undefined) {
+  return code === "42P01" || code === "PGRST116" || code === "PGRST114" || code === "PGRST205"
+}
+
+export async function fetchUserServiceDefaults(
+  userId: string,
+  client?: SupabaseClient,
+): Promise<ServiceUserDefaults | null> {
+  const supabase = getSupabaseServiceUsers(client)
+  const { data, error } = await supabase.from("service_users").select("*").eq("user_id", userId).maybeSingle()
+  if (error) {
+    if (isMissingTable((error as any).code)) {
+      console.warn(
+        `[service_users] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
+      )
+      return null
+    }
+    console.error("[service_users] fetch failed", error)
+    throw error
+  }
+  if (!data) return null
+  return mapRow(data)
+}
+
+export async function upsertUserServiceDefaults(
+  userId: string,
+  defaults: ServiceUserDefaultsPayload,
+  options?: { name?: string; serviceType?: string | null; client?: SupabaseClient },
+): Promise<ServiceUserDefaults | null> {
+  const supabase = getSupabaseServiceUsers(options?.client)
+  if (!defaults) {
+    console.error("[service_users] upsert failed: defaults payload is missing")
+    throw new Error("Service user defaults payload is required")
+  }
+  const normalizedSubStaffIds =
+    defaults.defaultSubStaffIds && defaults.defaultSubStaffIds.length > 0
+      ? defaults.defaultSubStaffIds.filter(Boolean)
+      : null
+  const payload = {
+    user_id: userId,
+    name: options?.name ?? userId,
+    service_type: options?.serviceType ?? null,
+    default_main_staff_id: defaults.defaultMainStaffId ?? null,
+    default_sub_staff_ids: normalizedSubStaffIds,
+    default_service_start_time: defaults.defaultServiceStartTime ?? null,
+    default_service_end_time: defaults.defaultServiceEndTime ?? null,
+    default_total_service_minutes: defaults.defaultTotalServiceMinutes ?? null,
+    default_day_service_am_start_time: defaults.defaultDayServiceAmStartTime ?? null,
+    default_day_service_am_end_time: defaults.defaultDayServiceAmEndTime ?? null,
+    default_day_service_pm_start_time: defaults.defaultDayServicePmStartTime ?? null,
+    default_day_service_pm_end_time: defaults.defaultDayServicePmEndTime ?? null,
+    updated_at: new Date().toISOString(),
+  }
+  const { data, error } = await supabase.from("service_users").upsert(payload, { onConflict: "user_id" }).select().single()
+  if (error) {
+    if (isMissingTable((error as any).code)) {
+      console.warn(
+        `[service_users] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
+      )
+      return null
+    }
+    console.error("[service_users] upsert failed", error)
+    throw error
+  }
+  return mapRow(data)
+}

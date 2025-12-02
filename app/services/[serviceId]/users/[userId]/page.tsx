@@ -16,6 +16,7 @@ import { formUrl } from "@/lib/url"
 import { userDetails } from "@/lib/user-master-data"
 import { DataStorageService } from "@/services/data-storage-service"
 import type { ServiceType, UserDetail } from "@/lib/user-service-allocation"
+import { SERVICE_TIME_CANDIDATES, TOTAL_SERVICE_TIME_OPTIONS } from "@/lib/case-record-constants"
 
 const welfareServices: Record<ServiceType, { name: string; icon: string; color: string }> = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -43,6 +44,20 @@ const dailyLogCategories = [
   { id: "transportation", name: "送迎・移動", icon: "🚌", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100", iconBg: "bg-amber-100 text-amber-600", description: "送迎や移動時の記録" },
 ]
 
+type StaffOption = { id: string; name: string }
+
+type ServiceUserDefaultsState = {
+  defaultMainStaffId: string | null
+  defaultSubStaffIds: string[] | null
+  defaultServiceStartTime: string | null
+  defaultServiceEndTime: string | null
+  defaultTotalServiceMinutes: string | null
+  defaultDayServiceAmStartTime: string | null
+  defaultDayServiceAmEndTime: string | null
+  defaultDayServicePmStartTime: string | null
+  defaultDayServicePmEndTime: string | null
+}
+
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -51,6 +66,7 @@ export default function UserDetailPage() {
   const userId = decodeURIComponent(params.userId as string)
   const service = welfareServices[serviceId]
 
+  // ユーザーマスタ: 静的 userDetails をベースに、supabase public.service_users のデフォルト値は API 経由で読み込み
   const storedDetail = userDetails[userId]
   const fallbackUser: UserDetail = {
     name: userId,
@@ -67,6 +83,18 @@ export default function UserDetailPage() {
   const [editedUser, setEditedUser] = useState<UserDetail>(storedDetail ? { ...storedDetail } : { ...fallbackUser })
   const [displayName, setDisplayName] = useState(() => storedDetail?.name ?? userId)
   const [currentDate, setCurrentDate] = useState<string>("")
+  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
+  const [serviceUserDefaults, setServiceUserDefaults] = useState<ServiceUserDefaultsState>({
+    defaultMainStaffId: null,
+    defaultSubStaffIds: null,
+    defaultServiceStartTime: null,
+    defaultServiceEndTime: null,
+    defaultTotalServiceMinutes: null,
+    defaultDayServiceAmStartTime: null,
+    defaultDayServiceAmEndTime: null,
+    defaultDayServicePmStartTime: null,
+    defaultDayServicePmEndTime: null,
+  })
 
   useEffect(() => {
     const profile = DataStorageService.getUserProfile(userId)
@@ -85,12 +113,66 @@ export default function UserDetailPage() {
     )
   }, [])
 
+  useEffect(() => {
+    fetch("/api/staff/active?limit=10")
+      .then((res) => res.json())
+      .then((json) => {
+        const payload = json?.staff ?? json?.data
+        if (json?.ok && Array.isArray(payload)) {
+          setStaffOptions(payload)
+        }
+      })
+      .catch((e) => console.error("[UserDetailPage] staff load failed", e))
+  }, [])
+
+  useEffect(() => {
+    fetch(`/api/service-users/${encodeURIComponent(userId)}/defaults`)
+      .then((res) => res.json())
+      .then((json) => {
+        const defaults = json?.defaults || json?.data
+        if (json?.ok && defaults) {
+          setServiceUserDefaults((prev) => ({
+            ...prev,
+            ...extractDefaults(defaults),
+          }))
+        }
+      })
+      .catch((e) => console.error("[UserDetailPage] service user defaults load failed", e))
+  }, [userId])
+
   const currentUserDetails: UserDetail = useMemo(
     () => (storedDetail ? { ...storedDetail, name: displayName } : { ...editedUser, name: displayName }),
     [storedDetail, editedUser, displayName],
   )
 
-  const handleSaveUser = () => {
+  const resolveStaffName = (id: string | null | undefined) => {
+    if (!id) return "-"
+    return staffOptions.find((s) => s.id === id)?.name || id
+  }
+
+  const extractDefaults = (data: any): ServiceUserDefaultsState => {
+    const subStaffIds =
+      data?.defaultSubStaffIds ??
+      data?.default_sub_staff_ids ??
+      (data?.defaultSubStaffId ? [data.defaultSubStaffId] : null) ??
+      (data?.default_sub_staff_id ? [data.default_sub_staff_id] : null)
+    return {
+      defaultMainStaffId: data?.defaultMainStaffId ?? null,
+      defaultSubStaffIds: Array.isArray(subStaffIds) ? subStaffIds.filter(Boolean) : null,
+      defaultServiceStartTime: data?.defaultServiceStartTime ?? null,
+      defaultServiceEndTime: data?.defaultServiceEndTime ?? null,
+      defaultTotalServiceMinutes:
+        data?.defaultTotalServiceMinutes !== undefined && data?.defaultTotalServiceMinutes !== null
+          ? String(data.defaultTotalServiceMinutes)
+          : null,
+      defaultDayServiceAmStartTime: data?.defaultDayServiceAmStartTime ?? null,
+      defaultDayServiceAmEndTime: data?.defaultDayServiceAmEndTime ?? null,
+      defaultDayServicePmStartTime: data?.defaultDayServicePmStartTime ?? null,
+      defaultDayServicePmEndTime: data?.defaultDayServicePmEndTime ?? null,
+    }
+  }
+
+  const handleSaveUser = async () => {
     const oldName = displayName
     const newName = editedUser.name.trim() || userId
 
@@ -116,6 +198,40 @@ export default function UserDetailPage() {
     }
 
     setDisplayName(newName)
+    const payloadDefaults = {
+      ...serviceUserDefaults,
+      defaultSubStaffIds:
+        serviceUserDefaults.defaultSubStaffIds && serviceUserDefaults.defaultSubStaffIds.length > 0
+          ? serviceUserDefaults.defaultSubStaffIds
+          : null,
+      defaultTotalServiceMinutes: serviceUserDefaults.defaultTotalServiceMinutes
+        ? Number(serviceUserDefaults.defaultTotalServiceMinutes)
+        : null,
+    }
+    try {
+      const res = await fetch(`/api/service-users/${encodeURIComponent(userId)}/defaults`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          serviceType: serviceId,
+          defaults: payloadDefaults,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || json?.ok === false) {
+        throw new Error(json?.message || json?.error || "保存に失敗しました")
+      }
+      const defaults = json?.defaults || json?.data
+      if (defaults) {
+        setServiceUserDefaults((prev) => ({ ...prev, ...extractDefaults(defaults) }))
+      }
+      alert("デフォルト設定を保存しました")
+    } catch (error) {
+      console.error("[UserDetailPage] save defaults failed", error)
+      alert("デフォルト設定の保存に失敗しました")
+    }
+
     setIsEditDialogOpen(false)
   }
 
@@ -141,6 +257,13 @@ export default function UserDetailPage() {
                       onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records`)}
                     >
                       ケース記録を見る
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records/excel`)}
+                    >
+                      ケース記録 (Excel手入力)
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">{service?.name ?? serviceId}</p>
@@ -274,6 +397,180 @@ export default function UserDetailPage() {
                           placeholder="医療ケア概要を入力してください（なしの場合は「なし」）"
                         />
                       </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">主担当（デフォルト）</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultMainStaffId || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultMainStaffId: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {staffOptions.length ? (
+                          staffOptions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_staff__" disabled>
+                            スタッフ未設定
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">従担当（デフォルト）</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultSubStaffIds?.[0] || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultSubStaffIds: value ? [value] : null }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {staffOptions.length ? (
+                          staffOptions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_staff__" disabled>
+                            スタッフ未設定
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">サービス開始時間（デフォルト）</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultServiceStartTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultServiceStartTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`start-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">サービス終了時間（デフォルト）</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultServiceEndTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultServiceEndTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`end-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">トータルサービス提供時間（デフォルト）</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultTotalServiceMinutes || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultTotalServiceMinutes: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {TOTAL_SERVICE_TIME_OPTIONS.map((opt) => (
+                          <SelectItem key={`total-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">日中一時（午前）開始</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultDayServiceAmStartTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultDayServiceAmStartTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`morning-start-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">日中一時（午前）終了</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultDayServiceAmEndTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultDayServiceAmEndTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`morning-end-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">日中一時（午後）開始</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultDayServicePmStartTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultDayServicePmStartTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`afternoon-start-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">日中一時（午後）終了</Label>
+                    <Select
+                      value={serviceUserDefaults.defaultDayServicePmEndTime || ""}
+                      onValueChange={(value) => setServiceUserDefaults((prev) => ({ ...prev, defaultDayServicePmEndTime: value }))}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue placeholder="未設定" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 border-gray-300 shadow-lg">
+                        {SERVICE_TIME_CANDIDATES.map((opt) => (
+                          <SelectItem key={`afternoon-end-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
@@ -313,6 +610,32 @@ export default function UserDetailPage() {
                   <div className="md:col-span-2">
                     <p className="text-sm text-muted-foreground mb-1">医療ケア</p>
                     <p className="text-base leading-relaxed">{currentUserDetails.medicalCare}</p>
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">主担当（デフォルト）</p>
+                      <p className="text-base font-semibold">{resolveStaffName(serviceUserDefaults.defaultMainStaffId)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">従担当（デフォルト）</p>
+                      <p className="text-base font-semibold">{resolveStaffName(serviceUserDefaults.defaultSubStaffIds?.[0])}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">サービス時間デフォルト</p>
+                      <p className="text-base font-semibold">{serviceUserDefaults.defaultServiceStartTime || "-"} ～ {serviceUserDefaults.defaultServiceEndTime || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">トータル提供時間デフォルト</p>
+                      <p className="text-base font-semibold">{serviceUserDefaults.defaultTotalServiceMinutes || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">日中一時（午前）デフォルト</p>
+                      <p className="text-base font-semibold">{serviceUserDefaults.defaultDayServiceAmStartTime || "-"} ～ {serviceUserDefaults.defaultDayServiceAmEndTime || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">日中一時（午後）デフォルト</p>
+                      <p className="text-base font-semibold">{serviceUserDefaults.defaultDayServicePmStartTime || "-"} ～ {serviceUserDefaults.defaultDayServicePmEndTime || "-"}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

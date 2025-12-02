@@ -14,6 +14,15 @@ export interface UserDetail {
   handbook?: string; // 療育手帳等
   assist?: string; // 介助状況
   disabilityType?: string; // 障害種別（区分）
+  defaultMainStaffId?: string | null
+  defaultSubStaffId?: string | null
+  defaultServiceStartTime?: string | null
+  defaultServiceEndTime?: string | null
+  defaultTotalServiceTimeSlot?: string | null
+  defaultDaytimeSupportMorningStart?: string | null
+  defaultDaytimeSupportMorningEnd?: string | null
+  defaultDaytimeSupportAfternoonStart?: string | null
+  defaultDaytimeSupportAfternoonEnd?: string | null
   service: ServiceType[];
 }
 

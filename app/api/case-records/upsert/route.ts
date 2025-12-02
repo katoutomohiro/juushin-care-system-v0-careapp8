@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         dailyLog,
         careEvents,
         userId,
+        serviceType,
         headerOverrides,
       })
 
@@ -53,7 +54,23 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, content: row.content })
   } catch (e: any) {
-    console.error("[case-records/upsert] error", e)
-    return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 })
+    const errorInfo = {
+      message: e?.message || "Server error",
+      code: e?.code,
+      details: e?.details,
+      hint: e?.hint,
+    }
+    console.error("[case-records/upsert] error", errorInfo)
+    return NextResponse.json(
+      {
+        error: errorInfo.message,
+        details: {
+          code: errorInfo.code,
+          hint: errorInfo.hint,
+          detail: errorInfo.details,
+        },
+      },
+      { status: e?.status || 500 },
+    )
   }
 }

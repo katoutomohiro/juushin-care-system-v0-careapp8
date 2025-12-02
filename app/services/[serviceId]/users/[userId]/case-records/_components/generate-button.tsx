@@ -36,7 +36,7 @@ export default function GenerateCaseRecordButton({ userId, serviceType, date, on
       }
       setStatus("ケース記録を生成しました。読み込み済みです。")
     } catch (e: any) {
-      setStatus(e.message)
+      setStatus(e?.message || "生成に失敗しました")
     } finally {
       setLoading(false)
     }

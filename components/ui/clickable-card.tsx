@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { motion, useAnimation } from "framer-motion"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -32,7 +32,6 @@ const particleEmojis = {
 }
 
 export function ClickableCard({ children, onClick, href, className, particleColors }: ClickableCardProps) {
-  const router = useRouter()
   const controls = useAnimation()
   const [particles, setParticles] = useState<Particle[]>([])
 
@@ -75,16 +74,29 @@ export function ClickableCard({ children, onClick, href, className, particleColo
       transition: { duration: 0.4, ease: "easeOut" },
     })
 
-    setTimeout(() => {
-      if (onClick) {
-        onClick()
-      } else if (href) {
-        router.push(href)
-      }
-    }, 200)
+    if (onClick) {
+      setTimeout(() => onClick(), 200)
+    }
   }
 
-  return (
+  const cardBody = (
+    <Card
+      className={cn("cursor-pointer transition-all duration-300 hover:shadow-2xl relative overflow-hidden", className)}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          handleClick(e as any)
+        }
+      }}
+    >
+      {children}
+    </Card>
+  )
+
+  const wrapper = (
     <motion.div
       className="relative"
       animate={controls}
@@ -92,23 +104,7 @@ export function ClickableCard({ children, onClick, href, className, particleColo
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      <Card
-        className={cn(
-          "cursor-pointer transition-all duration-300 hover:shadow-2xl relative overflow-hidden",
-          className,
-        )}
-        onClick={handleClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault()
-            handleClick(e as any)
-          }
-        }}
-      >
-        {children}
-      </Card>
+      {cardBody}
 
       {particles.map((particle) => (
         <motion.div
@@ -140,4 +136,14 @@ export function ClickableCard({ children, onClick, href, className, particleColo
       ))}
     </motion.div>
   )
+
+  if (href && !onClick) {
+    return (
+      <Link href={href} className="block">
+        {wrapper}
+      </Link>
+    )
+  }
+
+  return wrapper
 }

@@ -104,3 +104,44 @@
     @apply text-xl md:text-2xl;
   }
 }
+
+/* 印刷用スタイル */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body {
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .case-record-print {
+    page-break-inside: avoid;
+  }
+
+  .case-record-print .border {
+    border-color: #00000040 !important;
+  }
+
+  .case-record-print .shadow,
+  .case-record-print .shadow-sm,
+  .case-record-print .shadow-md {
+    box-shadow: none !important;
+  }
+}
