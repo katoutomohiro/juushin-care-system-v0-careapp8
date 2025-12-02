@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     const safeStaff = staff || []
     return NextResponse.json({ ok: true, staff: safeStaff, data: safeStaff })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch staff members"
     console.error("[staff/active][GET] error", error)
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

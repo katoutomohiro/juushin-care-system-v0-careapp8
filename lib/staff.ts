@@ -19,14 +19,15 @@ export async function listStaffMembers(options?: {
 }): Promise<StaffMember[]> {
   const supabase = getSupabaseStaff(options?.client)
   const activeOnly = options?.activeOnly ?? false
-  const limit = options?.limit
+  const limit =
+    typeof options?.limit === "number" ? Math.min(50, Math.max(1, Math.floor(options.limit))) : null
 
   let query = supabase.from("staff_members").select("id, name, is_active, created_at").order("created_at", { ascending: true })
   if (activeOnly) {
     query = query.eq("is_active", true)
   }
-  if (typeof limit === "number") {
-    query = query.limit(Math.max(1, limit))
+  if (limit !== null) {
+    query = query.limit(limit)
   }
 
   const { data, error } = await query

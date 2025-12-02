@@ -21,8 +21,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       defaults: defaults ? normalizeServiceUserDefaults(defaults) : null,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch service user defaults"
     console.error("[service-users/defaults][GET] error", error)
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
 
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ ok: true })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to upsert service user defaults"
     console.error("[service-users/defaults][POST] error", error)
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

@@ -18,7 +18,7 @@ interface Particle {
 
 interface ClickableCardProps {
   children: React.ReactNode
-  onClick?: () => void
+  onClick?: () => void | Promise<void>
   href?: string
   className?: string
   particleColors?: string[]
@@ -75,7 +75,16 @@ export function ClickableCard({ children, onClick, href, className, particleColo
     })
 
     if (onClick) {
-      setTimeout(() => onClick(), 200)
+      setTimeout(() => {
+        try {
+          const result = onClick()
+          if (result instanceof Promise) {
+            result.catch((err) => console.error("[ClickableCard] onClick handler failed", err))
+          }
+        } catch (err) {
+          console.error("[ClickableCard] onClick handler failed", err)
+        }
+      }, 200)
     }
   }
 
