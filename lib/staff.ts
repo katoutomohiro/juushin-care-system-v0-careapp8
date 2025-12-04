@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createServerSupabaseClient } from "./supabase/server"
 
+export const ACTIVE_STAFF_DEFAULT_LIMIT = 10
+const DEFAULT_ACTIVE_STAFF_LIMIT = ACTIVE_STAFF_DEFAULT_LIMIT
+
 export type StaffMember = {
   id: string
   name: string
@@ -12,6 +15,20 @@ function getSupabaseStaff(client?: SupabaseClient) {
   return client ?? createServerSupabaseClient()
 }
 
+function clampLimitValue(limit: number): number {
+  const numericLimit = Number(limit)
+  if (!Number.isFinite(numericLimit)) {
+    return DEFAULT_ACTIVE_STAFF_LIMIT
+  }
+  const floored = Math.floor(numericLimit)
+  return Math.min(50, Math.max(1, floored))
+}
+
+function clampOptionalLimit(limit?: number | null): number | null {
+  if (limit === undefined || limit === null) return null
+  return clampLimitValue(limit)
+}
+
 export async function listStaffMembers(options?: {
   activeOnly?: boolean
   limit?: number
@@ -19,8 +36,7 @@ export async function listStaffMembers(options?: {
 }): Promise<StaffMember[]> {
   const supabase = getSupabaseStaff(options?.client)
   const activeOnly = options?.activeOnly ?? false
-  const limit =
-    typeof options?.limit === "number" ? Math.min(50, Math.max(1, Math.floor(options.limit))) : null
+  const limit = clampOptionalLimit(options?.limit)
 
   let query = supabase.from("staff_members").select("id, name, is_active, created_at").order("created_at", { ascending: true })
   if (activeOnly) {
@@ -36,6 +52,11 @@ export async function listStaffMembers(options?: {
     throw error
   }
   return data || []
+}
+
+export async function fetchActiveStaff(limit: number): Promise<StaffMember[]> {
+  const safeLimit = clampLimitValue(limit)
+  return listStaffMembers({ activeOnly: true, limit: safeLimit })
 }
 
 export async function upsertStaffMember(payload: { id?: string; name: string; is_active?: boolean }): Promise<StaffMember> {

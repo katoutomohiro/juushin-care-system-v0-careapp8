@@ -1,19 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { listStaffMembers } from "@/lib/staff"
+import { ACTIVE_STAFF_DEFAULT_LIMIT, fetchActiveStaff } from "@/lib/staff"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limitParam = searchParams.get("limit")
-  const parsedLimit = limitParam ? Number(limitParam) : null
-  const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(50, parsedLimit)) : 10
+  const parsedLimit = limitParam !== null ? Number(limitParam) : ACTIVE_STAFF_DEFAULT_LIMIT
+  const limit = Number.isFinite(parsedLimit) ? parsedLimit : ACTIVE_STAFF_DEFAULT_LIMIT
 
   try {
-    const staff = await listStaffMembers({ activeOnly: true, limit })
-    const safeStaff = staff || []
-    return NextResponse.json({ ok: true, staff: safeStaff, data: safeStaff })
+    const staff = await fetchActiveStaff(limit)
+    return NextResponse.json({ ok: true, staff, data: staff })
   } catch (error) {
+    console.error("[staff/active][GET]", error)
     const message = error instanceof Error ? error.message : "Failed to fetch staff members"
-    console.error("[staff/active][GET] error", error)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

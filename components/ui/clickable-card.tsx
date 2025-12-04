@@ -5,6 +5,7 @@ import type React from "react"
 import { motion, useAnimation } from "framer-motion"
 import Link from "next/link"
 import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -34,6 +35,7 @@ const particleEmojis = {
 export function ClickableCard({ children, onClick, href, className, particleColors }: ClickableCardProps) {
   const controls = useAnimation()
   const [particles, setParticles] = useState<Particle[]>([])
+  const router = useRouter()
 
   const defaultColors = ["#FFB6C1", "#FFD700", "#87CEEB", "#DDA0DD", "#F0E68C", "#FFE4E1"]
   const colors = particleColors || defaultColors
@@ -74,17 +76,16 @@ export function ClickableCard({ children, onClick, href, className, particleColo
       transition: { duration: 0.4, ease: "easeOut" },
     })
 
-    if (onClick) {
-      setTimeout(() => {
-        try {
-          const result = onClick()
-          if (result instanceof Promise) {
-            result.catch((err) => console.error("[ClickableCard] onClick handler failed", err))
-          }
-        } catch (err) {
-          console.error("[ClickableCard] onClick handler failed", err)
-        }
-      }, 200)
+    try {
+      if (onClick) {
+        await onClick()
+      }
+    } catch (err) {
+      console.error("[ClickableCard] onClick handler failed", err)
+    } finally {
+      if (href) {
+        router.push(href)
+      }
     }
   }
 

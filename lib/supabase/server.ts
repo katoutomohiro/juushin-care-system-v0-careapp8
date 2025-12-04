@@ -1,21 +1,21 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-let hasWarnedHostMismatch = false
-
-function extractProjectRefFromServiceKey(key: string): string | null {
+function extractProjectRefFromServiceRoleKey(key: string): string | null {
   const parts = key.split(".")
   if (parts.length < 2) return null
+
   try {
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString())
-    return payload?.ref || null
-  } catch {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"))
+    return typeof payload?.ref === "string" ? payload.ref : null
+  } catch (error) {
+    console.error("[supabase] Failed to parse SUPABASE_SERVICE_ROLE_KEY payload", error)
     return null
   }
 }
 
-function normalizeSupabaseUrl(rawUrl: string, serviceKey: string): string {
+function normalizeSupabaseUrl(rawUrl: string, serviceRoleKey: string): string {
   if (!rawUrl) {
-    console.error("[supabase] Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL")
+    console.error("[supabase] Missing SUPABASE_URL")
     throw new Error("Supabase URL is not configured")
   }
 
@@ -27,20 +27,15 @@ function normalizeSupabaseUrl(rawUrl: string, serviceKey: string): string {
     throw new Error("Supabase URL is invalid")
   }
 
-  const projectRef = extractProjectRefFromServiceKey(serviceKey)
-  const hostname = parsed.hostname
-  const domainSuffix = hostname.split(".").slice(1).join(".")
-  const isSupabaseHost = domainSuffix.startsWith("supabase.")
-
-  if (projectRef && isSupabaseHost && hostname.split(".")[0] !== projectRef) {
-    const correctedHost = `${projectRef}.${domainSuffix}`
-    if (!hasWarnedHostMismatch) {
-      console.warn(
-        `[supabase] URL host (${hostname}) does not match service key project (${projectRef}); using ${correctedHost}`,
-      )
-      hasWarnedHostMismatch = true
+  const projectRef = extractProjectRefFromServiceRoleKey(serviceRoleKey)
+  if (projectRef) {
+    const expectedHost = `${projectRef}.supabase.co`
+    if (parsed.hostname !== expectedHost) {
+      console.warn(`[supabase] URL host (${parsed.hostname}) does not match service key project (${projectRef}); using ${expectedHost}`)
+      parsed.protocol = "https:"
+      parsed.hostname = expectedHost
+      parsed.port = ""
     }
-    parsed.hostname = correctedHost
   }
 
   // Ensure we don't end up with double slashes
@@ -62,8 +57,13 @@ function resolveSupabaseConfig() {
     throw new Error("Supabase service role key is not configured")
   }
 
-  const urlFromEnv = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim()
-  const supabaseUrl = normalizeSupabaseUrl(urlFromEnv, serviceRoleKey)
+  const supabaseUrlEnv = (process.env.SUPABASE_URL || "").trim()
+  if (!supabaseUrlEnv) {
+    console.error("[supabase] Missing SUPABASE_URL")
+    throw new Error("Supabase URL is not configured")
+  }
+
+  const supabaseUrl = normalizeSupabaseUrl(supabaseUrlEnv, serviceRoleKey)
 
   return { supabaseUrl, serviceRoleKey }
 }
@@ -74,3 +74,5 @@ export function createServerSupabaseClient(): SupabaseClient {
     auth: { persistSession: false },
   })
 }
+
+export const supabaseServer = createServerSupabaseClient()

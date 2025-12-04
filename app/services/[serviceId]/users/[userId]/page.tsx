@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import ClickableCard from "@/components/clickable-card"
+import CaseRecordCards from "./_components/case-records-cards"
 import { formUrl } from "@/lib/url"
 import { userDetails } from "@/lib/user-master-data"
 import { DataStorageService } from "@/services/data-storage-service"
@@ -215,7 +216,7 @@ export default function UserDetailPage() {
         body: JSON.stringify({
           name: newName,
           serviceType: serviceId,
-          defaults: payloadDefaults,
+          ...payloadDefaults,
         }),
       })
       const json = await res.json()
@@ -640,6 +641,8 @@ export default function UserDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <CaseRecordCards userId={userId} serviceId={serviceId} staffOptions={staffOptions} />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card

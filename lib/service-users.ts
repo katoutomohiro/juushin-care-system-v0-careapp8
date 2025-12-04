@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { createServerSupabaseClient } from "./supabase/server"
+import { createServerSupabaseClient, supabaseServer } from "./supabase/server"
+
+const TABLE_NAME = "service_users_defaults"
 
 // service_users defaults representation (camelCase on app side, snake_case in DB)
 export type ServiceUserDefaults = {
@@ -25,7 +27,7 @@ type ServiceUserDefaultsPayload = Omit<
 >
 
 function getSupabaseServiceUsers(client?: SupabaseClient) {
-  return client ?? createServerSupabaseClient()
+  return client ?? supabaseServer ?? createServerSupabaseClient()
 }
 
 function toNullIfEmpty<T extends string | number | null | undefined>(v: T): T | null {
@@ -105,15 +107,15 @@ export async function fetchUserServiceDefaults(
   client?: SupabaseClient,
 ): Promise<ServiceUserDefaults | null> {
   const supabase = getSupabaseServiceUsers(client)
-  const { data, error } = await supabase.from("service_users").select("*").eq("user_id", userId).maybeSingle()
+  const { data, error } = await supabase.from(TABLE_NAME).select("*").eq("user_id", userId).maybeSingle()
   if (error) {
     if (isMissingTable((error as any).code)) {
       console.warn(
-        `[service_users] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
+        `[${TABLE_NAME}] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
       )
       return null
     }
-    console.error("[service_users] fetch failed", error)
+    console.error(`[${TABLE_NAME}] fetch failed`, error)
     throw error
   }
   if (!data) return null
@@ -122,42 +124,55 @@ export async function fetchUserServiceDefaults(
 
 export async function upsertUserServiceDefaults(
   userId: string,
-  defaults: ServiceUserDefaultsPayload,
-  options?: { name?: string; serviceType?: string | null; client?: SupabaseClient },
+  defaults: any,
+  client?: SupabaseClient,
 ): Promise<ServiceUserDefaults | null> {
-  const supabase = getSupabaseServiceUsers(options?.client)
-  if (!defaults) {
-    console.error("[service_users] upsert failed: defaults payload is missing")
+  const supabase = getSupabaseServiceUsers(client)
+  const source = defaults?.defaults ?? defaults
+  if (!source || typeof source !== "object") {
+    console.error("[service_users_defaults] upsert failed: defaults payload is missing or invalid")
     throw new Error("Service user defaults payload is required")
   }
-  const normalizedSubStaffIds =
-    defaults.defaultSubStaffIds && defaults.defaultSubStaffIds.length > 0
-      ? defaults.defaultSubStaffIds.filter(Boolean)
-      : null
+
+  const normalizedSubStaffIds = normalizeSubStaffIds(source as any)
+
   const payload = {
     user_id: userId,
-    name: options?.name ?? userId,
-    service_type: options?.serviceType ?? null,
-    default_main_staff_id: defaults.defaultMainStaffId ?? null,
+    name: source.name ?? defaults?.name ?? userId,
+    service_type: source.serviceType ?? source.service_type ?? null,
+    default_main_staff_id: toNullIfEmpty(source.defaultMainStaffId ?? source.default_main_staff_id),
     default_sub_staff_ids: normalizedSubStaffIds,
-    default_service_start_time: defaults.defaultServiceStartTime ?? null,
-    default_service_end_time: defaults.defaultServiceEndTime ?? null,
-    default_total_service_minutes: defaults.defaultTotalServiceMinutes ?? null,
-    default_day_service_am_start_time: defaults.defaultDayServiceAmStartTime ?? null,
-    default_day_service_am_end_time: defaults.defaultDayServiceAmEndTime ?? null,
-    default_day_service_pm_start_time: defaults.defaultDayServicePmStartTime ?? null,
-    default_day_service_pm_end_time: defaults.defaultDayServicePmEndTime ?? null,
+    default_service_start_time: toNullIfEmpty(
+      source.defaultServiceStartTime ?? source.default_service_start_time,
+    ),
+    default_service_end_time: toNullIfEmpty(source.defaultServiceEndTime ?? source.default_service_end_time),
+    default_total_service_minutes:
+      source.defaultTotalServiceMinutes ?? source.default_total_service_minutes ?? null,
+    default_day_service_am_start_time:
+      toNullIfEmpty(source.defaultDayServiceAmStartTime ?? source.default_day_service_am_start_time),
+    default_day_service_am_end_time: toNullIfEmpty(
+      source.defaultDayServiceAmEndTime ?? source.default_day_service_am_end_time,
+    ),
+    default_day_service_pm_start_time:
+      toNullIfEmpty(source.defaultDayServicePmStartTime ?? source.default_day_service_pm_start_time),
+    default_day_service_pm_end_time: toNullIfEmpty(
+      source.defaultDayServicePmEndTime ?? source.default_day_service_pm_end_time,
+    ),
     updated_at: new Date().toISOString(),
   }
-  const { data, error } = await supabase.from("service_users").upsert(payload, { onConflict: "user_id" }).select().single()
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .upsert(payload, { onConflict: "user_id" })
+    .select()
+    .single()
   if (error) {
     if (isMissingTable((error as any).code)) {
       console.warn(
-        `[service_users] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
+        `[${TABLE_NAME}] table missing; ensure supabase/sql/2025-11-28-service-users-defaults.sql is applied to ${process.env.NEXT_PUBLIC_SUPABASE_URL}`,
       )
       return null
     }
-    console.error("[service_users] upsert failed", error)
+    console.error(`[${TABLE_NAME}] upsert failed`, error)
     throw error
   }
   return mapRow(data)
