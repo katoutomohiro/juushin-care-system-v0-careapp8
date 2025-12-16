@@ -803,7 +803,7 @@ export default function UserDetailPage() {
                 </Button>
               </div>
             </div>
-            <ATCaseRecordPrint data={atCaseRecordData} />
+            <ATCaseRecordPrint record={atCaseRecordData} />
           </div>
         )}
       </main>
