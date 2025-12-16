@@ -18,6 +18,9 @@ import { userDetails } from "@/lib/user-master-data"
 import { DataStorageService } from "@/services/data-storage-service"
 import type { ServiceType, UserDetail } from "@/lib/user-service-allocation"
 import { SERVICE_TIME_CANDIDATES, TOTAL_SERVICE_TIME_OPTIONS } from "@/lib/case-record-constants"
+import { AT_USER_ID, ATCaseRecord } from "@/lib/at-case-record-template"
+import { ATCaseRecordForm } from "@/components/at-case-record-form"
+import { ATCaseRecordPrint } from "@/components/at-case-record-print"
 
 const welfareServices: Record<ServiceType, { name: string; icon: string; color: string }> = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
