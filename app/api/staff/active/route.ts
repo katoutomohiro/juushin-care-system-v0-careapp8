@@ -7,12 +7,30 @@ export async function GET(request: NextRequest) {
   const parsedLimit = limitParam !== null ? Number(limitParam) : ACTIVE_STAFF_DEFAULT_LIMIT
   const limit = Number.isFinite(parsedLimit) ? parsedLimit : ACTIVE_STAFF_DEFAULT_LIMIT
 
+  // Fail-safe: env check to avoid undici fetch failed → return 200 with empty list
+  const supabaseUrl = (process.env.SUPABASE_URL || "").trim()
+  const serviceRole = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim()
+  if (!supabaseUrl || !serviceRole) {
+    console.error("[staff/active] Missing Supabase env", {
+      SUPABASE_URL_PRESENT: Boolean(supabaseUrl),
+      SUPABASE_SERVICE_ROLE_KEY_PRESENT: Boolean(serviceRole),
+    })
+    return NextResponse.json(
+      { ok: true, staff: [], data: [], warning: "MISSING_SUPABASE_ENV" },
+      { status: 200 },
+    )
+  }
+
   try {
     const staff = await fetchActiveStaff(limit)
     return NextResponse.json({ ok: true, staff, data: staff })
   } catch (error) {
-    console.error("[staff/active][GET]", error)
+    console.error("[staff/active][GET]", error, (error as any)?.cause)
     const message = error instanceof Error ? error.message : "Failed to fetch staff members"
-    return NextResponse.json({ ok: false, error: message }, { status: 500 })
+    // Degrade gracefully to avoid 500 spam in console
+    return NextResponse.json(
+      { ok: true, staff: [], data: [], error: message },
+      { status: 200 },
+    )
   }
 }

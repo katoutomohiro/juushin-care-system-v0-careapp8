@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { createServerSupabaseClient, supabaseServer } from "./supabase/server"
+import { createServerSupabaseClient } from "./supabase/server"
 
 const TABLE_NAME = "service_users_defaults"
 
@@ -27,7 +27,8 @@ type ServiceUserDefaultsPayload = Omit<
 >
 
 function getSupabaseServiceUsers(client?: SupabaseClient) {
-  return client ?? supabaseServer ?? createServerSupabaseClient()
+  // Avoid top-level client initialization that may throw during import
+  return client ?? createServerSupabaseClient()
 }
 
 function toNullIfEmpty<T extends string | number | null | undefined>(v: T): T | null {

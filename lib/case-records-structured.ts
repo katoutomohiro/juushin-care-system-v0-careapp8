@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { supabaseServer, createServerSupabaseClient } from "./supabase/server"
+import { createServerSupabaseClient } from "./supabase/server"
 
 type NullableString = string | null | undefined
 type NullableNumber = number | string | null | undefined
@@ -57,7 +57,8 @@ const MAX_LIMIT = 50
 const DEFAULT_LIMIT = 20
 
 function getClient(client?: SupabaseClient) {
-  return client ?? supabaseServer ?? createServerSupabaseClient()
+  // Avoid top-level client to prevent import-time failures
+  return client ?? createServerSupabaseClient()
 }
 
 function clampLimit(limit?: number | null) {
