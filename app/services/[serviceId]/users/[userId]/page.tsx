@@ -82,7 +82,8 @@ export default function UserDetailPage() {
     service: [serviceId],
   }
 
-  const [currentView, setCurrentView] = useState<"overview" | "daily-logs">("overview")
+  const [currentView, setCurrentView] = useState<"overview" | "daily-logs" | "at-case-record-form" | "at-case-record-preview">("overview")
+  const [atCaseRecordData, setATCaseRecordData] = useState<ATCaseRecord | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editedUser, setEditedUser] = useState<UserDetail>(storedDetail ? { ...storedDetail } : { ...fallbackUser })
   const [displayName, setDisplayName] = useState(() => storedDetail?.name ?? userId)
@@ -668,16 +669,25 @@ export default function UserDetailPage() {
 
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => setCurrentView("daily-logs")}
+                onClick={() => {
+                  if (userId === AT_USER_ID) {
+                    setATCaseRecordData(null)
+                    setCurrentView("at-case-record-form")
+                  } else {
+                    setCurrentView("daily-logs")
+                  }
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
                     <div className="p-2 bg-green-100 rounded-lg text-2xl">📝</div>
-                    日誌記録
+                    {userId === AT_USER_ID ? "ケース記録入力（A4印刷対応）" : "日誌記録"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">日誌（発作・バイタル・排泄など）入力・履歴</p>
+                  <p className="text-sm text-muted-foreground">
+                    {userId === AT_USER_ID ? "生活介護ケース記録の入力・確認" : "日誌（発作・バイタル・排泄など）入力・履歴"}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -749,6 +759,51 @@ export default function UserDetailPage() {
                 </ClickableCard>
               ))}
             </div>
+          </div>
+        )}
+
+        {currentView === "at-case-record-form" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">ケース記録入力 - {displayName}</h2>
+              <Button variant="outline" onClick={() => setCurrentView("overview")}>
+                ← 戻る
+              </Button>
+            </div>
+            <ATCaseRecordForm
+              date={currentDate}
+              onSave={(data) => {
+                setATCaseRecordData(data)
+                setCurrentView("at-case-record-preview")
+              }}
+              onCancel={() => setCurrentView("overview")}
+            />
+          </div>
+        )}
+
+        {currentView === "at-case-record-preview" && atCaseRecordData && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">ケース記録プレビュー - {displayName}</h2>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => window.print()}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  🖨️ 印刷する
+                </Button>
+                <Button 
+                  variant="secondary"
+                  onClick={() => setCurrentView("at-case-record-form")}
+                >
+                  ← 編集に戻る
+                </Button>
+                <Button variant="outline" onClick={() => setCurrentView("overview")}>
+                  ← 閉じる
+                </Button>
+              </div>
+            </div>
+            <ATCaseRecordPrint data={atCaseRecordData} />
           </div>
         )}
       </main>
