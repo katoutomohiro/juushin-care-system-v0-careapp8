@@ -12,7 +12,7 @@
 - **ファイル**: `app/services/[serviceId]/users/[userId]/page.tsx`
 - **機能**: 
   - 利用者の基本情報表示
-  - "ケース記録を見る" / "日誌記録" / "タイムライン" カード
+  - "ケース記録を見る"（ヘッダーボタン1本に統一） / "日誌記録" / "タイムライン" カード
   - A.T専用: "ケース記録入力（A4印刷対応）" カード（userId === AT_USER_ID 時）
 
 ### ケース記録カード（CaseRecordCards）
@@ -25,6 +25,10 @@
   - `CaseRecordCards`（Wrapper）: Hooksなし、A.Tガード（userId === AT_USER_ID で早期return）
   - `CaseRecordCardsInner`（Inner）: 全Hooks呼び出し、通常ケース記録処理
   - この分割により React Rules of Hooks を遵守（Hooksは常に同じ順序で呼ぶ）
+
+### ケース記録導線の統一（2025-12-16）
+- ヘッダーの「ケース記録を見る」ボタンのみを入口として残し、カード版の「ケース記録を見る」は削除
+- 「ケース記録 (Excel手入力)」入口を廃止（フォームは既存A4導線を使用）
 
 ### A.Tケース記録フォーム
 - **テンプレート定義**: `lib/at-case-record-template.ts`

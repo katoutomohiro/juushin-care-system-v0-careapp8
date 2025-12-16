@@ -128,6 +128,13 @@
 - ✅ **Console 500**: A.TガードでCaseRecordCardsが呼ばれず、500連打を防止
 - ✅ **A.Tフォーム表示**: ATCaseRecordForm が動作し、A4印刷導線が維持される
 
+### 2025-12-16 入口統一（UI整理） ✅
+- A.T画面ヘッダーの「ケース記録 (Excel手入力)」ボタンを削除（入口は1つに統一）
+- 利用者詳細ページのカード「ケース記録を見る」を削除。残る導線：
+  - ヘッダーの「ケース記録を見る」ボタン（一覧/入力/印刷へ）
+  - A.T向け「ケース記録入力（A4印刷対応）」カード（A4プレビュー/印刷導線）
+- 目的: ケース記録の入口を1つにし、職員が迷わないようにする
+
 ### 修正ファイル一覧
 1. `lib/notifications.ts` - Uint8Array型エラー解消
 2. `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx` - Wrapper/Inner分割

@@ -263,13 +263,6 @@ export default function UserDetailPage() {
                     >
                       ケース記録を見る
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}/case-records/excel`)}
-                    >
-                      ケース記録 (Excel手入力)
-                    </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">{service?.name ?? serviceId}</p>
                 </div>
@@ -648,25 +641,7 @@ export default function UserDetailPage() {
 
             <CaseRecordCards userId={userId} serviceId={serviceId} staffOptions={staffOptions} />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card
-                className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => {
-                  const encodedUser = encodeURIComponent(userId)
-                  router.push(`/services/${serviceId}/users/${encodedUser}/case-records`)
-                }}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
-                    <div className="p-2 bg-blue-100 rounded-lg text-2xl">📋</div>
-                    ケース記録を見る
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">ケース記録の入力・確認はこちら</p>
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
