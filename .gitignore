@@ -48,6 +48,10 @@ __pycache__/
 agent_report.txt
 artifacts/agent_reports/
 
+# Test/verification logs (do not commit)
+logs/
+*.log
+
 # Font files (download locally per developer)
 /public/fonts/*.ttf
 /public/fonts/*.otf

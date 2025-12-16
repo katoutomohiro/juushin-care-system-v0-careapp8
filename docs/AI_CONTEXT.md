@@ -66,15 +66,32 @@
 - **結果**: TSエラー **9件 → 2件**（7件削減）
 
 ### 受入条件チェック結果 ✅
-- ✅ lint: 0 errors, 3 warnings（変更前: 0 errors, 2 warnings） → 新規エラー増加なし
-- ✅ typecheck: 2 errors（変更前: 10 errors） → **8件削減**（新規エラー増加なし）
+- ✅ lint: 0 errors, 5 warnings（変更前: 0 errors, 2 warnings） → 新規エラー増加なし
+- ✅ typecheck: 1 error（変更前: 10 errors） → **9件削減**（新規エラー増加なし）
 - ✅ A.T専用ガードでConsole 500連打を止血（暫定対応）
 - ✅ APIエラーログ詳細化で原因追跡が可能に
 
+### 2025-12-16 lint/typecheck対応 ✅
+
+#### 4. ESLint react-hooks プラグイン導入
+- **問題**: eslint-plugin-react-hooks が未導入で exhaustive-deps ルールが使えない
+- **対策**:
+  - `pnpm add -D eslint-plugin-react-hooks` でプラグイン追加
+  - `eslint.config.mjs` に react-hooks プラグインと rules-of-hooks, exhaustive-deps ルールを追加
+  - Hooks の順序違反を修正（early return 前に全 Hooks 呼び出し）
+- **ファイル**: `eslint.config.mjs`, `app/(pochi)/users/page.tsx`, `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx`
+
+#### 5. Next.js 15 params Promise 対応
+- **問題**: Next.js 15 では Route Handler の params が Promise 型
+- **対策**:
+  - `type RouteContext = { params: Promise<{ userId: string }> }` に変更
+  - GET/POST handler で `const params = await context.params` してから値を取り出す
+- **ファイル**: `app/api/service-users/[userId]/defaults/route.ts`
+- **結果**: `.next/types` の2件のエラーが解消
+
 ### 残存エラー（既存）
-- **lint**: 1件の unused eslint-disable warning（`components/ui/clickable-card.tsx`）
-- **typecheck**: 2件（`.next/types/app/api/service-users/[userId]/defaults/route.ts`）
-  - Next.js 15の params Promise 対応が必要（別タスク）
+- **lint**: 5 warnings（既存の unused 系、新規エラー増加なし）
+- **typecheck**: 1件（`lib/notifications.ts` の型不一致、プロジェクト開始時から存在）
 
 ### 次のステップ（推奨）
 1. ブラウザでA.Tページを開き、Console 500連打が止まっていることを実機確認

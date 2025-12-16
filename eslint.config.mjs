@@ -1,5 +1,6 @@
 ﻿import tseslint from 'typescript-eslint';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
 	{ ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts'] },
@@ -15,9 +16,12 @@ export default [
 		},
 			plugins: {
 				'@typescript-eslint': tseslint.plugin,
+				'react-hooks': reactHooks,
 			},
 		rules: {
 			'@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 		},
 	},
 

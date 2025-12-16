@@ -82,12 +82,6 @@ export function CaseRecordCards({ userId, serviceId, staffOptions }: Props) {
 
   const createdByOptions = useMemo(() => staffOptions ?? [], [staffOptions])
 
-  // A.T専用の暫定止血（Console 500連打回避）
-  // TODO: 根本解決後にこのガードを削除
-  if (userId === AT_USER_ID) {
-    return null
-  }
-
   useEffect(() => {
     setForm(defaultForm(userId, serviceId))
   }, [userId, serviceId])
@@ -119,6 +113,12 @@ export function CaseRecordCards({ userId, serviceId, staffOptions }: Props) {
     }
     load()
   }, [userId, serviceId, toast])
+
+  // A.T専用の暫定止血（Console 500連打回避）
+  // TODO: 根本解決後にこのガードを削除
+  if (userId === AT_USER_ID) {
+    return null
+  }
 
   const handleCreateClick = () => {
     setEditingId(null)

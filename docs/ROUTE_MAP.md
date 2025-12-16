@@ -86,6 +86,7 @@ ATCaseRecordPrint (A4プレビュー)
 1. `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx`
    - useEffect 依存配列修正
    - A.T専用ガード追加（暫定）
+   - Hooks 順序修正（early return の後に呼ばない）
 
 2. `app/api/case-records/route.ts`
    - エラーログ強化（既存 try/catch の詳細化）
@@ -96,3 +97,14 @@ ATCaseRecordPrint (A4プレビュー)
 
 4. `lib/case-records-structured.ts`
    - number/string 比較の型統一
+
+### 優先度：中（lint/typecheck）
+5. `eslint.config.mjs`
+   - eslint-plugin-react-hooks 導入
+   - react-hooks/rules-of-hooks, exhaustive-deps ルール追加
+
+6. `app/(pochi)/users/page.tsx`
+   - Hooks 順序修正（early return 前に全 Hooks 呼び出し）
+
+7. `app/api/service-users/[userId]/defaults/route.ts`
+   - Next.js 15 params Promise 対応

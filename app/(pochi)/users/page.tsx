@@ -69,6 +69,14 @@ const FEATURE_FLAG = process.env.NEXT_PUBLIC_FEATURE_POCHI_USERS
 const isFeatureEnabled = FEATURE_FLAG === undefined || FEATURE_FLAG === "true" || FEATURE_FLAG === "1"
 
 export default function UsersPage() {
+  const [selectedGroup, setSelectedGroup] = useState(USER_GROUPS[0]?.id ?? "")
+  const [showTimecard, setShowTimecard] = useState(false)
+
+  const users = useMemo(() => {
+    const group = USER_GROUPS.find((item) => item.id === selectedGroup)
+    return group?.users ?? []
+  }, [selectedGroup])
+
   if (!isFeatureEnabled) {
     return (
       <main className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
@@ -81,14 +89,6 @@ export default function UsersPage() {
       </main>
     )
   }
-
-  const [selectedGroup, setSelectedGroup] = useState(USER_GROUPS[0]?.id ?? "")
-  const [showTimecard, setShowTimecard] = useState(false)
-
-  const users = useMemo(() => {
-    const group = USER_GROUPS.find((item) => item.id === selectedGroup)
-    return group?.users ?? []
-  }, [selectedGroup])
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-8 p-6">

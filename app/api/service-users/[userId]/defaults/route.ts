@@ -6,11 +6,12 @@ import {
 } from "@/lib/service-users"
 
 type RouteContext = {
-  params: { userId: string }
+  params: Promise<{ userId: string }>
 }
 
 export async function GET(_req: NextRequest, context: RouteContext) {
-  const { userId } = context.params
+  const params = await context.params
+  const { userId } = params
   const decodedUserId = decodeURIComponent(userId)
 
   try {
@@ -30,7 +31,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
-  const { userId } = context.params
+  const params = await context.params
+  const { userId } = params
   const decodedUserId = decodeURIComponent(userId)
 
   try {
