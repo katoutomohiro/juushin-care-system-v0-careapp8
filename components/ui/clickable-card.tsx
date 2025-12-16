@@ -30,7 +30,7 @@ export function ClickableCard({
       await onClick(event);
     } catch (error) {
       // エラーはログだけ出して、Link のナビゲーションは止めない
-      // eslint-disable-next-line no-console
+       
       console.error("[ClickableCard] onClick error", error);
     }
   };
