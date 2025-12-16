@@ -22,8 +22,21 @@ export async function GET(request: NextRequest) {
     )
     return NextResponse.json({ ok: true, data: records })
   } catch (error) {
-    console.error("[case-records][GET]", error)
-    return NextResponse.json({ ok: false, error: "Failed to fetch case records" }, { status: 500 })
+    console.error("[case-records][GET] Error details:", {
+      userId,
+      serviceType,
+      limit,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Failed to fetch case records",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    )
   }
 }
 
@@ -49,7 +62,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, data: record }, { status: 200 })
   } catch (error) {
-    console.error("[case-records][POST]", error)
-    return NextResponse.json({ ok: false, error: "Failed to create case record" }, { status: 500 })
+    console.error("[case-records][POST] Error details:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Failed to create case record",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    )
   }
 }

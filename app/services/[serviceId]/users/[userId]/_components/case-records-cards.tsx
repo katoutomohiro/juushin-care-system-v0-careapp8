@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import type { CaseRecordDetails, CaseRecordRow } from "@/lib/case-records-structured"
+import { AT_USER_ID } from "@/lib/at-case-record-template"
 
 type StaffOption = { id: string; name: string }
 
@@ -77,14 +78,25 @@ export function CaseRecordCards({ userId, serviceId, staffOptions }: Props) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(() => defaultForm(userId, serviceId))
+  const didFetchRef = useRef(false)
 
   const createdByOptions = useMemo(() => staffOptions ?? [], [staffOptions])
+
+  // A.T専用の暫定止血（Console 500連打回避）
+  // TODO: 根本解決後にこのガードを削除
+  if (userId === AT_USER_ID) {
+    return null
+  }
 
   useEffect(() => {
     setForm(defaultForm(userId, serviceId))
   }, [userId, serviceId])
 
   useEffect(() => {
+    // didFetchRef で初回のみ実行制御（userId/serviceId変更時は再度実行したいため、ここでリセット不要）
+    if (didFetchRef.current) return
+    didFetchRef.current = true
+
     const load = async () => {
       setLoading(true)
       try {

@@ -11,6 +11,8 @@ type ClickableCardProps = {
   onClick?: (event: MouseEvent<HTMLDivElement>) => void | Promise<void>;
   className?: string;
   children: ReactNode;
+  /** パーティクルエフェクトの色配列（任意） */
+  particleColors?: string[];
 };
 
 export function ClickableCard({
@@ -18,6 +20,7 @@ export function ClickableCard({
   onClick,
   className,
   children,
+  particleColors,
 }: ClickableCardProps) {
   // onClick を指定している場合だけラップして実行
   const handleClick = async (event: MouseEvent<HTMLDivElement>) => {

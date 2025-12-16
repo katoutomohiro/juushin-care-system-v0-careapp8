@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { supabaseServer, createServerSupabaseClient } from "./supabase/server"
 
 type NullableString = string | null | undefined
-type NullableNumber = number | null | undefined
+type NullableNumber = number | string | null | undefined
 
 export type CaseRecordDetails = {
   vital_signs: {
@@ -103,7 +103,10 @@ function toNullString(value: NullableString): string | null {
 }
 
 function toNullNumber(value: NullableNumber): number | null {
-  if (value === undefined || value === null || value === "") return null
+  if (value === undefined || value === null) return null
+  if (typeof value === "string") {
+    if (value.trim() === "") return null
+  }
   const n = Number(value)
   return Number.isFinite(n) ? n : null
 }
