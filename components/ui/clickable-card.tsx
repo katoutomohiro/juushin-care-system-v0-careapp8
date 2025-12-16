@@ -1,159 +1,58 @@
-"use client"
+"use client";
 
-import type React from "react"
+import Link from "next/link";
+import type { MouseEvent, ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-import { motion, useAnimation } from "framer-motion"
-import Link from "next/link"
-import { useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+type ClickableCardProps = {
+  /** 遷移先のパス。例: "/services/life-care" */
+  href?: string;
+  /** 追加で実行したいクリック処理（任意） */
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void | Promise<void>;
+  className?: string;
+  children: ReactNode;
+};
 
-interface Particle {
-  id: number
-  x: number
-  y: number
-  type: "star" | "heart" | "sparkle" | "flower"
-  color: string
-}
-
-interface ClickableCardProps {
-  children: React.ReactNode
-  onClick?: () => void | Promise<void>
-  href?: string
-  className?: string
-  particleColors?: string[]
-}
-
-const particleEmojis = {
-  star: "⭐",
-  heart: "❤️",
-  sparkle: "✨",
-  flower: "🌸",
-}
-
-export function ClickableCard({ children, onClick, href, className, particleColors }: ClickableCardProps) {
-  const controls = useAnimation()
-  const [particles, setParticles] = useState<Particle[]>([])
-  const router = useRouter()
-
-  const defaultColors = ["#FFB6C1", "#FFD700", "#87CEEB", "#DDA0DD", "#F0E68C", "#FFE4E1"]
-  const colors = particleColors || defaultColors
-
-  const createParticles = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      const rect = event.currentTarget.getBoundingClientRect()
-      const x = event.clientX - rect.left
-      const y = event.clientY - rect.top
-
-      const particleTypes: Array<"star" | "heart" | "sparkle" | "flower"> = ["star", "heart", "sparkle", "flower"]
-      const newParticles: Particle[] = []
-
-      for (let i = 0; i < 12; i++) {
-        newParticles.push({
-          id: Date.now() + i,
-          x,
-          y,
-          type: particleTypes[Math.floor(Math.random() * particleTypes.length)],
-          color: colors[Math.floor(Math.random() * colors.length)],
-        })
-      }
-
-      setParticles((prev) => [...prev, ...newParticles])
-
-      setTimeout(() => {
-        setParticles((prev) => prev.filter((p) => !newParticles.find((np) => np.id === p.id)))
-      }, 1000)
-    },
-    [colors],
-  )
-
-  const handleClick = async (event: React.MouseEvent<HTMLDivElement>) => {
-    createParticles(event)
-
-    await controls.start({
-      scale: [1, 1.05, 0.98, 1],
-      transition: { duration: 0.4, ease: "easeOut" },
-    })
+export function ClickableCard({
+  href,
+  onClick,
+  className,
+  children,
+}: ClickableCardProps) {
+  // onClick を指定している場合だけラップして実行
+  const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
+    if (!onClick) return;
 
     try {
-      if (onClick) {
-        await onClick()
-      }
-    } catch (err) {
-      console.error("[ClickableCard] onClick handler failed", err)
-    } finally {
-      if (href) {
-        router.push(href)
-      }
+      await onClick(event);
+    } catch (error) {
+      // エラーはログだけ出して、Link のナビゲーションは止めない
+      // eslint-disable-next-line no-console
+      console.error("[ClickableCard] onClick error", error);
     }
-  }
+  };
 
-  const cardBody = (
-    <Card
-      className={cn("cursor-pointer transition-all duration-300 hover:shadow-2xl relative overflow-hidden", className)}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          handleClick(e as any)
-        }
-      }}
+  const content = (
+    <div
+      className={cn(
+        "block cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md",
+        className,
+      )}
+      onClick={onClick ? handleClick : undefined}
     >
       {children}
-    </Card>
-  )
+    </div>
+  );
 
-  const wrapper = (
-    <motion.div
-      className="relative"
-      animate={controls}
-      whileHover={{ scale: 1.02, y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    >
-      {cardBody}
-
-      {particles.map((particle) => (
-        <motion.div
-          key={particle.id}
-          className="absolute pointer-events-none text-2xl z-50"
-          initial={{
-            x: particle.x,
-            y: particle.y,
-            opacity: 1,
-            scale: 0,
-          }}
-          animate={{
-            x: particle.x + (Math.random() - 0.5) * 150,
-            y: particle.y - Math.random() * 150 - 50,
-            opacity: 0,
-            scale: [0, 1.2, 0.8, 0],
-            rotate: Math.random() * 360,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: "easeOut",
-          }}
-          style={{
-            filter: `drop-shadow(0 0 8px ${particle.color})`,
-          }}
-        >
-          {particleEmojis[particle.type]}
-        </motion.div>
-      ))}
-    </motion.div>
-  )
-
-  if (href && !onClick) {
+  // href があれば Link でラップしてページ遷移させる
+  if (href) {
     return (
       <Link href={href} className="block">
-        {wrapper}
+        {content}
       </Link>
-    )
+    );
   }
 
-  return wrapper
+  // href が無い場合は onClick だけで使う（ダイアログを開くなど）
+  return content;
 }
