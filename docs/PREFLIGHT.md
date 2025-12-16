@@ -1,5 +1,8 @@
 # PREFLIGHT.md - 変更前後の検証手順
 
+> **🔖 この文書は「正本（Source of Truth）」です**  
+> コード変更の前後で必ず実行する検証手順が定義されています。
+
 **更新日**: 2025-12-16
 
 ## 実行可能なコマンド（package.json scripts）
@@ -8,6 +11,41 @@
 - ✅ `pnpm typecheck` - TypeScript型チェック（tsc --noEmit）
 - ✅ `pnpm build` - Next.js本番ビルド（時間かかる場合は省略可）
 - ✅ `pnpm test` - Vitest単体テスト実行
+- ✅ `pnpm ai:snapshot` - プロジェクト現状スナップショット生成
+
+## 📸 スナップショット生成（推奨）
+
+作業開始前・作業終了後にプロジェクトの現状を記録：
+
+```powershell
+pnpm ai:snapshot
+```
+
+- **出力**: `docs/SNAPSHOT.md`
+- **内容**: Git状態、lint/typecheck結果、変更ファイル一覧、次タスク
+- **用途**: 新しいAIチャットで現状を伝える際に全文コピペ
+
+## 🎯 GitHub テンプレート活用
+
+### Issue 作成時
+`.github/ISSUE_TEMPLATE/` から適切なテンプレートを選択：
+- **bug_report.md**: バグ報告
+- **feature_request.md**: 新機能提案
+- **ui_improvement.md**: UI/UX改善
+
+### Pull Request 作成時
+`.github/pull_request_template.md` が自動適用されます。  
+変更内容・テスト手順・チェックリストを埋めてください。
+
+## 📝 ADR（Architecture Decision Records）
+
+重要な技術的決定を記録する場合：
+
+1. `docs/adr/ADR-TEMPLATE.md` をコピー
+2. 連番を付けてリネーム（例: `ADR-002-nextjs-15-migration.md`）
+3. 内容を記入してコミット
+
+**参考**: [ADR-001-adr-introduction.md](adr/ADR-001-adr-introduction.md)
 
 ## プレフライト手順（変更前）
 

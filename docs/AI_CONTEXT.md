@@ -1,5 +1,9 @@
 # AI_CONTEXT.md - A.Tケース記録フォーム安定化作業
 
+> **🔖 この文書は「正本（Source of Truth）」です**  
+> AI/開発者が作業を開始する前に必ず参照してください。  
+> 関連正本: [ROUTE_MAP.md](ROUTE_MAP.md) / [PREFLIGHT.md](PREFLIGHT.md) / [AT_CASE_RECORD_SPEC.md](AT_CASE_RECORD_SPEC.md)
+
 **作成日**: 2025-12-16  
 **目的**: A.Tケース記録フォームは表示できているが、Console 500大量発生とTSエラーを止めて安定化する
 
