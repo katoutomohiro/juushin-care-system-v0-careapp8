@@ -21,7 +21,10 @@
   - 利用者詳細ページの "ケース記録を見る" セクションに表示
   - `/api/case-records` を fetch して最近のケース記録一覧を表示
   - 新規ケース記録の作成ダイアログ
-- **問題**: useEffect で無限fetchループが発生している可能性
+- **構造**（2025-12-16更新）:
+  - `CaseRecordCards`（Wrapper）: Hooksなし、A.Tガード（userId === AT_USER_ID で早期return）
+  - `CaseRecordCardsInner`（Inner）: 全Hooks呼び出し、通常ケース記録処理
+  - この分割により React Rules of Hooks を遵守（Hooksは常に同じ順序で呼ぶ）
 
 ### A.Tケース記録フォーム
 - **テンプレート定義**: `lib/at-case-record-template.ts`

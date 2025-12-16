@@ -71,6 +71,15 @@ function formatDate(iso: string) {
 }
 
 export function CaseRecordCards({ userId, serviceId, staffOptions }: Props) {
+  // A.T専用フォーム（ATCaseRecordForm）があるため、通常のケース記録カードは表示しない
+  if (userId === AT_USER_ID) {
+    return null
+  }
+  // Wrapper: HooksなしでA.Tガードのみ実行し、通常ユーザーはInnerに委譲
+  return <CaseRecordCardsInner userId={userId} serviceId={serviceId} staffOptions={staffOptions} />
+}
+
+function CaseRecordCardsInner({ userId, serviceId, staffOptions }: Props) {
   const { toast } = useToast()
   const [records, setRecords] = useState<CaseRecordRow[]>([])
   const [loading, setLoading] = useState(false)

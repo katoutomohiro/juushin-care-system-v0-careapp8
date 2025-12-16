@@ -205,9 +205,10 @@ export async function subscribePush(userId: string = DEFAULT_USER_ID): Promise<P
   }
 
   try {
+    const keyUint8 = base64UrlToUint8Array(vapidKey)
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlToUint8Array(vapidKey),
+      applicationServerKey: keyUint8.buffer as ArrayBuffer, // Cast for TS 5.9 compatibility
     })
     await upsertSubscriptionRecord(userId, subscription)
     return subscription

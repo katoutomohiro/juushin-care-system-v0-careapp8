@@ -102,3 +102,34 @@
 2. A.T以外の利用者でケース記録が正常動作することを確認
 3. 暫定ガード（`if (userId === AT_USER_ID) return null`）を、根本解決後に削除
 4. `.next/types` のエラーは Next.js 15 params対応で別途修正
+
+### 2025-12-16 最終安定化 ✅
+
+#### 6. lib/notifications.ts 型エラー解消
+- **問題**: TypeScript 5.9 で `Uint8Array<ArrayBufferLike>` が `BufferSource` に割り当てられない
+- **対策**:
+  - `base64UrlToUint8Array` の戻り値から `.buffer` を取得して `ArrayBuffer` として渡す
+  - `applicationServerKey: keyUint8.buffer as ArrayBuffer` で明示的にキャスト
+- **ファイル**: `lib/notifications.ts`
+- **結果**: typecheck エラー **1件 → 0件**（完全解消）
+
+#### 7. CaseRecordCards Wrapper/Inner 分割（rules-of-hooks 完全解消）
+- **問題**: 早期return（A.Tガード）の後にHooksを呼ぶとrules-of-hooksエラー
+- **対策**:
+  - `CaseRecordCards`（Wrapper）: Hooksなし、A.Tガードのみ実行
+  - `CaseRecordCardsInner`（Inner）: 全Hooks呼び出し、通常ケース記録処理
+  - Reactの「Hooksは必ず同じ順序で呼ぶ」原則を遵守
+- **ファイル**: `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx`
+- **結果**: lint エラー **11件 → 0件**（完全解消）
+
+### 最終受入条件チェック結果 ✅✅✅
+- ✅ **lint**: 0 errors, 5 warnings（warningsは既存、新規エラー増加なし）
+- ✅ **typecheck**: 0 errors（完全通過）
+- ✅ **Console 500**: A.TガードでCaseRecordCardsが呼ばれず、500連打を防止
+- ✅ **A.Tフォーム表示**: ATCaseRecordForm が動作し、A4印刷導線が維持される
+
+### 修正ファイル一覧
+1. `lib/notifications.ts` - Uint8Array型エラー解消
+2. `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx` - Wrapper/Inner分割
+3. `docs/AI_CONTEXT.md` - 修正履歴記録
+4. `docs/ROUTE_MAP.md` - コンポーネント構造更新
