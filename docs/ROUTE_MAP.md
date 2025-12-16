@@ -30,6 +30,12 @@
 - ヘッダーの「ケース記録を見る」ボタンのみを入口として残し、カード版の「ケース記録を見る」は削除
 - 「ケース記録 (Excel手入力)」入口を廃止（フォームは既存A4導線を使用）
 
+### 機能フラグによる入口制御（2025-12-16）
+- `src/config/features.ts` で制御
+  - `timeline`: タイムラインカードはデフォルト非表示
+  - `pushNotifications`: Push通知ボタンはデフォルト非表示
+  - `preloadCaseRecordMetaOnProfile`: プロフィール初期表示での staff / defaults 取得をデフォルト停止（Consoleエラー抑止）
+
 ### A.Tケース記録フォーム
 - **テンプレート定義**: `lib/at-case-record-template.ts`
 - **フォームコンポーネント**: `components/at-case-record-form.tsx`

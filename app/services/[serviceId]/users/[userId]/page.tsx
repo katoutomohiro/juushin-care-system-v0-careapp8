@@ -21,6 +21,7 @@ import { SERVICE_TIME_CANDIDATES, TOTAL_SERVICE_TIME_OPTIONS } from "@/lib/case-
 import { AT_USER_ID, ATCaseRecord } from "@/lib/at-case-record-template"
 import { ATCaseRecordForm } from "@/components/at-case-record-form"
 import { ATCaseRecordPrint } from "@/components/at-case-record-print"
+import { FEATURES } from "@/config/features"
 
 const welfareServices: Record<ServiceType, { name: string; icon: string; color: string }> = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -119,6 +120,7 @@ export default function UserDetailPage() {
   }, [])
 
   useEffect(() => {
+    if (!FEATURES.preloadCaseRecordMetaOnProfile) return
     fetch("/api/staff/active?limit=10")
       .then((res) => res.json())
       .then((json) => {
@@ -131,6 +133,7 @@ export default function UserDetailPage() {
   }, [])
 
   useEffect(() => {
+    if (!FEATURES.preloadCaseRecordMetaOnProfile) return
     fetch(`/api/service-users/${encodeURIComponent(userId)}/defaults`)
       .then((res) => res.json())
       .then((json) => {
@@ -641,7 +644,7 @@ export default function UserDetailPage() {
 
             <CaseRecordCards userId={userId} serviceId={serviceId} staffOptions={staffOptions} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={`grid gap-6 ${FEATURES.timeline ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
@@ -665,24 +668,25 @@ export default function UserDetailPage() {
                   </p>
                 </CardContent>
               </Card>
-
-              <Card
-                className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => {
-                  const encodedUser = encodeURIComponent(userId)
-                  router.push(`/services/${serviceId}/users/${encodedUser}/timeline`)
-                }}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
-                    <div className="p-2 bg-purple-100 rounded-lg text-2xl">🕒</div>
-                    タイムライン
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">最近の記録を時系列で確認</p>
-                </CardContent>
-              </Card>
+              {FEATURES.timeline && (
+                <Card
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
+                  onClick={() => {
+                    const encodedUser = encodeURIComponent(userId)
+                    router.push(`/services/${serviceId}/users/${encodedUser}/timeline`)
+                  }}
+                >
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
+                      <div className="p-2 bg-purple-100 rounded-lg text-2xl">🕒</div>
+                      タイムライン
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">最近の記録を時系列で確認</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </>
         )}

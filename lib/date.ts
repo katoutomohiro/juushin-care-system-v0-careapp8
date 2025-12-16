@@ -24,3 +24,14 @@ export function toTokyo(date: dayjs.Dayjs | string): dayjs.Dayjs {
   const d = typeof date === "string" ? dayjs(date) : date
   return d.tz(TOKYO_TZ)
 }
+
+/**
+ * HTML input[type="date"] 用に YYYY-MM-DD へ正規化する。
+ * 変換できない場合は空文字を返し、ブラウザの警告を防ぐ。
+ */
+export function toInputDate(value: string | dayjs.Dayjs | null | undefined): string {
+  if (!value) return ""
+  const parsed = typeof value === "string" ? dayjs(value) : value
+  if (!parsed.isValid()) return ""
+  return parsed.format("YYYY-MM-DD")
+}

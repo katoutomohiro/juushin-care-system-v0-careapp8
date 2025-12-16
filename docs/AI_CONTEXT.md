@@ -135,6 +135,14 @@
   - A.T向け「ケース記録入力（A4印刷対応）」カード（A4プレビュー/印刷導線）
 - 目的: ケース記録の入口を1つにし、職員が迷わないようにする
 
+### 2025-12-16 機能フラグで不要入口を停止 ✅
+- `src/config/features.ts` を追加し、以下をデフォルトOFF:
+  - `timeline`: タイムラインカードは非表示
+  - `pushNotifications`: Push通知ボタンを非表示（処理は残す）
+  - `caseRecordExcelInput`: Excel手入力入口は非表示
+  - `preloadCaseRecordMetaOnProfile`: プロフィール初期表示での staff / service-user-defaults 取得を止め、Consoleエラーを抑止
+- 日付入力に `toInputDate` を適用し、`input[type=date]` に正規化済み `YYYY-MM-DD` を渡す
+
 ### 修正ファイル一覧
 1. `lib/notifications.ts` - Uint8Array型エラー解消
 2. `app/services/[serviceId]/users/[userId]/_components/case-records-cards.tsx` - Wrapper/Inner分割

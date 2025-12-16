@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import type { CaseRecordDetails, CaseRecordRow } from "@/lib/case-records-structured"
 import { AT_USER_ID } from "@/lib/at-case-record-template"
+import { toInputDate } from "@/lib/date"
 
 type StaffOption = { id: string; name: string }
 
@@ -211,7 +212,7 @@ function CaseRecordCardsInner({ userId, serviceId, staffOptions }: Props) {
                 <Label>日付</Label>
                 <Input
                   type="date"
-                  value={form.recordDate}
+                  value={toInputDate(form.recordDate)}
                   onChange={(e) => setForm((prev) => ({ ...prev, recordDate: e.target.value }))}
                 />
               </div>

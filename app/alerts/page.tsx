@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { db, type Alert, type AlertLevel, type AlertType } from "@/lib/db"
 import { ensurePermission } from "@/lib/notifications"
 import { PushSubscriptionButton } from "@/app/service-worker-registration"
+import { FEATURES } from "@/config/features"
 
 function getLevelBadgeClass(level: AlertLevel): string {
   switch (level) {
@@ -73,16 +74,18 @@ export default function AlertsPage() {
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">⚠️ アラート一覧</h1>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => ensurePermission()}
-            className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            通知を有効化
-          </button>
-          <PushSubscriptionButton className="flex flex-col gap-1 text-sm text-gray-600" />
-        </div>
+        {FEATURES.pushNotifications && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => ensurePermission()}
+              className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+            >
+              通知を有効化
+            </button>
+            <PushSubscriptionButton className="flex flex-col gap-1 text-sm text-gray-600" />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded border bg-gray-50 p-4">
