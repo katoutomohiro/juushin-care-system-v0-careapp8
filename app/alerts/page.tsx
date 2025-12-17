@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { db, type Alert, type AlertLevel, type AlertType } from "@/lib/db"
 import { ensurePermission } from "@/lib/notifications"
@@ -31,7 +31,7 @@ export default function AlertsPage() {
   const [levelFilter, setLevelFilter] = useState<AlertLevel | "all">("all")
   const [sortBy, setSortBy] = useState<SortBy>("createdAt-desc")
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
@@ -57,11 +57,11 @@ export default function AlertsPage() {
 
     setAlerts(rows.slice(0, 20))
     setLoading(false)
-  }
+  }, [userId, days, typeFilter, levelFilter, sortBy])
 
   useEffect(() => {
     load()
-  }, [userId, days, typeFilter, levelFilter, sortBy])
+  }, [load])
 
   function getDetailLink(alert: Alert): string {
     if (alert.type === "seizure") {

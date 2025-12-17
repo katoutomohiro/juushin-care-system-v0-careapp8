@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from '../../lib/db';
 import type { Medication } from '../../schemas/medication';
 
@@ -24,17 +24,17 @@ export default function MedicationsPage() {
     [name, dosage, time]
   );
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const rows = (await db.table('medications').where('date').equals(date).toArray()) as Medication[];
     rows.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     setItems(rows);
     setLoading(false);
-  }
+  }, [date]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   async function addMedication(e: React.FormEvent) {
     e.preventDefault();

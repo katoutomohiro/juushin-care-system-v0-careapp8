@@ -20,7 +20,7 @@ export function ClickableCard({
   onClick,
   className,
   children,
-  particleColors,
+  particleColors: _particleColors,
 }: ClickableCardProps) {
   // onClick を指定している場合だけラップして実行
   const handleClick = async (event: MouseEvent<HTMLDivElement>) => {

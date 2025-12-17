@@ -21,7 +21,7 @@ export type ServiceUserDefaults = {
   updated_at?: string
 }
 
-type ServiceUserDefaultsPayload = Omit<
+type _ServiceUserDefaultsPayload = Omit<
   ServiceUserDefaults,
   "userId" | "name" | "serviceType" | "created_at" | "updated_at"
 >
