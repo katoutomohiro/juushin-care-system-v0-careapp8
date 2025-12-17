@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import { toInputDate } from '@/lib/date';
 import { db } from '../../lib/db';
 import type { TodoItem, TodoPriority } from '../../schemas/todo';
 
@@ -65,7 +66,13 @@ export default function TodosPage() {
         </div>
         <div>
           <label className="block text-sm text-gray-600 mb-1" htmlFor="todo-due">期限</label>
-          <input id="todo-due" type="date" className="border rounded px-3 py-2" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <input
+            id="todo-due"
+            type="date"
+            className="border rounded px-3 py-2"
+            value={toInputDate(dueDate)}
+            onChange={(e) => setDueDate(e.currentTarget.value)}
+          />
         </div>
         <div>
           <label className="block text-sm text-gray-600 mb-1" htmlFor="todo-priority">優先度</label>

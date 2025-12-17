@@ -19,6 +19,7 @@ import {
   STOOL_QUALITY_OPTIONS,
   TOTAL_SERVICE_TIME_OPTIONS,
 } from "@/lib/case-record-constants"
+import { toInputDate } from "@/lib/date"
 import type {
   ATCaseRecordBath,
   ATCaseRecordContent,
@@ -262,7 +263,7 @@ export default function ATExcelCaseRecordClient({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <Label className="text-sm">利用日</Label>
-                <Input type="date" value={content.header.recordDate || recordDate} readOnly />
+                <Input type="date" value={toInputDate(content.header.recordDate || recordDate)} readOnly />
                 <p className="text-xs text-muted-foreground mt-1">{displayDate}</p>
               </div>
               <div>

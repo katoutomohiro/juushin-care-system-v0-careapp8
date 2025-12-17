@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toInputDate } from "@/lib/date"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -222,8 +223,8 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
                   <Input
                     id="dateOfBirth"
                     type="date"
-                    value={newProfile.dateOfBirth}
-                    onChange={(e) => setNewProfile({ ...newProfile, dateOfBirth: e.target.value })}
+                    value={toInputDate(newProfile.dateOfBirth)}
+                    onChange={(e) => setNewProfile({ ...newProfile, dateOfBirth: e.currentTarget.value })}
                   />
                 </div>
 

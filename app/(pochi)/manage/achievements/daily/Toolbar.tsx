@@ -59,13 +59,13 @@ export function Toolbar({
       <div className="flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[200px]">
           <Label htmlFor="date">日付</Label>
-          <Input
-            id="date"
-            type="date"
-            value={header.date}
-            onChange={(e) => onHeaderChange({ date: e.target.value })}
-            aria-invalid={!!errors.date}
-          />
+            <Input
+              id="date"
+              type="date"
+              value={header.date ?? ""}
+              onChange={(e) => onHeaderChange({ date: e.currentTarget.value })}
+              aria-invalid={!!errors.date}
+            />
           {errors.date && <p className="text-sm text-red-500 mt-1">{errors.date}</p>}
         </div>
 
