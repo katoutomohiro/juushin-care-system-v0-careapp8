@@ -258,6 +258,57 @@ const handleManualSync = async () => {
 
 **Dedup Key**: `${serviceId}_${userId}_${date}`
 
+---
+
+## サーバー冪等性 (Idempotency)
+
+- **op単位**: `opId` を必須化し、`offline_op_receipts` に `payload_hash` 付きで insert → 重複は `applied/processing/failed` を返却。
+- **リクエスト単位**: HTTP `Idempotency-Key` (または body.syncRequestId) を `api_idempotency_keys` に保存。ペイロードが同一ならキャッシュレスポンスを返し、異なる場合は 409。
+- **ハッシュ**: `sha256(stableStringify(payload))` を保存し、同じ `opId` で payload が違う場合は 409 (Idempotency-Key 標準挙動)。
+
+### レスポンス挙動
+
+| HTTP | 条件 |
+| --- | --- |
+| 200 | 新規適用 or `already_applied` (同一 `opId` を再送) |
+| 202 | 既存 receipt が `processing` のため待機 |
+| 409 | 同一 `opId` / `Idempotency-Key` で payload が不一致 |
+
+### PowerShell 検証例
+
+```powershell
+$syncRequestId = [guid]::NewGuid().ToString()
+$body = @{
+  syncRequestId = $syncRequestId
+  deviceId = "dev-lab-01"
+  ops = @(
+    @{
+      opId = [guid]::NewGuid().ToString()
+      dedupeKey = "life_A-T_2025-01-17"
+      serviceId = "life"
+      userId = "A・T"
+      recordDate = "2025-01-17"
+      operationType = "upsert_case_record"
+      payload = @{
+        date = "2025-01-17"
+        bodyTemperatures = @(36.5)
+        hydrations = @(@{ type = "お茶"; amount = 200 })
+        excretions = @(@{ urinationCount = 1 })
+        lunch = @{}
+        snack = @{}
+        restraint = @{}
+      }
+    }
+  )
+} | ConvertTo-Json -Depth 8
+
+Invoke-WebRequest \
+  -Uri "http://localhost:3000/api/case-records/offline-upsert" \
+  -Method POST \
+  -Headers @{"Content-Type" = "application/json"; "Idempotency-Key" = $syncRequestId} \
+  -Body $body
+```
+
 ```typescript
 // 1 回目の保存（2024-01-15）
 await enqueueUpsertCaseRecord({

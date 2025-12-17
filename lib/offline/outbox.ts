@@ -30,6 +30,9 @@ export async function enqueueUpsertCaseRecord(params: {
   const op: OutboxOp = {
     opId,
     dedupeKey,
+    serviceId,
+    userId,
+    recordDate: date,
     operationType: "upsert_case_record",
     payload,
     status: "pending",
