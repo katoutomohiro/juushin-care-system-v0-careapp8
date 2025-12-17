@@ -34,13 +34,19 @@ jobs:
     timeout-minutes: 30
     
     steps:
-      - name: Debug gating context
+      - name: Debug gating context (safe)
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          HEAD_REF: ${{ github.head_ref }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
         run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "actor=${{ github.actor }}"
-          echo "head_ref=${{ github.head_ref }}"
-          echo "draft=${{ github.event.pull_request.draft }}"
-          echo "labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name' | paste -sd, -)"
+          echo "event_name=${EVENT_NAME}"
+          echo "actor=${ACTOR}"
+          echo "head_ref=${HEAD_REF}"
+          echo "draft=${DRAFT}"
+          echo "labels=$(printf '%s' "$LABELS_JSON" | jq -r '.[].name' | paste -sd, -)"
       
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,31 +59,37 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       
-      - name: Run Auto-Merge Operator
+      - name: Run Auto-Merge Operator (safe)
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ inputs.pr }}
+          PULL_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          $pr = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            "${{ inputs.pr }}"
-          } else {
-            ${{ github.event.pull_request.number }}
+          $event = $env:EVENT_NAME
+          $rawPr = if ($event -eq 'workflow_dispatch') { $env:INPUT_PR } else { $env:PULL_NUMBER }
+          # sanitize: digits only
+          $pr = ($rawPr -replace "[^0-9]", "")
+          if (-not $pr) {
+            Write-Host "❌ Invalid PR number input" -ForegroundColor Red
+            exit 1
           }
-          
+
           Write-Host "🚀 Starting auto-merge operator for PR #$pr"
-          
+
           # モジュール読み込み
           Import-Module ./scripts/modules/CiUtils.psm1 -Force
-          
+
           # contextsチェック
           if (-not (Test-RequiredContextsAttached -PrNumber $pr)) {
             Write-Host "❌ Required contexts mismatch detected" -ForegroundColor Red
             exit 2
           }
-          
+
           # 自動マージ実行
           ./scripts/ci_automerge.ps1 -Pr $pr -TimeoutMinutes 25
-          
+
           if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ PR #$pr merged successfully" -ForegroundColor Green
           } elseif ($LASTEXITCODE -eq 2) {

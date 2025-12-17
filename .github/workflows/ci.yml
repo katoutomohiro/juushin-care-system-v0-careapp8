@@ -177,6 +177,9 @@ jobs:
 
       - name: Slack notify
         if: ${{ always() && env.WEBHOOK != '' && github.event_name == 'pull_request' }}
+        env:
+          REPO: ${{ github.repository }}
+          PR_NUM: ${{ github.event.pull_request.number }}
         run: |
           if [ -f ai_review.json ]; then
             SUMMARY=$(jq -r '.slack_summary' ai_review.json 2>/dev/null || echo "")
@@ -184,7 +187,7 @@ jobs:
           else
             SUMMARY="$(head -n 30 agent_report.txt | sed 's/"/\\"/g' | tr '\n' ' ')"
           fi
-          payload=$(jq -n --arg t "${{ github.repository }} PR #${{ github.event.pull_request.number }}" --arg s "$SUMMARY" '{text: ($t+"\n"+$s)}')
+          payload=$(jq -n --arg t "${REPO} PR #${PR_NUM}" --arg s "$SUMMARY" '{text: ($t+"\n"+$s)}')
           curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$WEBHOOK" >/dev/null 2>&1 || echo "Slack notification skipped"
 
       - name: Attach AI review to Job Summary
