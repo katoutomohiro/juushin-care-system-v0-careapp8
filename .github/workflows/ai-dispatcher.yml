@@ -25,12 +25,30 @@ jobs:
       startsWith(github.event.comment.body, '/ai ')
     runs-on: ubuntu-latest
     steps:
-      - name: Parse command
+      - name: Parse command (safe)
         id: cmd
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
-          cmd="${{ github.event.comment.body }}"
-          cmd="${cmd#'/ai '}"
-          echo "cmd=$cmd" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          body="$(printf '%s' "$COMMENT_BODY" | head -n 1 | tr -d '\r')"
+          body="${body#'/ai '}"
+
+          # allowlist: permit only known commands
+          case "$body" in
+            "update all")
+              echo "cmd=update all" >> "$GITHUB_OUTPUT"
+              ;;
+            "merge all")
+              echo "cmd=merge all" >> "$GITHUB_OUTPUT"
+              ;;
+            "status")
+              echo "cmd=status" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "cmd=none" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
       - name: Update all behind
         if: steps.cmd.outputs.cmd == 'update all'
         env:
