@@ -13,7 +13,7 @@ export type PublicSeizureInsert = {
 
 function normalizeUuid(value: string | null | undefined): string | null {
   const v = (value ?? "").trim()
-  if (!v) return "00000000-0000-0000-0000-000000000000"
+  if (!v) return null
   return v
 }
 

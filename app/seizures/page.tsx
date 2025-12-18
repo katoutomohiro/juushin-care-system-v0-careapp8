@@ -124,9 +124,9 @@ export default async function SeizuresListPage() {
                 {/* 中段: トリガー・対応 */}
                 {(displayTriggers.length > 0 || displayInterventions.length > 0) && (
                   <div className="flex flex-wrap gap-2 text-xs">
-                    {displayTriggers.map((trigger, idx) => (
+                    {displayTriggers.map((trigger) => (
                       <span
-                        key={`trigger-${idx}`}
+                        key={`${seizure.id}-trigger-${trigger}`}
                         className="inline-block rounded bg-amber-100 px-2 py-0.5 text-amber-800"
                       >
                         🔔 {trigger}
@@ -135,9 +135,9 @@ export default async function SeizuresListPage() {
                     {remainingTriggersCount > 0 && (
                       <span className="text-gray-500">…ほか{remainingTriggersCount}件</span>
                     )}
-                    {displayInterventions.map((intervention, idx) => (
+                    {displayInterventions.map((intervention) => (
                       <span
-                        key={`intervention-${idx}`}
+                        key={`${seizure.id}-intervention-${intervention}`}
                         className="inline-block rounded bg-blue-100 px-2 py-0.5 text-blue-800"
                       >
                         💊 {intervention}

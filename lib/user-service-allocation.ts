@@ -60,7 +60,7 @@ export function calculateServicesForUser(age: number, existingServices: ServiceT
     }
   }
 
-  return services;
+  return [...new Set(services)];
 }
 
 /**
