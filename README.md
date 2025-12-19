@@ -52,4 +52,6 @@ Continue building your app on:
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
 
+<!-- Trigger SonarCloud reanalysis (2025-12-19) -->
+
 <!-- Trigger SonarCloud reanalysis -->
