@@ -7,7 +7,8 @@ export function mapFormToModel(values: CaseRecordFormValues) {
       userId: values.userId,
       date: values.date,
       serviceType: undefined,
-      staffIds: [values.mainStaffId, ...(values.subStaffIds ?? [])].filter(Boolean) as string[],
+      staffIds: [values.mainStaffId, ...(values.subStaffIds ?? [])]
+        .filter((id) => id != null && id !== "") as string[],
     },
     meta: {
       time: values.time,

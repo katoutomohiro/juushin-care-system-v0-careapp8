@@ -14,6 +14,7 @@ export function NotesSection({ specialNotes, familyNotes, onChange }: NotesSecti
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">特記事項</label>
         <textarea
+          aria-label="特記事項"
           value={specialNotes ?? ""}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange({ specialNotes: e.target.value })}
           className="border rounded px-3 py-2 min-h-28"
@@ -22,6 +23,7 @@ export function NotesSection({ specialNotes, familyNotes, onChange }: NotesSecti
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">家族連絡</label>
         <textarea
+          aria-label="家族連絡"
           value={familyNotes ?? ""}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange({ familyNotes: e.target.value })}
           className="border rounded px-3 py-2 min-h-28"

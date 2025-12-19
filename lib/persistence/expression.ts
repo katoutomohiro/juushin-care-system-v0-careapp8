@@ -177,13 +177,13 @@ export async function listExpressionLogs(params: ExpressionListParams = {}): Pro
     const k = keyword.trim().toLowerCase()
     filtered = filtered.filter((l) =>
       [l.expression, l.reaction, l.intervention, l.discomfort, l.note]
-        .filter(Boolean)
+        .filter((v) => v != null && v !== "")
         .some((v) => String(v).toLowerCase().includes(k)),
     )
   }
 
-  // sort desc by occurredAt
-  filtered.sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : a.occurredAt > b.occurredAt ? -1 : 0))
+  // sort desc by occurredAt using localeCompare for reliability
+  filtered.sort((a, b) => String(b.occurredAt).localeCompare(String(a.occurredAt)))
   return filtered.slice(offset, offset + limit)
 }
 

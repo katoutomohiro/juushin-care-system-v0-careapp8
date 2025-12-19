@@ -16,6 +16,7 @@ export function StaffSelector({ mainStaffId, subStaffIds, options, onChange }: S
         <label className="text-sm text-muted-foreground">主担当</label>
         <select
           className="border rounded px-3 py-2"
+          aria-label="主担当"
           value={mainStaffId ?? ""}
           onChange={(e) => onChange({ mainStaffId: e.target.value || null })}
         >
@@ -30,6 +31,7 @@ export function StaffSelector({ mainStaffId, subStaffIds, options, onChange }: S
         <select
           className="border rounded px-3 py-2"
           multiple
+          aria-label="副担当（複数可）"
           value={subStaffIds ?? []}
           onChange={(e) => {
             const selected = Array.from(e.target.selectedOptions).map((o) => o.value)
