@@ -149,7 +149,7 @@ export async function notifyLocal(opts: LocalNotificationOptions): Promise<void>
   }
 }
 
-function base64UrlToUint8Array(base64Url: string): Uint8Array {
+function base64UrlToArrayBuffer(base64Url: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4)
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/")
   const raw = typeof atob === "function" ? atob(base64) : ""
@@ -157,7 +157,7 @@ function base64UrlToUint8Array(base64Url: string): Uint8Array {
   for (let i = 0; i < raw.length; i += 1) {
     output[i] = raw.charCodeAt(i)
   }
-  return output
+  return output.buffer
 }
 
 async function upsertSubscriptionRecord(userId: string, subscription: PushSubscription): Promise<void> {
@@ -180,7 +180,8 @@ export async function getStoredSubscription(userId: string = DEFAULT_USER_ID): P
 
 export async function subscribePush(userId: string = DEFAULT_USER_ID): Promise<PushSubscription | null> {
   if (typeof window === "undefined") return null
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+  const supportsPush = ("serviceWorker" in navigator) && ("PushManager" in window)
+  if (!supportsPush) {
     console.warn("[subscribePush] Push API not supported")
     return null
   }
@@ -207,7 +208,7 @@ export async function subscribePush(userId: string = DEFAULT_USER_ID): Promise<P
   try {
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlToUint8Array(vapidKey),
+      applicationServerKey: base64UrlToArrayBuffer(vapidKey),
     })
     await upsertSubscriptionRecord(userId, subscription)
     return subscription

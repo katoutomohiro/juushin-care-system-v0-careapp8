@@ -1,3 +1,5 @@
+import { generateSecureUUID } from "@/lib/crypto-utils"
+
 export interface CareEvent {
   id: string
   eventType: string
@@ -346,7 +348,7 @@ export class DataStorageService {
 
   // Utility Methods
   private static generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2)
+    return generateSecureUUID()
   }
 
   static clearAllData(): void {
