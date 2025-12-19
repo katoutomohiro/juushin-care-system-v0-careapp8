@@ -54,4 +54,4 @@ Continue building your app on:
 
 <!-- Trigger SonarCloud reanalysis (2025-12-19) -->
 
-<!-- Trigger SonarCloud reanalysis -->
+<!-- SonarCloud reanalysis trigger -->
