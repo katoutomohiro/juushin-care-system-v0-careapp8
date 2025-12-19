@@ -15,7 +15,10 @@ jobs:
           fetch-depth: 0  # Shallow clones should be disabled for better analysis
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
+        with:
+          sonar-scanner-opts: >
+            -Dsonar.exclusions=**/at-case-record-form-offline.tsx
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_SCANNER_OPTS: "-Dsonar.scanner.clean=true -Dsonar.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx"
+          SONAR_SCANNER_OPTS: "-Dsonar.scanner.clean=true"
           # SONAR_HOST_URL is not needed for SonarCloud (only for SonarQube Server)
