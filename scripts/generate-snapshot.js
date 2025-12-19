@@ -6,28 +6,42 @@
  * 出力: docs/SNAPSHOT.md
  */
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-function exec(cmd) {
+// ホワイトリストに登録されたコマンドのみ実行許可
+const ALLOWED_COMMANDS = {
+  'git': 'git',
+  'pnpm': 'pnpm',
+  'node': 'node',
+  'tsc': 'tsc'
+};
+
+function execSafe(command, args = []) {
+  if (!ALLOWED_COMMANDS.hasOwnProperty(command)) {
+    throw new Error(`Command '${command}' is not allowed`);
+  }
   try {
-    return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    return execFileSync(ALLOWED_COMMANDS[command], args, { 
+      encoding: 'utf8', 
+      stdio: ['pipe', 'pipe', 'ignore'] 
+    }).trim();
   } catch (error) {
     return `Error: ${error.message}`;
   }
 }
 
 function getGitInfo() {
-  const branch = exec('git rev-parse --abbrev-ref HEAD');
-  const commit = exec('git rev-parse --short HEAD');
-  const commitMsg = exec('git log -1 --pretty=%s');
-  const commitDate = exec('git log -1 --pretty=%ci');
+  const branch = execSafe('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+  const commit = execSafe('git', ['rev-parse', '--short', 'HEAD']);
+  const commitMsg = execSafe('git', ['log', '-1', '--pretty=%s']);
+  const commitDate = execSafe('git', ['log', '-1', '--pretty=%ci']);
   return { branch, commit, commitMsg, commitDate };
 }
 
 function getLintSummary() {
-  const result = exec('pnpm lint 2>&1');
+  const result = execSafe('pnpm', ['lint']);
   const match = result.match(/(\d+)\s+problems?\s+\((\d+)\s+errors?,\s+(\d+)\s+warnings?\)/);
   if (match) {
     return { problems: match[1], errors: match[2], warnings: match[3] };
@@ -36,21 +50,21 @@ function getLintSummary() {
 }
 
 function getTypecheckSummary() {
-  const result = exec('pnpm typecheck 2>&1');
+  const result = execSafe('pnpm', ['typecheck']);
   const match = result.match(/Found\s+(\d+)\s+errors?/);
   if (match) {
     return { errors: match[1] };
   }
   // エラーがない場合
-  if (result.includes('tsc --noEmit') && !result.includes('error TS')) {
+  if (result.includes('tsc') && !result.includes('error TS')) {
     return { errors: '0' };
   }
   return { errors: 'N/A' };
 }
 
 function getChangedFiles() {
-  const staged = exec('git diff --cached --name-only');
-  const unstaged = exec('git diff --name-only');
+  const staged = execSafe('git', ['diff', '--cached', '--name-only']);
+  const unstaged = execSafe('git', ['diff', '--name-only']);
   return {
     staged: staged ? staged.split('\n') : [],
     unstaged: unstaged ? unstaged.split('\n') : []
