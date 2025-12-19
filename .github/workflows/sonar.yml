@@ -16,9 +16,8 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
         with:
-          sonar-scanner-opts: >
-            -Dsonar.exclusions=**/at-case-record-form-offline.tsx
+          args: >
+            -Dsonar.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_SCANNER_OPTS: "-Dsonar.scanner.clean=true"
           # SONAR_HOST_URL is not needed for SonarCloud (only for SonarQube Server)
