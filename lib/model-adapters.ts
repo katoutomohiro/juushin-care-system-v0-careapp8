@@ -1,6 +1,7 @@
 import type { DiaryEntry, MedicalRecord } from "../lib/db"
 import { UnifiedEntrySchema } from "../schemas/unified"
 import type { UnifiedEntry, UnifiedRecordT, UnifiedCategory } from "../schemas/unified"
+import { generateSecureUUID } from "./crypto-utils"
 
 export interface JournalEntry {
   title: string
@@ -18,10 +19,7 @@ interface JournalToUnifiedOptions {
 }
 
 const createRandomId = () => {
-  if (typeof globalThis.crypto !== "undefined" && typeof globalThis.crypto.randomUUID === "function") {
-    return globalThis.crypto.randomUUID()
-  }
-  return Math.random().toString(36).slice(2)
+  return generateSecureUUID()
 }
 
 export function journalToUnified(j: JournalEntry, options?: JournalToUnifiedOptions): UnifiedEntry {
