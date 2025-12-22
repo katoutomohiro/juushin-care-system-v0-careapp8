@@ -43,7 +43,7 @@ jobs:
           echo "labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name' | paste -sd, -)"
       
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
