@@ -33,7 +33,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache .next
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .next
           key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
