@@ -21,13 +21,17 @@ jobs:
         with:
           version: 8
       - name: Verify pnpm-lock.yaml exists
-        run: test -f pnpm-lock.yaml || (echo "ERROR: pnpm-lock.yaml not found!" && exit 1)
+        run: |
+          ls -la pnpm-lock.yaml || (echo "ERROR: pnpm-lock.yaml not found in $(pwd)" && exit 1)
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
       - run: pnpm install --frozen-lockfile
+        working-directory: ${{ github.workspace }}
       - run: pnpm test -- --coverage
+        working-directory: ${{ github.workspace }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
