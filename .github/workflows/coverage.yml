@@ -9,21 +9,26 @@ on:
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    # For public repositories, Codecov does not require a token
-    # For private repositories, add CODECOV_TOKEN to Secrets
-    # permissions:
-    #   id-token: write  # Required for OIDC authentication (optional)
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+
+      - run: corepack enable
+      - run: corepack prepare pnpm@10.4.0 --activate
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+
+      - run: pnpm -v
       - run: pnpm install --frozen-lockfile
       - run: pnpm test -- --coverage
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
