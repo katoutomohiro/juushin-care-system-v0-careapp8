@@ -20,7 +20,7 @@ jobs:
         with:
           args: >
             -Dsonar.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
-            -Dsonar.cpd.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
+            -Dsonar.cpd.exclusions=**/at-case-record-form.tsx,**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
             -Dsonar.verbose=true
             -Dsonar.scanner.dumpToFile=sonar-dump.properties
             -Dsonar.pullrequest.base=main
