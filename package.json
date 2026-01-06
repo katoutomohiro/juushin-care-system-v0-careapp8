@@ -82,7 +82,7 @@
     "less": "latest",
     "lightningcss": "latest",
     "lucide-react": "^0.553.0",
-    "next": "15.2.5",
+    "next": "15.4.10",
     "next-i18next": "^15.2.0",
     "next-themes": "latest",
     "path": "latest",
