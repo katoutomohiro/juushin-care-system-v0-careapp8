@@ -17,5 +17,17 @@ jobs:
         uses: SonarSource/sonarcloud-scan-action@v1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_SCANNER_OPTS: >
+        with:
+          args: >
             -Dsonar.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
+            -Dsonar.verbose=true
+            -Dsonar.scanner.dumpToFile=sonar-dump.properties
+            -Dsonar.pullrequest.base=main
+      - name: Verify Sonar Exclusions Config
+        run: |
+          if [ -f sonar-dump.properties ]; then
+            echo "=== sonar-dump.properties content ===" 
+            grep -E "sonar\.(exclusions|pullrequest)" sonar-dump.properties || echo "No sonar exclusions found"
+          else
+            echo "sonar-dump.properties not found"
+          fi
