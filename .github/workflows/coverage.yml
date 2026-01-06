@@ -21,13 +21,15 @@ jobs:
         with:
           version: 10
       - run: pnpm -v
-      - run: find . -maxdepth 4 -name pnpm-lock.yaml -print
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+        working-directory: ${{ github.workspace }}
       - run: pnpm test -- --coverage
+        working-directory: ${{ github.workspace }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
