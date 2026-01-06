@@ -1,12 +1,12 @@
 "use client"
 
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
-import { atCaseRecordStaffOptions, buildATCaseRecordInitial } from "./at-case-record-form-shared"
+import { buildAtCaseRecordInitial, buildAtCaseRecordStaffOptions } from "./at-case-record-form-shared"
 import type { CaseRecordFormProps } from "@/src/components/case-records/CaseRecordForm"
 
 export default function ATCaseRecordFormOffline() {
-  const initial: CaseRecordFormProps["initial"] = buildATCaseRecordInitial()
-  const staffOptions = atCaseRecordStaffOptions
+  const initial: CaseRecordFormProps["initial"] = buildAtCaseRecordInitial()
+  const staffOptions = buildAtCaseRecordStaffOptions()
 
   const handleSubmit: CaseRecordFormProps["onSubmit"] = async (values) => {
     // オフライン時はIndexedDBへ保存するなどの既存ロジックに接続
