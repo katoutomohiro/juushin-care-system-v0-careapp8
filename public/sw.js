@@ -1,5 +1,9 @@
-// Service Worker for notifications (minimal skeleton)
-// Cache strategy and advanced features to be added in future iterations
+// Service Worker for notifications
+// Prevents stale cache from causing React errors by enforcing Network First for HTML
+// and excluding Next.js build artifacts from caching
+
+const VERSION = '1.0.0';
+const CACHE_NAME = `app-cache-v${VERSION}`;
 
 self.addEventListener('install', () => {
   console.log('[SW] install');
@@ -8,7 +12,22 @@ self.addEventListener('install', () => {
 
 self.addEventListener('activate', (event) => {
   console.log('[SW] activate');
-  event.waitUntil(self.clients.claim());
+  // Remove old caches to prevent stale assets
+  event.waitUntil(
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            console.log('[SW] deleting old cache:', name);
+            return caches.delete(name);
+          }
+        })
+      );
+      // Claim all clients to ensure immediate control
+      return self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

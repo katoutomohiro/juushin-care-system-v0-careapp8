@@ -43,8 +43,15 @@ export async function ensurePermission(): Promise<boolean> {
 
 /**
  * Register the service worker used for notifications.
+ * Respects NEXT_PUBLIC_DISABLE_SW environment variable to disable registration in preview/test.
  */
 export async function registerServiceWorker(): Promise<void> {
+  // Allow disabling SW via environment variable (useful for preview/staging)
+  if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
+    console.log("[registerServiceWorker] disabled via NEXT_PUBLIC_DISABLE_SW")
+    return
+  }
+
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     console.warn("[registerServiceWorker] Service Worker not supported")
     return
