@@ -390,22 +390,23 @@ describe('Alert notifications on save (S-04)', () => {
     showNotification.mockReset();
   });
 
-  it('notifies once for new warn alert and does not duplicate on same-level recompute', async () => {
+  it('does not trigger notifications (notifications disabled)', async () => {
     const date = '2025-10-21';
     await createEntry({ date, records: [{ time: '09:00', temperature: 37.6 }] });
-    expect(showNotification).toHaveBeenCalledTimes(1);
+    // Notifications are disabled in current implementation
+    expect(showNotification).not.toHaveBeenCalled();
 
     await createEntry({ date, records: [{ time: '12:00', temperature: 37.7 }] });
-    expect(showNotification).toHaveBeenCalledTimes(1);
+    expect(showNotification).not.toHaveBeenCalled();
   });
 
-  it('notifies again when level upgrades to critical', async () => {
+  it('does not trigger notifications even when level upgrades (notifications disabled)', async () => {
     const date = '2025-10-22';
     await createEntry({ date, records: [{ time: '08:00', temperature: 37.6 }] });
-    expect(showNotification).toHaveBeenCalledTimes(1);
+    expect(showNotification).not.toHaveBeenCalled();
 
     await createEntry({ date, records: [{ time: '13:00', temperature: 38.1 }] });
-    expect(showNotification).toHaveBeenCalledTimes(2);
+    expect(showNotification).not.toHaveBeenCalled();
   });
 
   it('skips info-level alerts when computing notifications', async () => {
