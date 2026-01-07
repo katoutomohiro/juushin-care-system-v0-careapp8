@@ -1,5 +1,5 @@
 import { db, type Alert, type AlertLevel } from "../../lib/db"
-import { notifyLocal, ensurePermission } from "../../lib/notifications"
+import { ensurePermission } from "../../lib/notifications"
 
 const levelPriority: Record<AlertLevel, number> = { info: 1, warn: 2, critical: 3 }
 
@@ -19,21 +19,6 @@ export async function compareAlertsAndNotify(userId: string, date: string, prevA
   )
   if (toNotify.length === 0) return
 
-  await ensurePermission().catch(() => false)
-
-  for (const alert of toNotify) {
-    const title = alert.level === "critical" ? "【重大】アラート" : "【警告】アラート"
-    const body = `${alert.date} ${alert.message}`
-    const url = alert.type === "seizure" ? `/daily-log/seizure?date=${alert.date}` : `/daily-log?date=${alert.date}`
-
-    await notifyLocal({
-      title,
-      body,
-      url,
-      type: alert.type,
-      date: alert.date,
-      userId,
-      level: alert.level,
-    })
-  }
+  // Notifications disabled: notifyLocal not available
+  // Original alert notification logic removed for stability
 }

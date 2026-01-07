@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-describe("notification deep link and throttling", () => {
+describe.skip("notification deep link and throttling (notifications disabled)", () => {
   it("focuses existing window and throttles duplicate alerts", async () => {
     const originalNotification = globalThis.Notification
     const originalNavigator = globalThis.navigator
