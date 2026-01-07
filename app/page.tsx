@@ -240,9 +240,23 @@ export default function WorldClassSoulCareApp() {
   const [currentView, setCurrentView] = useState<"dashboard" | "statistics" | "settings">("dashboard")
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [displayDate, setDisplayDate] = useState<string>("—")
+  const [a4RecordDate, setA4RecordDate] = useState<string>("—")
   const _router = useRouter()
   const { toast } = useToast()
   const { t } = useTranslation()
+
+  // Initialize date display on client side only to avoid SSR/CSR mismatch
+  useEffect(() => {
+    setDisplayDate(
+      new Date().toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    )
+    setA4RecordDate(new Date().toLocaleDateString("ja-JP"))
+  }, [])
 
   useEffect(() => {
     const savedUserNames = DataStorageService.getCustomUserNames()
@@ -496,11 +510,7 @@ export default function WorldClassSoulCareApp() {
                 ))}
               </select>
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">
-                {new Date().toLocaleDateString("ja-JP", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {displayDate}
               </Badge>
             </div>
           </div>
@@ -778,7 +788,7 @@ export default function WorldClassSoulCareApp() {
                       <A4RecordSheet
                         selectedUser={selectedUser}
                         dailyRecords={careEvents}
-                        date={new Date().toLocaleDateString("ja-JP")}
+                        date={a4RecordDate}
                         record={a4}
                       />
                     )
