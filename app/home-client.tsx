@@ -54,7 +54,7 @@ const SERVICE_ROUTE_MAP = {
 } as const
 
 export default function HomeClient({ initialCareReceiverId }: Props) {
-  const [_customUserNames, setCustomUserNames] = useState<string[]>([])
+  const [, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
@@ -88,7 +88,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
   }, [])
 
   useEffect(() => {
-    const defaultId = lifeCareReceivers[0]?.id
+    const _defaultId = lifeCareReceivers[0]?.id
     const isValid = typeof initialCareReceiverId === "string" && lifeCareReceivers.some(r => r.id === initialCareReceiverId)
 
     if (isValid) {
@@ -96,12 +96,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
       const found = lifeCareReceivers.find(r => r.id === initialCareReceiverId)!
       setSelectedUser(found.label)
       return
-    }
-
-    if (defaultId) {
-      setSelectedCareReceiverId(defaultId)
-      setSelectedUser(lifeCareReceivers[0].label)
-      _router.replace(`${window.location.pathname}?careReceiverId=${encodeURIComponent(defaultId)}`, { scroll: false })
     }
   }, [initialCareReceiverId])
 
