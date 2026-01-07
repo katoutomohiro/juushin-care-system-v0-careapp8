@@ -256,13 +256,19 @@ export default function WorldClassSoulCareApp() {
   const { toast } = useToast()
   const { t } = useTranslation()
 
-  // サービス選択時に即遷移（未選択は何もしない）
   const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-    setServiceType(value)
-    if (!value) return
-    const route = SERVICE_ROUTE_MAP[value as keyof typeof SERVICE_ROUTE_MAP]
-    if (route) _router.push(route)
+//  const value = e.target.value
+  setServiceType(value)
+
+  const route = SERVICE_ROUTE_MAP[value as keyof typeof SERVICE_ROUTE_MAP]
+  if (!route) return
+
+  // 遷移する場合だけリセット（事故防止UX）
+  setServiceType("")
+  _router.push(route)
+}
+ サービス選択時に即遷移（未選択は何もしない）
+
   }
 
   // Initialize date display on client side only to avoid SSR/CSR mismatch
