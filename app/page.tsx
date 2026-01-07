@@ -240,8 +240,6 @@ export default function WorldClassSoulCareApp() {
   const [customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
-  const [_isModalOpen, _setIsModalOpen] = useState(false)
-  const [_currentFormType, _setCurrentFormType] = useState<string | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
   const [isA4RecordSheetOpen, setIsA4RecordSheetOpen] = useState(false)
   const [careEvents, setCareEvents] = useState<CareEvent[]>([])
@@ -608,8 +606,8 @@ export default function WorldClassSoulCareApp() {
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">{service.description}</p>
                 <div className="flex flex-wrap gap-1">
-                  {service.features.map((feature, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
+                  {service.features.map((feature) => (
+                    <Badge key={`${service.id}-${feature}`} variant="secondary" className="text-xs">
                       {feature}
                     </Badge>
                   ))}
@@ -661,7 +659,7 @@ export default function WorldClassSoulCareApp() {
           </div>
         </section>
 
-        {currentView === "dashboard" ? (
+        {currentView === "dashboard" && (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
@@ -679,7 +677,7 @@ export default function WorldClassSoulCareApp() {
                       disabled={isLoading}
                       title="A4記録用紙プレビュー (Ctrl+A)"
                     >
-                      {isLoading ? <LoadingSpinner size="sm" /> : "📋"}
+                      {isLoading ? <LoadingSpinner size="sm" /> : "📋"}{" "}
                       A4記録用紙
                     </Button>
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -689,7 +687,7 @@ export default function WorldClassSoulCareApp() {
                         disabled={isLoading}
                         title="PDFプレビュー (Ctrl+P)"
                       >
-                        {isLoading ? <LoadingSpinner size="sm" /> : "👁️"}
+                        {isLoading ? <LoadingSpinner size="sm" /> : "👁️"}{" "}
                         PDFプレビュー
                       </Button>
                       <div className="flex items-center gap-3 flex-1">
@@ -709,7 +707,7 @@ export default function WorldClassSoulCareApp() {
                         disabled={isExporting}
                         title="CSV出力 (Ctrl+E)"
                       >
-                        {isExporting ? <LoadingSpinner size="sm" /> : "📥"}
+                        {isExporting ? <LoadingSpinner size="sm" /> : "📥"}{" "}
                         CSV出力
                       </Button>
                     </div>
@@ -747,9 +745,11 @@ export default function WorldClassSoulCareApp() {
               </Card>
             )}
           </>
-        ) : currentView === "statistics" ? (
+        )}
+        {currentView === "statistics" && (
           <StatisticsDashboard selectedUser={selectedUser} />
-        ) : (
+        )}
+        {currentView !== "dashboard" && currentView !== "statistics" && (
           <div className="space-y-6">
             <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} onAppTitleUpdate={() => {}} />
             <SettingsPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
