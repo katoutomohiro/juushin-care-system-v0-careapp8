@@ -200,6 +200,15 @@ const welfareServices = [
   },
 ]
 
+// 明示的なサービスID→ルートのマッピング（SSR/CSR差が出ない純粋な定数）
+const SERVICE_ROUTE_MAP = {
+  "life-care": "/services/life-care",
+  "after-school": "/services/after-school",
+  "day-support": "/services/day-support",
+  "group-home": "/services/group-home",
+  "home-care": "/services/home-care",
+} as const
+
 const _enhancedEventCategories = [
   ...eventCategories,
   {
@@ -240,11 +249,21 @@ export default function WorldClassSoulCareApp() {
   const [currentView, setCurrentView] = useState<"dashboard" | "statistics" | "settings">("dashboard")
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [serviceType, setServiceType] = useState<string>("")
   const [displayDate, setDisplayDate] = useState<string>("—")
   const [a4RecordDate, setA4RecordDate] = useState<string>("—")
   const _router = useRouter()
   const { toast } = useToast()
   const { t } = useTranslation()
+
+  // サービス選択時に即遷移（未選択は何もしない）
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
+    setServiceType(value)
+    if (!value) return
+    const route = SERVICE_ROUTE_MAP[value as keyof typeof SERVICE_ROUTE_MAP]
+    if (route) _router.push(route)
+  }
 
   // Initialize date display on client side only to avoid SSR/CSR mismatch
   useEffect(() => {
@@ -486,7 +505,12 @@ export default function WorldClassSoulCareApp() {
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <label htmlFor="serviceType" className="sr-only">サービス種別</label>
-              <select id="serviceType" className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary">
+              <select
+                id="serviceType"
+                className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary"
+                value={serviceType}
+                onChange={handleServiceChange}
+              >
                 <option value="">サービス種別を選択</option>
                 {welfareServices.map((service) => (
                   <option key={service.id} value={service.id}>
