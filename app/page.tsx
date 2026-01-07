@@ -696,7 +696,7 @@ export default function WorldClassSoulCareApp() {
                             type="checkbox"
                             checked={includeAlerts}
                             onChange={(e) => setIncludeAlerts(e.target.checked)}
-                          />
+                          />{" "}
                           アラート列を含める
                         </label>
                       </div>
