@@ -262,7 +262,11 @@ export default function WorldClassSoulCareApp() {
     setServiceType(value)
     if (!value) return
     const route = SERVICE_ROUTE_MAP[value as keyof typeof SERVICE_ROUTE_MAP]
-    if (route) _router.push(route)
+    if (route) {
+      // 遷移が発生する場合のみ、表示を未選択に戻す
+      setServiceType("")
+      _router.push(route)
+    }
   }
 
   // Initialize date display on client side only to avoid SSR/CSR mismatch
