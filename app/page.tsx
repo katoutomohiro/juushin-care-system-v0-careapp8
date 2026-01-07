@@ -21,6 +21,7 @@ import { ClickableCard } from "@/components/ui/clickable-card"
 import { useRouter } from "next/navigation"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
+import { lifeCareReceivers } from "@/lib/mock/careReceivers"
 
 const eventCategories = [
   {
@@ -250,6 +251,7 @@ export default function WorldClassSoulCareApp() {
   const [displayDate, setDisplayDate] = useState<string>("—")
   const [a4RecordDate, setA4RecordDate] = useState<string>("—")
   const _router = useRouter()
+  const [selectedCareReceiverId, setSelectedCareReceiverId] = useState<string | null>(null)
   const { toast } = useToast()
   const { t } = useTranslation()
 
@@ -276,6 +278,25 @@ export default function WorldClassSoulCareApp() {
     )
     setA4RecordDate(new Date().toLocaleDateString("ja-JP"))
   }, [])
+
+  // Sync selected care receiver from URL query (client-side only)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get("careReceiverId")
+    if (id) {
+      setSelectedCareReceiverId(id)
+      const found = lifeCareReceivers.find((r) => r.id === id)
+      if (found) setSelectedUser(found.label)
+    }
+  }, [])
+
+  const pushWithCareReceiverId = (path: string) => {
+    const url = selectedCareReceiverId
+      ? `${path}${path.includes("?") ? "&" : "?"}careReceiverId=${encodeURIComponent(selectedCareReceiverId)}`
+      : path
+    _router.push(url)
+  }
 
   useEffect(() => {
     const savedUserNames = DataStorageService.getCustomUserNames()
@@ -576,7 +597,7 @@ export default function WorldClassSoulCareApp() {
                 </div>
               </div>
               <Button
-                onClick={() => _router.push("/daily-log/seizure")}
+                onClick={() => pushWithCareReceiverId("/daily-log/seizure")}
                 className="bg-rose-600 hover:bg-rose-700 text-white"
               >
                 記録を入力
@@ -589,7 +610,7 @@ export default function WorldClassSoulCareApp() {
           {welfareServices.map((service) => (
             <ClickableCard
               key={service.id}
-              onClick={() => _router.push(`/services/${service.id}`)}
+              onClick={() => pushWithCareReceiverId(`/services/${service.id}`)}
               className={`group border-2 hover:border-primary/30 ${service.color}`}
               particleColors={["#FFB6C1", "#FFD700", "#DDA0DD"]}
             >
@@ -622,7 +643,7 @@ export default function WorldClassSoulCareApp() {
           <h2 id="ai-lab-section" className="text-xl font-bold text-foreground">🧪 試験機能 / AI支援セクション</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ClickableCard
-              onClick={() => _router.push('/todos')}
+              onClick={() => pushWithCareReceiverId('/todos')}
               className="group border-2 hover:border-primary/30 bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-primary"
               particleColors={["#34d399", "#10b981", "#6ee7b7"]}
             >
@@ -640,7 +661,7 @@ export default function WorldClassSoulCareApp() {
             </ClickableCard>
 
             <ClickableCard
-              onClick={() => _router.push('/diary/monthly')}
+              onClick={() => pushWithCareReceiverId('/diary/monthly')}
               className="group border-2 hover:border-primary/30 bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-primary"
               particleColors={["#38bdf8", "#0ea5e9", "#7dd3fc"]}
             >
@@ -661,6 +682,34 @@ export default function WorldClassSoulCareApp() {
 
         {currentView === "dashboard" && (
           <>
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 bg-secondary/10 rounded-lg">👥</div>
+                  生活介護 利用者一覧
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-3 text-sm text-muted-foreground">選択中：{selectedUser}</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {lifeCareReceivers.map((r) => (
+                    <Button
+                      key={r.id}
+                      variant={selectedCareReceiverId === r.id ? "default" : "outline"}
+                      size="sm"
+                      className="justify-center"
+                      onClick={() => {
+                        setSelectedCareReceiverId(r.id)
+                        setSelectedUser(r.label)
+                        _router.push(`/?service=life&careReceiverId=${encodeURIComponent(r.id)}`)
+                      }}
+                    >
+                      {r.label}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardHeader>
