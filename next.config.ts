@@ -1,8 +1,5 @@
 import type { NextConfig } from "next"
 
-const DEV_PORT = 3000
-const ip = process.env.DEV_HOST
-
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: {
