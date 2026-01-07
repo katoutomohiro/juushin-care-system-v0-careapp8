@@ -43,34 +43,22 @@ export async function ensurePermission(): Promise<boolean> {
 
 /**
  * Register the service worker used for notifications.
- * Disabled by default in production to prevent stale cache issues.
- * Can be enabled via NEXT_PUBLIC_ENABLE_SW=true in development/staging.
+ * Only registered in non-production environments to prevent hydration errors.
  */
 export async function registerServiceWorker(): Promise<void> {
-  // Respect explicit disable flag
-  if (process.env.NEXT_PUBLIC_DISABLE_SW === 'true') {
-    console.log("[registerServiceWorker] disabled via NEXT_PUBLIC_DISABLE_SW")
-    return
-  }
-
-  // Production: disable SW by default unless explicitly enabled
-  if (typeof window !== "undefined" && process.env.NODE_ENV === 'production') {
-    if (process.env.NEXT_PUBLIC_ENABLE_SW !== 'true') {
-      console.log("[registerServiceWorker] disabled in production (set NEXT_PUBLIC_ENABLE_SW=true to enable)")
-      return
+  if (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" })
+      console.log("[registerServiceWorker] registered:", registration.scope)
+    } catch (error) {
+      console.warn("[registerServiceWorker] failed:", error)
     }
-  }
-
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
-    console.warn("[registerServiceWorker] Service Worker not supported")
-    return
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" })
-    console.log("[registerServiceWorker] registered:", registration.scope)
-  } catch (error) {
-    console.warn("[registerServiceWorker] failed:", error)
+  } else {
+    console.log("[registerServiceWorker] skipped (production or no ServiceWorker support)")
   }
 }
 

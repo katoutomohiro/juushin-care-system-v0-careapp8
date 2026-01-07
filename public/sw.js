@@ -1,65 +1,75 @@
 // Service Worker for notifications
-// Prevents stale cache from causing React errors by avoiding caching of navigations (HTML)
-// Only static assets (JS, CSS, images) are cached
+// Disabled in Vercel production to prevent React hydration errors
+// HTML is never cached; only non-production environments use service worker caching
 
-const VERSION = '1.0.1';
-const CACHE_NAME = `app-cache-v${VERSION}`;
+const IS_PROD = self.location.hostname.includes("vercel.app");
 
-self.addEventListener('install', () => {
-  console.log('[SW] install');
-  self.skipWaiting();
-});
+if (IS_PROD) {
+  // Production: disable service worker completely
+  self.addEventListener("install", () => self.skipWaiting());
+  self.addEventListener("activate", () => {
+    self.registration.unregister();
+  });
+  console.log("[SW] disabled in production (vercel.app)");
+} else {
+  // Non-production: prevent HTML caching to avoid hydration errors
+  self.addEventListener("fetch", (event) => {
+    const request = event.request;
 
-self.addEventListener('activate', (event) => {
-  console.log('[SW] activate');
-  // Remove old caches to prevent stale assets
-  event.waitUntil(
-    (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
-            console.log('[SW] deleting old cache:', name);
-            return caches.delete(name);
-          }
-        })
-      );
-      // Claim all clients to ensure immediate control
-      return self.clients.claim();
-    })()
-  );
-});
+    // Never cache navigation requests or HTML
+    if (
+      request.mode === "navigate" ||
+      request.headers.get("accept")?.includes("text/html")
+    ) {
+      // Let network handle HTML requests
+      return;
+    }
+  });
 
-self.addEventListener('notificationclick', (event) => {
+  self.addEventListener("install", () => {
+    console.log("[SW] install (dev/preview)");
+    self.skipWaiting();
+  });
+
+  self.addEventListener("activate", () => {
+    console.log("[SW] activate (dev/preview)");
+    self.clients.claim();
+  });
+}
+
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = event.notification?.data?.url || '/';
+  const target = event.notification?.data?.url || "/";
 
   event.waitUntil(
     (async () => {
       try {
-        const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        const windowClients = await clients.matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        });
         const targetUrl = new URL(target, self.location.origin).href;
 
         for (const client of windowClients) {
           if (!client?.url) continue;
           const clientUrl = new URL(client.url, self.location.origin).href;
-          if (clientUrl === targetUrl && typeof client.focus === 'function') {
+          if (clientUrl === targetUrl && typeof client.focus === "function") {
             await client.focus();
             return;
           }
         }
 
-        if (typeof clients.openWindow === 'function') {
+        if (typeof clients.openWindow === "function") {
           await clients.openWindow(target);
         }
       } catch (_err) {
-        console.warn('[SW] notificationclick handler failed:', _err);
+        console.warn("[SW] notificationclick handler failed:", _err);
       }
-    })(),
+    })()
   );
 });
 
-self.addEventListener('push', (event) => {
+self.addEventListener("push", (event) => {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
@@ -71,42 +81,15 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = payload.title || 'Care App 通知';
+  const title = payload.title || "Care App 通知";
   const options = {
     body: payload.body,
-    icon: payload.icon || '/icon-192.png',
-    badge: payload.badge || '/badge-96.png',
+    icon: payload.icon || "/icon-192.png",
+    badge: payload.badge || "/badge-96.png",
     data: payload.data || {},
-    tag: payload.tag || 'care-app-alert',
+    tag: payload.tag || "care-app-alert",
     requireInteraction: payload.requireInteraction ?? false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// Fetch handler: avoid caching navigations (HTML) to prevent React errors
-// Only static assets are cached; HTML always comes from network
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  
-  // Never cache navigation requests (HTML pages)
-  // Check for navigate mode or Accept header containing text/html
-  if (
-    request.mode === 'navigate' ||
-    (request.headers && request.headers.get('accept')?.includes('text/html'))
-  ) {
-    // Always fetch fresh HTML from network
-    event.respondWith(
-      fetch(request).catch(() => {
-        // Fallback if offline: this is a limitation
-        console.warn('[SW] fetch failed for navigation:', request.url);
-        throw new Error('Network request failed');
-      })
-    );
-    return;
-  }
-
-  // For other requests, we could implement cache strategies in the future
-  // For now, just pass through to network
-  event.respondWith(fetch(request));
 });
