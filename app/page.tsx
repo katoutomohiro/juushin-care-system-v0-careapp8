@@ -2,9 +2,8 @@
 
 export const dynamic = "force-dynamic"
 
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState, useEffect, useCallback } from "react"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n-client"
@@ -406,11 +405,11 @@ export default function WorldClassSoulCareApp() {
   }, [generateDailyLog, toast, careEvents, dailyLog, selectedUser])
 
   const handleA4RecordSheetPrint = useCallback(() => {
-    const printWindow = window.open("", "_blank")
+    const printWindow = globalThis.open?.("", "_blank")
     if (printWindow) {
       const recordSheetElement = document.getElementById("a4-record-sheet")
       if (recordSheetElement) {
-        printWindow.document.write(`
+        const html = `
           <!DOCTYPE html>
           <html>
             <head>
@@ -427,7 +426,9 @@ export default function WorldClassSoulCareApp() {
               ${recordSheetElement.outerHTML}
             </body>
           </html>
-        `)
+        `
+        printWindow.document.open()
+        printWindow.document.body.innerHTML = html
         printWindow.document.close()
         printWindow.print()
       }
@@ -490,8 +491,8 @@ export default function WorldClassSoulCareApp() {
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
+    globalThis.addEventListener?.("keydown", handleKeyDown)
+    return () => globalThis.removeEventListener?.("keydown", handleKeyDown)
   }, [handlePdfPreview, handleExcelExport, handleA4RecordSheetPreview])
 
   const currentUsers = customUserNames.length > 0 ? customUserNames : users
