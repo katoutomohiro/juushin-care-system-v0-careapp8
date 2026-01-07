@@ -1,5 +1,4 @@
 import { db, type Alert, type AlertLevel } from "../../lib/db"
-import { ensurePermission } from "../../lib/notifications"
 
 const levelPriority: Record<AlertLevel, number> = { info: 1, warn: 2, critical: 3 }
 
