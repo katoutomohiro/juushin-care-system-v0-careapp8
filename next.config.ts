@@ -11,12 +11,6 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    allowedDevOrigins: [
-      `http://localhost:${DEV_PORT}`,
-      ...(ip ? [`http://${ip}:${DEV_PORT}`] : []),
-    ],
-  },
   async redirects() {
     return [
       {
