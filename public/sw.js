@@ -1,8 +1,8 @@
 // Service Worker for notifications
-// Prevents stale cache from causing React errors by enforcing Network First for HTML
-// and excluding Next.js build artifacts from caching
+// Prevents stale cache from causing React errors by avoiding caching of navigations (HTML)
+// Only static assets (JS, CSS, images) are cached
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const CACHE_NAME = `app-cache-v${VERSION}`;
 
 self.addEventListener('install', () => {
@@ -82,4 +82,31 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Fetch handler: avoid caching navigations (HTML) to prevent React errors
+// Only static assets are cached; HTML always comes from network
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  
+  // Never cache navigation requests (HTML pages)
+  // Check for navigate mode or Accept header containing text/html
+  if (
+    request.mode === 'navigate' ||
+    (request.headers && request.headers.get('accept')?.includes('text/html'))
+  ) {
+    // Always fetch fresh HTML from network
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Fallback if offline: this is a limitation
+        console.warn('[SW] fetch failed for navigation:', request.url);
+        throw new Error('Network request failed');
+      })
+    );
+    return;
+  }
+
+  // For other requests, we could implement cache strategies in the future
+  // For now, just pass through to network
+  event.respondWith(fetch(request));
 });
