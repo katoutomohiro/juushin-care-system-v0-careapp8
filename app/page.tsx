@@ -6,4 +6,3 @@ export default function Page() {
   // ログインチェックは middleware 側や Supabase auth で行う想定
   return <HomeClient />
 }
-
