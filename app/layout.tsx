@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "重心ケアアプリ - PROJECT",
   description: "日誌とAI連携でケア記録を最適化します。",
   generator: "v0.app",
+  other: {
+    "build-id": "main-2026-01-07-no-sw-1",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
