@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { ServiceWorkerRegistration, PushSubscriptionButton } from "./service-worker-registration"
 import { UserProvider } from "@/contexts/user-context"
 
 export const viewport: Viewport = {
@@ -20,10 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body>
-        <ServiceWorkerRegistration />
-        <div className="fixed bottom-4 right-4 z-50 flex max-w-xs flex-col items-end gap-2 rounded bg-white/90 p-3 shadow">
-          <PushSubscriptionButton />
-        </div>
         <UserProvider>
           {children}
         </UserProvider>
