@@ -17,6 +17,7 @@ interface StatisticsData {
 
 interface StatisticsDashboardProps {
   selectedUser?: string
+  careReceiverId?: string
 }
 
 export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) {

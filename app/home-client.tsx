@@ -257,8 +257,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                   setSelectedUser={setSelectedUser}
                 />
               </Suspense>
-              {/* // TODO: debug only */}
-              <p className="text-xs text-muted-foreground">現在の利用者ID: {selectedCareReceiverId ?? "—"}</p>
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
@@ -407,7 +405,9 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
           </>
         )}
 
-        {currentView === "statistics" && (<StatisticsDashboard selectedUser={selectedUser} />)}
+        {currentView === "statistics" && (
+          <StatisticsDashboard selectedUser={selectedUser} careReceiverId={selectedCareReceiverId ?? undefined} />
+        )}
         {currentView !== "dashboard" && currentView !== "statistics" && (
           <div className="space-y-6">
             <AdminPasswordAuth onUserNamesUpdate={handleUserNamesUpdate} onAppTitleUpdate={() => {}} />
