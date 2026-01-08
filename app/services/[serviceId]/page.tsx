@@ -207,6 +207,14 @@ const userDetails: {
     medicalCare: "なし",
     service: ["life-care"],
   },
+  "TEST_USER_01": {
+    age: 99,
+    gender: "テスト",
+    careLevel: "テスト",
+    condition: "テンプレート横展開検証用ダミーユーザー",
+    medicalCare: "なし",
+    service: ["life-care"],
+  },
 }
 
 export default function ServiceUsersPage() {
