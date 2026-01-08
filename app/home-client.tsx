@@ -79,12 +79,22 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
   }, [])
 
   useEffect(() => {
-    if (initialCareReceiverId) {
-      setSelectedCareReceiverId(initialCareReceiverId)
-      const found = lifeCareReceivers.find((r) => r.id === initialCareReceiverId)
-      if (found) setSelectedUser(found.label)
+    const defaultId = lifeCareReceivers[0]?.id
+    const isValid = typeof initialCareReceiverId === "string" && lifeCareReceivers.some(r => r.id === initialCareReceiverId)
+
+    if (isValid) {
+      setSelectedCareReceiverId(initialCareReceiverId!)
+      const found = lifeCareReceivers.find(r => r.id === initialCareReceiverId)!
+      setSelectedUser(found.label)
+      return
     }
-  }, [initialCareReceiverId])
+
+    if (defaultId) {
+      setSelectedCareReceiverId(defaultId)
+      setSelectedUser(lifeCareReceivers[0].label)
+      _router.replace(`${window.location.pathname}?careReceiverId=${encodeURIComponent(defaultId)}`, { scroll: false })
+    }
+  }, [])
 
   const pushWithCareReceiverId = (path: string) => {
     const url = selectedCareReceiverId
