@@ -200,7 +200,10 @@ export default function DailyLogsPage() {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}`)}
+                onClick={() => {
+                  const internalId = (userId as string).replace(/・/g, "").trim()
+                  router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
+                }}
               >
                 ← 利用者詳細に戻る
               </Button>

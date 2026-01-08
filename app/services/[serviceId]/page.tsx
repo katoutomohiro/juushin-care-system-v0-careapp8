@@ -384,7 +384,11 @@ export default function ServiceUsersPage() {
             return (
               <ClickableCard
                 key={user}
-                onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(user)}`)}
+                onClick={() => {
+                  // 内部IDへ正規化してURLセグメントに使用
+                  const internalId = user.replace(/・/g, "").trim()
+                  router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
+                }}
                 className={`group border-2 hover:border-primary/30 ${service.color}`}
                 particleColors={["#FFB6C1", "#FFD700", "#DDA0DD"]}
               >

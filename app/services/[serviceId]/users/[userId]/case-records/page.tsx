@@ -31,7 +31,7 @@ export default async function CaseRecordsPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <Link
-              href={`/services/${serviceId}/users/${encodeURIComponent(userId)}`}
+              href={`/services/${serviceId}/users/${encodeURIComponent(userId.replace(/・/g, "").trim())}`}
               className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
             >
               ← {userId}の詳細に戻る
