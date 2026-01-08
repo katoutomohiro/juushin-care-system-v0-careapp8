@@ -369,6 +369,5 @@ export function CaseRecordFormClient({
         />
       </div>
     </div>
-  }
   )
 }

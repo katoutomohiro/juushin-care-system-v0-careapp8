@@ -109,19 +109,21 @@ export default async function CaseRecordsPage({
     careReceiverName = displayUserId
   }
 
-  // Debug logging (always enabled for now to diagnose issues)
-  console.log("[case-records] Debug info:", {
-    rawUserId,
-    displayUserId,
-    internalUserId,
-    careReceiverId,
-    careReceiverUuid,
-    serviceUuid,
-    template_found: !!template,
-    template_name: template?.name,
-    template_fields_count: template?.customFields?.length ?? 0,
-    searchParams_careReceiverId: idParam,
-  })
+  // Debug logging (disabled in production)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[case-records] Debug info:", {
+      rawUserId,
+      displayUserId,
+      internalUserId,
+      careReceiverId,
+      careReceiverUuid,
+      serviceUuid,
+      template_found: !!template,
+      template_name: template?.name,
+      template_fields_count: template?.customFields?.length ?? 0,
+      searchParams_careReceiverId: idParam,
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
