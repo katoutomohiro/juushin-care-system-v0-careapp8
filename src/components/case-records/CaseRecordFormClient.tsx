@@ -24,7 +24,7 @@ export function CaseRecordFormClient({
   template?: CareReceiverTemplate | null
 }) {
   const { toast } = useToast()
-  const [_isSubmitting, _setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Get current date and time
   const now = new Date()
@@ -33,10 +33,38 @@ export function CaseRecordFormClient({
 
   const handleSubmit = async (values: any) => {
     try {
-      _setIsSubmitting(true)
+      setIsSubmitting(true)
       console.log("[CaseRecordFormClient] Submitting:", values)
 
-      // TODO: Send to API or localStorage
+      // Send to API
+      const response = await fetch("/api/case-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          serviceId: serviceId,
+          recordDate: values.date,
+          recordTime: values.time,
+          mainStaffId: values.mainStaffId,
+          subStaffIds: values.subStaffIds || [],
+          payload: {
+            specialNotes: values.specialNotes || "",
+            familyNotes: values.familyNotes || "",
+            custom: values.custom || {},
+          },
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "保存に失敗しました")
+      }
+
+      console.log("[CaseRecordFormClient] Saved:", result.record)
+
       toast({
         variant: "default",
         title: "ケース記録を保存しました",
@@ -47,10 +75,10 @@ export function CaseRecordFormClient({
       toast({
         variant: "destructive",
         title: "保存に失敗しました",
-        description: "もう一度お試しください",
+        description: error instanceof Error ? error.message : "もう一度お試しください",
       })
     } finally {
-      _setIsSubmitting(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -97,7 +125,8 @@ export function CaseRecordFormClient({
       staffOptions={MOCK_STAFF_OPTIONS}
       templateFields={template.customFields || []}
       onSubmit={handleSubmit}
-      submitLabel="保存"
+      submitLabel={isSubmitting ? "保存中..." : "保存"}
+      isSubmitting={isSubmitting}
     />
   )
 }
