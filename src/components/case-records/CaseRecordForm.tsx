@@ -23,6 +23,7 @@ export type CaseRecordFormProps = {
   templateFields?: TemplateField[]
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
+  isSubmitting?: boolean
 }
 
 export function CaseRecordForm({
@@ -31,6 +32,7 @@ export function CaseRecordForm({
   templateFields = [],
   onSubmit,
   submitLabel = "保存",
+  isSubmitting = false,
 }: CaseRecordFormProps) {
   const [state, setState] = useState(initial)
   const customData = state.custom ?? {}
@@ -81,7 +83,11 @@ export function CaseRecordForm({
       )}
 
       <div className="flex justify-end gap-3">
-        <button type="submit" className="px-4 py-2 rounded bg-primary text-primary-foreground">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 rounded bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {submitLabel}
         </button>
       </div>
