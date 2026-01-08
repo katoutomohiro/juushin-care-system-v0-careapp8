@@ -126,6 +126,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     const errorStack = error instanceof Error ? error.stack : ""
+    // Truncate stack to first 200 chars for production logging
+    const truncatedStack = errorStack.substring(0, 200)
     
     console.error("[case-records POST] failed", {
       message: errorMsg,
@@ -137,8 +139,9 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: "Unexpected error occurred",
-        detail: errorMsg,
-        where: "case-records POST",
+        message: errorMsg,
+        stack: truncatedStack,
+        where: "route.ts:POST",
       },
       { status: 500 }
     )
