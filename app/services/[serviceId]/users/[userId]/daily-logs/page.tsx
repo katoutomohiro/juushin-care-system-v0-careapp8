@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ClickableCard } from "@/components/ui/clickable-card"
 import { formUrl, buildSeizureUrl, buildVitalsUrl } from "@/lib/url"
+import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 const welfareServices: { [key: string]: { name: string; icon: string } } = {
   "life-care": { name: "生活介護", icon: "🏥" },
@@ -201,7 +202,7 @@ export default function DailyLogsPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const internalId = (userId as string).replace(/・/g, "").trim()
+                  const internalId = normalizeUserId(userId as string)
                   router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
                 }}
               >

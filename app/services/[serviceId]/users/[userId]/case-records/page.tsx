@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFormClient"
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
@@ -18,14 +17,19 @@ export default async function CaseRecordsPage({
 
   const serviceId = resolvedParams.serviceId
   const rawUserId = resolvedParams.userId
-  const displayUserId = decodeURIComponent(rawUserId)
+  let displayUserId = rawUserId
+  try {
+    displayUserId = decodeURIComponent(rawUserId)
+  } catch {
+    displayUserId = rawUserId
+  }
   
   // Normalize to internal ID (e.g., "A・T" → "AT")
-  const internalUserId = normalizeUserId(displayUserId)
+  const internalUserId = normalizeUserId(rawUserId)
 
   // Determine careReceiverId from searchParams or use normalized userId as fallback
   const idParam = resolvedSearchParams.careReceiverId
-  const careReceiverId = typeof idParam === "string" ? normalizeUserId(idParam) : internalUserId
+  const careReceiverId = normalizeUserId(typeof idParam === "string" ? idParam : internalUserId) || internalUserId
 
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
@@ -60,27 +64,13 @@ export default async function CaseRecordsPage({
           </div>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!careReceiverId || careReceiverId === "" ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>ケース記録</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                利用者が指定されていません。ユーザー詳細から再度アクセスしてください。
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <CaseRecordFormClient
-            careReceiverId={careReceiverId}
-            userId={internalUserId}
-            serviceId={serviceId}
-            template={template}
-          />
-        )}
+        <CaseRecordFormClient
+          careReceiverId={careReceiverId}
+          userId={internalUserId}
+          serviceId={serviceId}
+          template={template}
+        />
       </main>
     </div>
   )

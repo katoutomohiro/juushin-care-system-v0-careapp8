@@ -5,6 +5,7 @@
 
 import { CareReceiverTemplate } from "./schema";
 import { AT_TEMPLATE_FIELDS } from "./at-template";
+import { normalizeUserId } from "@/lib/ids/normalizeUserId";
 
 /**
  * Get the template for a specific care receiver
@@ -12,7 +13,9 @@ import { AT_TEMPLATE_FIELDS } from "./at-template";
  * @returns The template for the care receiver, or empty template if not found
  */
 export function getTemplate(careReceiverId: string | null | undefined): CareReceiverTemplate {
-  if (!careReceiverId) {
+  const normalizedId = normalizeUserId(careReceiverId ?? "")
+
+  if (!normalizedId) {
     return {
       careReceiverId: "unknown",
       name: "Default Template",
@@ -21,9 +24,9 @@ export function getTemplate(careReceiverId: string | null | undefined): CareRece
   }
 
   // AT-specific template（内部ID "AT" で統一）
-  if (careReceiverId === "AT") {
+  if (normalizedId === "AT") {
     return {
-      careReceiverId,
+      careReceiverId: normalizedId,
       name: "A・T 専用テンプレート（重心ケア記録用紙準拠）",
       customFields: AT_TEMPLATE_FIELDS,
     };
@@ -31,8 +34,8 @@ export function getTemplate(careReceiverId: string | null | undefined): CareRece
 
   // Default empty template for other care receivers
   return {
-    careReceiverId,
-    name: `${careReceiverId} テンプレート`,
+    careReceiverId: normalizedId,
+    name: `${normalizedId} テンプレート`,
     customFields: [],
   };
 }
@@ -41,5 +44,5 @@ export function getTemplate(careReceiverId: string | null | undefined): CareRece
  * Get all available care receiver IDs with templates
  */
 export function getTemplatedCareReceiverIds(): string[] {
-  return ["A・T"];
+  return ["AT"];
 }

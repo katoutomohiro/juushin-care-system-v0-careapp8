@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DataStorageService } from "@/services/data-storage-service"
+import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -280,6 +281,7 @@ export default function UserDetailPage() {
   const searchParams = useSearchParams()
   const serviceId = params.serviceId as string
   const userId = decodeURIComponent(params.userId as string)
+  const normalizedUserId = normalizeUserId(userId)
   const service = welfareServices[serviceId]
 
   const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
@@ -576,7 +578,7 @@ export default function UserDetailPage() {
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
                   // Navigate to case-records page
-                  router.push(`/services/${serviceId}/users/${userId}/case-records`)
+                  router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
                 }}
               >
                 <CardHeader>

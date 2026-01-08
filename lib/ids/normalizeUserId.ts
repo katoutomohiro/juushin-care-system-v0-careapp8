@@ -21,13 +21,16 @@
 export function normalizeUserId(raw: string | null | undefined): string {
   if (!raw) return ""
 
-  // Decode URI component (handles %E3%83%BB etc)
-  const decoded = decodeURIComponent(raw)
+  let decoded = raw
+  try {
+    decoded = decodeURIComponent(raw)
+  } catch {
+    decoded = raw
+  }
 
-  // Remove all separators and normalize
   return decoded
-    .replace(/[・･.\s　-]/g, "") // Remove common separators
-    .replace(/[^\p{L}\p{N}]/gu, "") // Remove all non-alphanumeric (Unicode-aware)
+    .replace(/??$/u, "")
+    .replace(/[^\p{L}\p{N}]/gu, "")
     .toUpperCase()
 }
 
