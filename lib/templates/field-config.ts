@@ -52,7 +52,6 @@ function getIndividualFields(userId: string): TemplateField[] {
     case "TESTUSER01":
       // Test user for template horizontal expansion verification
       return require("./test-user-template").TEST_USER_01_TEMPLATE_FIELDS
-    
     // Future: Add other care receivers here
     // case "IK":
     //   return require("./ik-template").IK_TEMPLATE_FIELDS
