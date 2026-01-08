@@ -4,8 +4,8 @@
  */
 
 import { CareReceiverTemplate } from "./schema";
-import { AT_TEMPLATE_FIELDS } from "./at-template";
 import { normalizeUserId } from "@/lib/ids/normalizeUserId";
+import { getFieldConfiguration, mergeFields } from "./field-config";
 
 /**
  * Get the template for a specific care receiver
@@ -23,20 +23,19 @@ export function getTemplate(careReceiverId: string | null | undefined): CareRece
     };
   }
 
-  // AT-specific template（内部ID "AT" で統一）
-  if (normalizedId === "AT") {
-    return {
-      careReceiverId: normalizedId,
-      name: "A・T 専用テンプレート（重心ケア記録用紙準拠）",
-      customFields: AT_TEMPLATE_FIELDS,
-    };
-  }
+  // Get field configuration for this care receiver (common + individual fields)
+  const fieldConfig = getFieldConfiguration(normalizedId)
+  const allFields = mergeFields(fieldConfig)
 
-  // Default empty template for other care receivers
+  // Build template name based on userId
+  const templateName = normalizedId === "AT" 
+    ? "A・T 専用テンプレート（重心ケア記録用紙準拠）"
+    : `${normalizedId} テンプレート`
+
   return {
     careReceiverId: normalizedId,
-    name: `${normalizedId} テンプレート`,
-    customFields: [],
+    name: templateName,
+    customFields: allFields,
   };
 }
 

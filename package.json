@@ -78,7 +78,7 @@
     "input-otp": "latest",
     "jiti": "latest",
     "jsdom": "latest",
-    "langchain": "^1.0.4",
+    "langchain": "^1.2.6",
     "less": "latest",
     "lightningcss": "latest",
     "lucide-react": "^0.553.0",
