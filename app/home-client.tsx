@@ -472,6 +472,22 @@ function CareReceiverSelect({
 
   const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
 
+  // Guard: if URL has an invalid careReceiverId, replace with default and sync state
+  useEffect(() => {
+    const id = params.get('careReceiverId')
+    if (!id) return
+    const isValid = lifeCareReceivers.some(r => r.id === id)
+    if (!isValid) {
+      const defaultId = lifeCareReceivers[0]?.id
+      if (!defaultId) return
+      const next = new URLSearchParams(params.toString())
+      next.set('careReceiverId', defaultId)
+      router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
+      setSelectedCareReceiverId(defaultId)
+      setSelectedUser(lifeCareReceivers[0].label)
+    }
+  }, [params, router, setSelectedCareReceiverId, setSelectedUser])
+
   const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value
     const found = lifeCareReceivers.find(r => r.id === id)
