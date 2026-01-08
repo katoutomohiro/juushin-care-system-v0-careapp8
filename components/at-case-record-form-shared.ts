@@ -3,6 +3,7 @@
 import React from "react"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import type { CaseRecordFormProps } from "@/src/components/case-records/CaseRecordForm"
+import { getTemplate } from "@/lib/templates/getTemplate"
 
 type AtCaseRecordFormConfig = {
   onSubmit?: CaseRecordFormProps["onSubmit"]
@@ -20,6 +21,7 @@ export function buildAtCaseRecordInitial(): CaseRecordFormProps["initial"] {
     subStaffIds: [],
     specialNotes: "",
     familyNotes: "",
+    custom: {},
   }
 }
 
@@ -33,6 +35,10 @@ export function createAtCaseRecordForm(config: AtCaseRecordFormConfig = {}) {
   return function AtCaseRecordFormInstance() {
     const initial = buildAtCaseRecordInitial()
     const staffOptions = buildAtCaseRecordStaffOptions()
+    
+    // Get AT template for custom fields
+    const template = getTemplate("A・T")
+    const templateFields = template.customFields
 
     const handleSubmit: CaseRecordFormProps["onSubmit"] = onSubmit
       ? onSubmit
@@ -43,6 +49,7 @@ export function createAtCaseRecordForm(config: AtCaseRecordFormConfig = {}) {
     return React.createElement(CaseRecordForm, {
       initial,
       staffOptions,
+      templateFields,
       onSubmit: handleSubmit,
       submitLabel,
     })

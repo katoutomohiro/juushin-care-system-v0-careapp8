@@ -4,6 +4,8 @@ import { useState } from "react"
 import { HeaderFields } from "@/src/components/case-records/HeaderFields"
 import { StaffSelector, type StaffOption } from "@/src/components/case-records/StaffSelector"
 import { NotesSection } from "@/src/components/case-records/NotesSection"
+import { TemplateFieldsSection } from "@/src/components/case-records/TemplateFieldsSection"
+import { TemplateField, TemplateFormValues } from "@/lib/templates/schema"
 
 export type CaseRecordFormProps = {
   initial: {
@@ -15,14 +17,23 @@ export type CaseRecordFormProps = {
     subStaffIds?: string[] | null
     specialNotes?: string
     familyNotes?: string
+    custom?: TemplateFormValues
   }
   staffOptions: StaffOption[]
+  templateFields?: TemplateField[]
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
 }
 
-export function CaseRecordForm({ initial, staffOptions, onSubmit, submitLabel = "保存" }: CaseRecordFormProps) {
+export function CaseRecordForm({
+  initial,
+  staffOptions,
+  templateFields = [],
+  onSubmit,
+  submitLabel = "保存",
+}: CaseRecordFormProps) {
   const [state, setState] = useState(initial)
+  const customData = state.custom ?? {}
 
   return (
     <form
@@ -52,6 +63,22 @@ export function CaseRecordForm({ initial, staffOptions, onSubmit, submitLabel = 
         familyNotes={state.familyNotes}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
       />
+
+      {templateFields.length > 0 && (
+        <TemplateFieldsSection
+          fields={templateFields}
+          values={customData}
+          onChange={(fieldId, value) => {
+            setState((s) => ({
+              ...s,
+              custom: {
+                ...customData,
+                [fieldId]: value,
+              },
+            }))
+          }}
+        />
+      )}
 
       <div className="flex justify-end gap-3">
         <button type="submit" className="px-4 py-2 rounded bg-primary text-primary-foreground">
