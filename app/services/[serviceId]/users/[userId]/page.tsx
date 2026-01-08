@@ -1,12 +1,12 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import ClickableCard from "@/components/clickable-card"
-import { formUrl } from "@/lib/url"
+import { formUrl, buildUserDiaryUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -277,6 +277,7 @@ const userDetails: Record<string, UserDetail> = {
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const serviceId = params.serviceId as string
   const userId = decodeURIComponent(params.userId as string)
   const service = welfareServices[serviceId]
@@ -590,7 +591,10 @@ export default function UserDetailPage() {
 
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => setCurrentView("daily-logs")}
+                onClick={() => {
+                  const careReceiverId = searchParams.get("careReceiverId")
+                  router.push(buildUserDiaryUrl(serviceId, userId, careReceiverId))
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
