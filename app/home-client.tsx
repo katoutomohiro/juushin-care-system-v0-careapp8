@@ -87,17 +87,17 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
     setA4RecordDate(new Date().toLocaleDateString("ja-JP"))
   }, [])
 
+  // 初期ロード時は URL から値があれば state のみ反映（URL は変更しない）
   useEffect(() => {
-    const _defaultId = lifeCareReceivers[0]?.id
-    const isValid = typeof initialCareReceiverId === "string" && lifeCareReceivers.some(r => r.id === initialCareReceiverId)
-
-    if (isValid) {
-      setSelectedCareReceiverId(initialCareReceiverId!)
-      const found = lifeCareReceivers.find(r => r.id === initialCareReceiverId)!
-      setSelectedUser(found.label)
-      return
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('careReceiverId')
+    if (id && lifeCareReceivers.some(r => r.id === id)) {
+      setSelectedCareReceiverId(id)
+      const found = lifeCareReceivers.find(r => r.id === id)
+      if (found) setSelectedUser(found.label)
     }
-  }, [initialCareReceiverId])
+  }, [])
 
   const pushWithCareReceiverId = (path: string) => {
     // URL に careReceiverId を付与しない
@@ -258,9 +258,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                   const found = lifeCareReceivers.find(r => r.id === id)
                   setSelectedCareReceiverId(id)
                   if (found) setSelectedUser(found.label)
-                  const params = new URLSearchParams(window.location.search)
-                  params.set('careReceiverId', id)
-                  _router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false })
                 }}
                 className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
                 aria-label="利用者を選択"
@@ -554,41 +551,3 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
     </div>
   )
 }
-<<<<<<< HEAD
-
-function CareReceiverSelect({
-  selectedCareReceiverId,
-  setSelectedCareReceiverId,
-  selectedUser,
-  setSelectedUser,
-}: {
-  selectedCareReceiverId: string | null
-  setSelectedCareReceiverId: (v: string | null) => void
-  selectedUser: string
-  setSelectedUser: (v: string) => void
-}) {
-  const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
-
-  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value
-    const found = lifeCareReceivers.find(r => r.id === id)
-    setSelectedCareReceiverId(id)
-    if (found) setSelectedUser(found.label)
-  }
-
-  return (
-    <select
-      id="userSelect"
-      value={value}
-      onChange={onChange}
-      className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[120px]"
-      aria-label="利用者を選択"
-    >
-      {lifeCareReceivers.map((r) => (
-        <option key={r.id} value={r.id}>{r.label}</option>
-      ))}
-    </select>
-  )
-}
-=======
->>>>>>> d7d1feb (1/8)
