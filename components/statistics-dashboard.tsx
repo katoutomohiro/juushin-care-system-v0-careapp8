@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DataStorageService } from "@/services/data-storage-service"
+import { lifeCareReceivers } from "@/lib/mock/careReceivers"
 
 interface StatisticsData {
   totalEvents: number
@@ -20,7 +21,7 @@ interface StatisticsDashboardProps {
   careReceiverId?: string
 }
 
-export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) {
+export function StatisticsDashboard({ selectedUser, careReceiverId }: StatisticsDashboardProps) {
   const [stats, setStats] = useState<StatisticsData | null>(null)
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("week")
 
@@ -110,11 +111,13 @@ export function StatisticsDashboard({ selectedUser }: StatisticsDashboardProps) 
   }
 
   const maxCount = Math.max(...Object.values(stats.eventsByType))
+  const receiverName = careReceiverId ? lifeCareReceivers.find(r => r.id === careReceiverId)?.label : undefined
+  const titleText = receiverName ? `📊 統計（${receiverName}）` : "📊 統計ダッシュボード"
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">📊 統計ダッシュボード</h2>
+        <h2 className="text-2xl font-bold">{titleText}</h2>
         <div className="flex gap-2">
           <Button variant={timeRange === "week" ? "default" : "outline"} size="sm" onClick={() => setTimeRange("week")}>
             1週間
