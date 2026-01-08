@@ -8,7 +8,7 @@ import { AT_TEMPLATE_FIELDS } from "./at-template";
 
 /**
  * Get the template for a specific care receiver
- * @param careReceiverId - The care receiver ID (e.g., "AT", "I・K")
+ * @param careReceiverId - The care receiver ID (normalized, e.g., "AT")
  * @returns The template for the care receiver, or empty template if not found
  */
 export function getTemplate(careReceiverId: string | null | undefined): CareReceiverTemplate {
@@ -20,11 +20,11 @@ export function getTemplate(careReceiverId: string | null | undefined): CareRece
     };
   }
 
-  // AT-specific template
-  if (careReceiverId === "A・T" || careReceiverId === "AT") {
+  // AT-specific template（内部ID "AT" で統一）
+  if (careReceiverId === "AT") {
     return {
       careReceiverId,
-      name: "A・T 専用テンプレート",
+      name: "A・T 専用テンプレート（重心ケア記録用紙準拠）",
       customFields: AT_TEMPLATE_FIELDS,
     };
   }
