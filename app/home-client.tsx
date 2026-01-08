@@ -16,28 +16,13 @@ import { useToast } from "@/components/ui/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
 
 type Props = { initialCareReceiverId?: string }
-
-const eventCategories = [
-  { id: "seizure", name: "発作記録", icon: "⚡", color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100", iconBg: "bg-red-100 text-red-600", description: "発作の種類・時間・対応を記録" },
-  { id: "expression", name: "表情・反応", icon: "😊", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100", iconBg: "bg-amber-100 text-amber-600", description: "表情や反応の変化を記録" },
-  { id: "vitals", name: "バイタル", icon: "❤️", color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100", iconBg: "bg-rose-100 text-rose-600", description: "体温・血圧・脈拍を記録" },
-  { id: "hydration", name: "水分補給", icon: "💧", color: "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100", iconBg: "bg-sky-100 text-sky-600", description: "水分摂取量・方法を記録" },
-  { id: "excretion", name: "排泄", icon: "🚽", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100", iconBg: "bg-emerald-100 text-emerald-600", description: "排尿・排便の状況を記録" },
-  { id: "activity", name: "活動", icon: "🏃", color: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100", iconBg: "bg-violet-100 text-violet-600", description: "日常活動・リハビリを記録" },
-  { id: "skin_oral_care", name: "皮膚・口腔ケア", icon: "🛡️", color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100", iconBg: "bg-indigo-100 text-indigo-600", description: "皮膚状態・口腔ケアを記録" },
-  { id: "tube_feeding", name: "経管栄養", icon: "🍽️", color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100", iconBg: "bg-orange-100 text-orange-600", description: "経管栄養の実施状況を記録" },
-  { id: "respiratory", name: "呼吸管理", icon: "🫁", color: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100", iconBg: "bg-cyan-100 text-cyan-600", description: "呼吸状態・人工呼吸器管理を記録" },
-  { id: "positioning", name: "体位変換・姿勢管理", icon: "🔄", color: "bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100", iconBg: "bg-lime-100 text-lime-600", description: "体位変換・姿勢調整を記録" },
-  { id: "swallowing", name: "摂食嚥下管理", icon: "🍽️", color: "bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100", iconBg: "bg-pink-100 text-pink-600", description: "嚥下機能・誤嚥リスク管理を記録" },
-  { id: "infection-prevention", name: "感染予防管理", icon: "🛡️", color: "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100", iconBg: "bg-yellow-100 text-yellow-600", description: "感染兆候・予防策実施を記録" },
-  { id: "communication", name: "コミュニケーション支援", icon: "💬", color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100", iconBg: "bg-purple-100 text-purple-600", description: "意思疎通・支援機器使用を記録" },
-]
 
 const users = [
   "利用者A","利用者B","利用者C","利用者D","利用者E","利用者F","利用者G","利用者H","利用者I","利用者J","利用者K","利用者L","利用者M","利用者N","利用者O","利用者P","利用者Q","利用者R","利用者S","利用者T","利用者U","利用者V","利用者W","利用者X",
@@ -60,7 +45,7 @@ const SERVICE_ROUTE_MAP = {
 } as const
 
 export default function HomeClient({ initialCareReceiverId }: Props) {
-  const [customUserNames, setCustomUserNames] = useState<string[]>([])
+  const [_customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
@@ -235,7 +220,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
     return () => globalThis.removeEventListener?.("keydown", handleKeyDown)
   }, [handlePdfPreview, handleExcelExport, handleA4RecordSheetPreview])
 
-  const currentUsers = customUserNames.length > 0 ? customUserNames : users
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -255,9 +239,14 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
               </select>
 
               <label htmlFor="userSelect" className="sr-only">対象利用者</label>
-              <select id="userSelect" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[120px]" aria-label="利用者を選択">
-                {currentUsers.map((user) => (<option key={user} value={user}>{user}</option>))}
-              </select>
+              <Suspense fallback={<div className="px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground min-w-[120px]">読み込み中…</div>}>
+                <CareReceiverSelect
+                  selectedCareReceiverId={selectedCareReceiverId}
+                  setSelectedCareReceiverId={setSelectedCareReceiverId}
+                  selectedUser={selectedUser}
+                  setSelectedUser={setSelectedUser}
+                />
+              </Suspense>
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
@@ -454,5 +443,46 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
         )}
       </main>
     </div>
+  )
+}
+
+function CareReceiverSelect({
+  selectedCareReceiverId,
+  setSelectedCareReceiverId,
+  selectedUser,
+  setSelectedUser,
+}: {
+  selectedCareReceiverId: string | null
+  setSelectedCareReceiverId: (v: string | null) => void
+  selectedUser: string
+  setSelectedUser: (v: string) => void
+}) {
+  const router = useRouter()
+  const params = useSearchParams()
+
+  const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
+
+  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value
+    const found = lifeCareReceivers.find(r => r.id === id)
+    setSelectedCareReceiverId(id)
+    if (found) setSelectedUser(found.label)
+    const next = new URLSearchParams(params.toString())
+    next.set('careReceiverId', id)
+    router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
+  }
+
+  return (
+    <select
+      id="userSelect"
+      value={value}
+      onChange={onChange}
+      className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[120px]"
+      aria-label="利用者を選択"
+    >
+      {lifeCareReceivers.map((r) => (
+        <option key={r.id} value={r.id}>{r.label}</option>
+      ))}
+    </select>
   )
 }
