@@ -29,7 +29,7 @@ export function normalizeUserId(raw: string | null | undefined): string {
   }
 
   return decoded
-    .replace(/??$/u, "")
+    .replace(/[・･.\s　-]/g, "")
     .replace(/[^\p{L}\p{N}]/gu, "")
     .toUpperCase()
 }
