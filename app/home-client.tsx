@@ -54,7 +54,7 @@ const SERVICE_ROUTE_MAP = {
 } as const
 
 export default function HomeClient({ initialCareReceiverId }: Props) {
-  const [, setCustomUserNames] = useState<string[]>([])
+  const [customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
@@ -250,14 +250,26 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
               </select>
 
               <label htmlFor="userSelect" className="sr-only">対象利用者</label>
-              <Suspense fallback={<div className="px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground min-w-[120px]">読み込み中…</div>}>
-                <CareReceiverSelect
-                  selectedCareReceiverId={selectedCareReceiverId}
-                  setSelectedCareReceiverId={setSelectedCareReceiverId}
-                  selectedUser={selectedUser}
-                  setSelectedUser={setSelectedUser}
-                />
-              </Suspense>
+              <select
+                id="userSelect"
+                value={selectedCareReceiverId ?? ""}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const found = lifeCareReceivers.find(r => r.id === id)
+                  setSelectedCareReceiverId(id)
+                  if (found) setSelectedUser(found.label)
+                  const params = new URLSearchParams(window.location.search)
+                  params.set('careReceiverId', id)
+                  _router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false })
+                }}
+                className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
+                aria-label="利用者を選択"
+              >
+                <option value="" disabled>利用者を選択</option>
+                {lifeCareReceivers.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
@@ -542,6 +554,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
     </div>
   )
 }
+<<<<<<< HEAD
 
 function CareReceiverSelect({
   selectedCareReceiverId,
@@ -577,3 +590,5 @@ function CareReceiverSelect({
     </select>
   )
 }
+=======
+>>>>>>> d7d1feb (1/8)
