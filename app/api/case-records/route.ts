@@ -38,11 +38,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Prepare record data
+    // Prepare record data with exact column names matching DB schema
     const recordData = {
-      user_id: userId,
-      service_id: serviceId,
-      record_date: recordDate,
+      service_id: serviceId,    // Ensure snake_case to match DB columns
+      user_id: userId,          // Ensure snake_case to match DB columns
+      record_date: recordDate,  // Ensure snake_case to match DB columns
       record_time: recordTime || null,
       payload: {
         ...payload,
@@ -52,17 +52,19 @@ export async function POST(req: NextRequest) {
     }
 
     console.log("[case-records POST] Upserting record:", {
-      user_id: userId,
       service_id: serviceId,
+      user_id: userId,
       record_date: recordDate,
       payloadKeys: payload ? Object.keys(payload) : [],
     })
 
-    // Upsert to Supabase (unique constraint: service_id, user_id, record_date)
+    // Upsert to Supabase with explicit column conflict specification
+    // Using column names (not constraint name) for onConflict
     const { data, error } = await supabaseAdmin
       .from("case_records")
       .upsert(recordData, {
         onConflict: "service_id,user_id,record_date",
+        ignoreDuplicates: false,
       })
       .select()
       .single()
