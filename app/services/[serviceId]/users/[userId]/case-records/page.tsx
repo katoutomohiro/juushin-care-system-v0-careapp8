@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFormClient"
 import { getTemplate } from "@/lib/templates/getTemplate"
-import { toInternalId } from "@/lib/url"
+import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
@@ -17,29 +16,35 @@ export default async function CaseRecordsPage({
   const resolvedSearchParams = await searchParams
 
   const serviceId = resolvedParams.serviceId
-  const displayUserId = decodeURIComponent(resolvedParams.userId)
+  const rawUserId = resolvedParams.userId
+  let displayUserId = rawUserId
+  try {
+    displayUserId = decodeURIComponent(rawUserId)
+  } catch {
+    displayUserId = rawUserId
+  }
   
   // Normalize to internal ID (e.g., "A・T" → "AT")
-  const internalUserId = toInternalId(displayUserId)
+  const internalUserId = normalizeUserId(rawUserId)
 
   // Determine careReceiverId from searchParams or use normalized userId as fallback
   const idParam = resolvedSearchParams.careReceiverId
-  const careReceiverId = typeof idParam === "string" ? toInternalId(idParam) : internalUserId
+  const careReceiverId = normalizeUserId(typeof idParam === "string" ? idParam : internalUserId) || internalUserId
 
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
 
-  // Debug logging (removed in production)
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[case-records] Debug info:", {
-      params_userId: resolvedParams.userId,
-      displayUserId,
-      internalUserId,
-      careReceiverId,
-      template_found: !!template,
-      searchParams_careReceiverId: idParam,
-    })
-  }
+  // Debug logging (always enabled for now to diagnose issues)
+  console.log("[case-records] Debug info:", {
+    rawUserId,
+    displayUserId,
+    internalUserId,
+    careReceiverId,
+    template_found: !!template,
+    template_name: template?.name,
+    template_fields_count: template?.customFields?.length ?? 0,
+    searchParams_careReceiverId: idParam,
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -59,27 +64,13 @@ export default async function CaseRecordsPage({
           </div>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!careReceiverId || careReceiverId === "" ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>ケース記録</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                利用者が指定されていません。ユーザー詳細から再度アクセスしてください。
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <CaseRecordFormClient
-            careReceiverId={careReceiverId}
-            userId={internalUserId}
-            serviceId={serviceId}
-            template={template}
-          />
-        )}
+        <CaseRecordFormClient
+          careReceiverId={careReceiverId}
+          userId={internalUserId}
+          serviceId={serviceId}
+          template={template}
+        />
       </main>
     </div>
   )

@@ -54,19 +54,28 @@ export function CaseRecordFormClient({
     }
   }
 
-  // If template not found, show message
+  // If template not found, show diagnostic message
   if (!template) {
     return (
       <Card className="bg-amber-50 border-amber-200">
         <CardHeader>
           <CardTitle className="text-amber-900">テンプレート未設定</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-amber-800">
-            利用者 {careReceiverId} のケース記録テンプレートが見つかりません。
-            <br />
-            管理者にお問い合わせください。
+            利用者 <strong>{careReceiverId}</strong> のケース記録テンプレートが見つかりません。
           </p>
+          <div className="text-sm text-amber-700 bg-amber-100 p-3 rounded">
+            <p className="font-semibold mb-1">診断情報:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>正規化ID: {careReceiverId}</li>
+              <li>元のID: {userId}</li>
+              <li>サービス: {serviceId}</li>
+            </ul>
+            <p className="mt-2 text-xs">
+              ※ 現在サポートされているテンプレート: AT（A・T様専用）
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
