@@ -574,7 +574,10 @@ export default function UserDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
-                onClick={() => setCurrentView("case-records")}
+                onClick={() => {
+                  // Navigate to case-records page
+                  router.push(`/services/${serviceId}/users/${userId}/case-records`)
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-lg group-hover:text-primary transition-colors">
@@ -610,22 +613,6 @@ export default function UserDetailPage() {
               </Card>
             </div>
           </>
-        )}
-
-        {currentView === "case-records" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">ケース記録</h2>
-              <Button variant="outline" onClick={() => setCurrentView("overview")}>
-                ← 戻る
-              </Button>
-            </div>
-            <Card className="shadow-lg">
-              <CardContent className="py-12 text-center">
-                <p className="text-lg text-muted-foreground">ケース記録機能は準備中です</p>
-              </CardContent>
-            </Card>
-          </div>
         )}
 
         {currentView === "daily-logs" && (

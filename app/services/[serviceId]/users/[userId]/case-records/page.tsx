@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFormClient"
 import { getTemplate } from "@/lib/templates/getTemplate"
-import { toInternalId } from "@/lib/url"
+import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
@@ -17,29 +17,30 @@ export default async function CaseRecordsPage({
   const resolvedSearchParams = await searchParams
 
   const serviceId = resolvedParams.serviceId
-  const displayUserId = decodeURIComponent(resolvedParams.userId)
+  const rawUserId = resolvedParams.userId
+  const displayUserId = decodeURIComponent(rawUserId)
   
   // Normalize to internal ID (e.g., "A・T" → "AT")
-  const internalUserId = toInternalId(displayUserId)
+  const internalUserId = normalizeUserId(displayUserId)
 
   // Determine careReceiverId from searchParams or use normalized userId as fallback
   const idParam = resolvedSearchParams.careReceiverId
-  const careReceiverId = typeof idParam === "string" ? toInternalId(idParam) : internalUserId
+  const careReceiverId = typeof idParam === "string" ? normalizeUserId(idParam) : internalUserId
 
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
 
-  // Debug logging (removed in production)
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[case-records] Debug info:", {
-      params_userId: resolvedParams.userId,
-      displayUserId,
-      internalUserId,
-      careReceiverId,
-      template_found: !!template,
-      searchParams_careReceiverId: idParam,
-    })
-  }
+  // Debug logging (always enabled for now to diagnose issues)
+  console.log("[case-records] Debug info:", {
+    rawUserId,
+    displayUserId,
+    internalUserId,
+    careReceiverId,
+    template_found: !!template,
+    template_name: template?.name,
+    template_fields_count: template?.customFields?.length ?? 0,
+    searchParams_careReceiverId: idParam,
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
