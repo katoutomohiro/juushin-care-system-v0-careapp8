@@ -51,21 +51,17 @@ export async function POST(req: NextRequest) {
       },
     }
 
-    console.log("[case-records POST] Upserting record:", {
+    console.log("[case-records POST] Inserting record:", {
       service_id: serviceId,
       user_id: userId,
       record_date: recordDate,
       payloadKeys: payload ? Object.keys(payload) : [],
     })
 
-    // Upsert to Supabase with explicit column conflict specification
-    // Using column names (not constraint name) for onConflict
+    // Insert to Supabase without conflict handling for debugging
     const { data, error } = await supabaseAdmin
       .from("case_records")
-      .upsert(recordData, {
-        onConflict: "service_id,user_id,record_date",
-        ignoreDuplicates: false,
-      })
+      .insert(recordData)
       .select()
       .single()
 
@@ -84,7 +80,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: error.message,
-          detail: `Supabase upsert failed: ${error.code}`,
+          detail: `Supabase insert failed: ${error.code}`,
           where: "case-records POST",
         },
         { status: 500 }
@@ -92,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data) {
-      console.error("[case-records POST] failed: no data returned from upsert", {
+      console.error("[case-records POST] failed: no data returned from insert", {
         userId,
         serviceId,
         recordDate,
@@ -101,7 +97,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: "No data returned from database",
-          detail: "Upsert completed but returned empty result",
+          detail: "Insert completed but returned empty result",
           where: "case-records POST",
         },
         { status: 500 }
@@ -125,7 +121,7 @@ export async function POST(req: NextRequest) {
     )
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
-    const errorStack = error instanceof Error ? error.stack : ""
+    const errorStack = error instanceof Error && error.stack ? error.stack : ""
     // Truncate stack to first 200 chars for production logging
     const truncatedStack = errorStack.substring(0, 200)
     
