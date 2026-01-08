@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toInternalId } from "@/lib/url"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -386,7 +387,7 @@ export default function ServiceUsersPage() {
                 key={user}
                 onClick={() => {
                   // 内部IDへ正規化してURLセグメントに使用
-                  const internalId = user.replace(/・/g, "").trim()
+                  const internalId = toInternalId(user)
                   router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
                 }}
                 className={`group border-2 hover:border-primary/30 ${service.color}`}

@@ -1,6 +1,18 @@
-// Normalize display name like "A・T" or "ATさん" to internal id like "AT"
+// Normalize display name like "A・T" or "A.T" or "A-T" or "AT" to internal id like "AT"
+// Removes: full-width middle dot (・), periods (.), hyphens (-), spaces, and "さん" suffix
+// Then converts to uppercase
 export function toInternalId(value: string): string {
-  return value.replace(/・/g, "").replace(/さん$/u, "").trim()
+  if (!value) return ""
+  return (
+    value
+      .replace(/・/g, "") // Remove full-width middle dot
+      .replace(/\./g, "") // Remove periods
+      .replace(/-/g, "") // Remove hyphens
+      .replace(/\s+/g, "") // Remove all whitespace
+      .replace(/さん$/u, "") // Remove "さん" suffix
+      .trim()
+      .toUpperCase()
+  )
 }
 export const formUrl = (form: string, serviceId: string, userId: string) =>
   `/forms/${form}?user=${encodeURIComponent(userId)}&service=${serviceId}`;

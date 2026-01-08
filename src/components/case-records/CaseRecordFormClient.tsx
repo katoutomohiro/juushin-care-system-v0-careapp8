@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const MOCK_STAFF_OPTIONS = [
   { value: "staff-1", label: "スタッフA" },
@@ -20,7 +21,7 @@ export function CaseRecordFormClient({
   careReceiverId: string
   userId: string
   serviceId: string
-  template: CareReceiverTemplate
+  template?: CareReceiverTemplate | null
 }) {
   const { toast } = useToast()
   const [_isSubmitting, _setIsSubmitting] = useState(false)
@@ -53,6 +54,24 @@ export function CaseRecordFormClient({
     }
   }
 
+  // If template not found, show message
+  if (!template) {
+    return (
+      <Card className="bg-amber-50 border-amber-200">
+        <CardHeader>
+          <CardTitle className="text-amber-900">テンプレート未設定</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-amber-800">
+            利用者 {careReceiverId} のケース記録テンプレートが見つかりません。
+            <br />
+            管理者にお問い合わせください。
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <CaseRecordForm
       initial={{
@@ -67,7 +86,7 @@ export function CaseRecordFormClient({
         custom: {},
       }}
       staffOptions={MOCK_STAFF_OPTIONS}
-      templateFields={template.customFields}
+      templateFields={template.customFields || []}
       onSubmit={handleSubmit}
       submitLabel="保存"
     />

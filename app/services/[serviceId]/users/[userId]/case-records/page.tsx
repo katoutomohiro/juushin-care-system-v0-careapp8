@@ -29,6 +29,18 @@ export default async function CaseRecordsPage({
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
 
+  // Debug logging (removed in production)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[case-records] Debug info:", {
+      params_userId: resolvedParams.userId,
+      displayUserId,
+      internalUserId,
+      careReceiverId,
+      template_found: !!template,
+      searchParams_careReceiverId: idParam,
+    })
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-40">
