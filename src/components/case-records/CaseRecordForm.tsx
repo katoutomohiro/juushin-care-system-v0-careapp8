@@ -42,6 +42,7 @@ export function CaseRecordForm({
       className="space-y-6"
       onSubmit={(e) => {
         e.preventDefault()
+        if (isSubmitting) return
         void onSubmit(state)
       }}
     >

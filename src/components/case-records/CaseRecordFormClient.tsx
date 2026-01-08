@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
@@ -25,6 +25,8 @@ export function CaseRecordFormClient({
 }) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const submittingRef = useRef(false)
 
   // Get current date and time
   const now = new Date()
@@ -32,8 +34,11 @@ export function CaseRecordFormClient({
   const timeStr = now.toTimeString().split(" ")[0].substring(0, 5)
 
   const handleSubmit = async (values: any) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setIsSubmitting(true)
+    setStatusMessage(null)
     try {
-      setIsSubmitting(true)
       console.log("[CaseRecordFormClient] Submitting:", values)
 
       // Send to API
@@ -65,19 +70,23 @@ export function CaseRecordFormClient({
 
       console.log("[CaseRecordFormClient] Saved:", result.record)
 
+      setStatusMessage("保存しました")
+
       toast({
         variant: "default",
-        title: "ケース記録を保存しました",
-        description: `${careReceiverId} の記録が正常に保存されました`,
+        title: "✅ ケース記録を保存しました",
+        description: `${careReceiverId} の記録が正常に保存されました (${new Date().toLocaleTimeString("ja-JP")})`,
       })
     } catch (error) {
       console.error("[CaseRecordFormClient] Submit error:", error)
+      setStatusMessage("保存に失敗しました")
       toast({
         variant: "destructive",
         title: "保存に失敗しました",
         description: error instanceof Error ? error.message : "もう一度お試しください",
       })
     } finally {
+      submittingRef.current = false
       setIsSubmitting(false)
     }
   }
@@ -110,23 +119,37 @@ export function CaseRecordFormClient({
   }
 
   return (
-    <CaseRecordForm
-      initial={{
-        date: dateStr,
-        time: timeStr,
-        userId: userId,
-        serviceId: serviceId,
-        mainStaffId: null,
-        subStaffIds: [],
-        specialNotes: "",
-        familyNotes: "",
-        custom: {},
-      }}
-      staffOptions={MOCK_STAFF_OPTIONS}
-      templateFields={template.customFields || []}
-      onSubmit={handleSubmit}
-      submitLabel={isSubmitting ? "保存中..." : "保存"}
-      isSubmitting={isSubmitting}
-    />
+    <div className="space-y-4">
+      {statusMessage && (
+        <div
+          className={`px-4 py-3 rounded ${
+            statusMessage === "保存しました"
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+          }`}
+        >
+          {statusMessage}
+        </div>
+      )}
+      
+      <CaseRecordForm
+        initial={{
+          date: dateStr,
+          time: timeStr,
+          userId: userId,
+          serviceId: serviceId,
+          mainStaffId: null,
+          subStaffIds: [],
+          specialNotes: "",
+          familyNotes: "",
+          custom: {},
+        }}
+        staffOptions={MOCK_STAFF_OPTIONS}
+        templateFields={template.customFields || []}
+        onSubmit={handleSubmit}
+        submitLabel={isSubmitting ? "保存中..." : "保存"}
+        isSubmitting={isSubmitting}
+      />
+    </div>
   )
 }
