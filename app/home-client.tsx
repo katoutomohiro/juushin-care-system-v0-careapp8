@@ -277,9 +277,12 @@ HEAD
                   setSelectedUser={setSelectedUser}
                 />
               </Suspense>
+<HEAD
               {/* // TODO: debug only */}
               <p className="text-xs text-muted-foreground">現在の利用者ID: {selectedCareReceiverId ?? "—"}</p>
 0299e19 (1/8)
+
+7b1231e (1/8)
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
