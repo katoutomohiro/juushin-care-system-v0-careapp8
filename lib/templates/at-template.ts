@@ -1,118 +1,182 @@
 /**
  * AT-specific care record template
- * Based on the AT care record sheet (Excel)
+ * Based on AT記録用紙（Excel） - 重心ケア支援アプリ
+ *
+ * カテゴリ順序：
+ * 1. 基本情報（日付、時間帯、スタッフ）
+ * 2. バイタル（体温、血圧、脈拍）
+ * 3. 水分補給
+ * 4. 排泄
+ * 5. 入浴
+ * 6. ストレッチ・マッサージ（AT独自）
+ * 7. リハ/課題①②③（AT独自）
+ * 8. 意思疎通（カード、声掛け反応など）
+ * 9. 活動内容
+ * 10. 身体拘束（有/無）
+ * 11. 特記事項
  */
 
 import { CareCategory } from "./categories";
 import { TemplateField } from "./schema";
 
 export const AT_TEMPLATE_FIELDS: TemplateField[] = [
-  // 課題①【側弯・拘縮予防】
+  // ============================================
+  // ストレッチ・マッサージ（AT独自項目）
+  // ============================================
   {
-    id: "at_rehab1_stretch_targets",
-    label: "リハビリ対象部位",
-    category: CareCategory.REHAB,
-    type: "checkbox",
-    required: false,
-    options: [
-      { value: "upper_limbs", label: "上肢" },
-      { value: "lower_limbs", label: "下肢" },
-      { value: "shoulder", label: "肩" },
-      { value: "waist", label: "腰" },
-      { value: "hip", label: "股関節" },
-    ],
-    order: 1,
-  },
-  {
-    id: "at_rehab1_notes",
-    label: "課題①の様子",
+    id: "at_stretch_massage",
+    label: "ストレッチ・マッサージ",
     category: CareCategory.REHAB,
     type: "textarea",
     required: false,
-    placeholder: "側弯・拘縮予防の様子を記入",
+    placeholder: "実施内容：部位・時間・スタッフなど",
+    order: 0,
+  },
+
+  // ============================================
+  // 課題①：側弯・拘縮予防
+  // ============================================
+  {
+    id: "at_challenge1_title",
+    label: "課題①【側弯・拘縮予防】",
+    category: CareCategory.REHAB,
+    type: "text",
+    required: false,
+    placeholder: "固定的な項目",
+    order: 1,
+  },
+  {
+    id: "at_challenge1_details",
+    label: "実施内容",
+    category: CareCategory.REHAB,
+    type: "textarea",
+    required: false,
+    placeholder: "リハビリ対象部位（上肢・下肢・肩・腰・股関節）、実施内容など",
     order: 2,
   },
 
-  // 課題②【下肢の機能低下を防止する】
+  // ============================================
+  // 課題②：下肢の機能低下を防止する
+  // ============================================
   {
-    id: "at_rehab2_standing_count",
-    label: "立ち上がり訓練",
+    id: "at_challenge2_title",
+    label: "課題②【下肢機能低下防止】",
+    category: CareCategory.REHAB,
+    type: "text",
+    required: false,
+    placeholder: "固定的な項目",
+    order: 3,
+  },
+  {
+    id: "at_challenge2_standing_count",
+    label: "立ち上がり訓練（回数）",
     category: CareCategory.REHAB,
     type: "number",
     required: false,
     unit: "回",
     placeholder: "0",
-    order: 3,
+    order: 4,
   },
   {
-    id: "at_rehab2_notes",
-    label: "課題②の様子",
+    id: "at_challenge2_details",
+    label: "実施内容",
     category: CareCategory.REHAB,
     type: "textarea",
     required: false,
-    placeholder: "下肢の機能低下防止の様子を記入",
-    order: 4,
+    placeholder: "訓練内容、様子、スタッフなど",
+    order: 5,
   },
 
-  // 課題③【意思疎通】
+  // ============================================
+  // 課題③：意思疎通・コミュニケーション
+  // ============================================
   {
-    id: "at_comm_notes",
-    label: "コミュニケーション",
+    id: "at_challenge3_title",
+    label: "課題③【意思疎通】",
     category: CareCategory.COMMUNICATION,
-    type: "textarea",
+    type: "text",
     required: false,
-    placeholder: "カード/声掛け反応/トイレ誘導など",
+    placeholder: "固定的な項目",
     order: 1,
   },
-
-  // 活動
   {
-    id: "at_activity_content",
-    label: "活動内容",
-    category: CareCategory.ACTIVITY,
-    type: "textarea",
-    required: false,
-    placeholder: "本日の活動内容を記入",
-    order: 1,
-  },
-
-  // 身体拘束
-  {
-    id: "at_restraint_wheelchair",
-    label: "身体拘束（車いす）",
-    category: CareCategory.RESTRAINT,
+    id: "at_challenge3_communication",
+    label: "コミュニケーション方法",
+    category: CareCategory.COMMUNICATION,
     type: "checkbox",
     required: false,
-    options: [{ value: "yes", label: "実施" }],
-    order: 1,
-  },
-  {
-    id: "at_restraint_table",
-    label: "テーブル",
-    category: CareCategory.RESTRAINT,
-    type: "checkbox",
-    required: false,
-    options: [{ value: "yes", label: "実施" }],
+    options: [
+      { value: "voice", label: "声掛け反応" },
+      { value: "card", label: "カード" },
+      { value: "eye_contact", label: "視線接触" },
+      { value: "toilet_guidance", label: "トイレ誘導" },
+      { value: "sign", label: "身振り" },
+      { value: "other", label: "その他" },
+    ],
     order: 2,
   },
   {
-    id: "at_restraint_chestbelt",
-    label: "胸ベルト",
-    category: CareCategory.RESTRAINT,
-    type: "checkbox",
+    id: "at_challenge3_details",
+    label: "実施内容・様子",
+    category: CareCategory.COMMUNICATION,
+    type: "textarea",
     required: false,
-    options: [{ value: "yes", label: "実施" }],
+    placeholder: "意思疎通の様子、反応など",
     order: 3,
   },
 
-  // 特記
+  // ============================================
+  // 活動等（AT独自項目）
+  // ============================================
+  {
+    id: "at_activity_content",
+    label: "活動等の内容",
+    category: CareCategory.ACTIVITY,
+    type: "textarea",
+    required: false,
+    placeholder: "本日の活動内容（時間帯、内容、スタッフなど）",
+    order: 1,
+  },
+
+  // ============================================
+  // 身体拘束（AT独自項目）
+  // ============================================
+  {
+    id: "at_restraint_status",
+    label: "身体拘束",
+    category: CareCategory.RESTRAINT,
+    type: "select",
+    required: false,
+    options: [
+      { value: "none", label: "無" },
+      { value: "wheelchair", label: "有（車いす）" },
+      { value: "table", label: "有（テーブル）" },
+      { value: "chestbelt", label: "有（胸ベルト）" },
+      { value: "other", label: "有（その他）" },
+    ],
+    order: 1,
+  },
+  {
+    id: "at_restraint_reason",
+    label: "身体拘束の理由（実施した場合）",
+    category: CareCategory.RESTRAINT,
+    type: "textarea",
+    required: false,
+    placeholder: "実施理由、保護者への説明内容など",
+    order: 2,
+  },
+
+  // ============================================
+  // 特記事項（AT独自項目）
+  // ============================================
   {
     id: "at_special_notes",
     label: "特記事項",
     category: CareCategory.NOTES,
     type: "textarea",
     required: false,
-    placeholder: "スキントラブル/体調変化など",
+    placeholder: "スキントラブル、体調変化、気づき、転倒防止対策など",
     order: 1,
   },
 ];
+
