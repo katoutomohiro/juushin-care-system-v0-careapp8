@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFormClient"
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
