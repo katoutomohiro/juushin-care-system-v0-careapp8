@@ -250,6 +250,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
               </select>
 
               <label htmlFor="userSelect" className="sr-only">対象利用者</label>
+HEAD
               <select
                 id="userSelect"
                 value={selectedCareReceiverId ?? ""}
@@ -267,6 +268,17 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                   <option key={r.id} value={r.id}>{r.label}</option>
                 ))}
               </select>
+
+              <Suspense fallback={<div className="px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground min-w-[120px]">読み込み中…</div>}>
+                <CareReceiverSelect
+                  selectedCareReceiverId={selectedCareReceiverId}
+                  setSelectedCareReceiverId={setSelectedCareReceiverId}
+                  selectedUser={selectedUser}
+                  setSelectedUser={setSelectedUser}
+                />
+              </Suspense>
+              <p className="text-xs text-muted-foreground">現在の利用者ID: {selectedCareReceiverId ?? "—"}</p>
+0299e19 (1/8)
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
