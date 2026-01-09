@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
@@ -33,11 +33,16 @@ export function CaseRecordFormClient({
   const dateStr = now.toISOString().split("T")[0]
   const timeStr = now.toTimeString().split(" ")[0].substring(0, 5)
 
-  const handleSubmit = async (values: any) => {
-    if (submittingRef.current) return
+  const handleSubmit = useCallback(async (values: any) => {
+    // Double-submit guard: prevent concurrent submissions
+    if (submittingRef.current) {
+      console.warn("[CaseRecordFormClient] Already submitting, ignoring duplicate call")
+      return
+    }
     submittingRef.current = true
     setIsSubmitting(true)
     setStatusMessage(null)
+    
     try {
       console.log("[CaseRecordFormClient] Submitting:", values)
 
@@ -89,7 +94,8 @@ export function CaseRecordFormClient({
       submittingRef.current = false
       setIsSubmitting(false)
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [careReceiverId, serviceId, userId])
 
   // If template not found, show diagnostic message
   if (!template) {

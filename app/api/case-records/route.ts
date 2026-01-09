@@ -1,8 +1,49 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 
+export const runtime = "nodejs"
+
 export async function POST(req: NextRequest) {
   try {
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+
+    // Env presence check (return 200 with diagnostics, not 500)
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      const missingKeys: string[] = []
+      if (!SUPABASE_URL) missingKeys.push("NEXT_PUBLIC_SUPABASE_URL")
+      if (!SERVICE_ROLE) missingKeys.push("SUPABASE_SERVICE_ROLE_KEY")
+
+      const urlSample = SUPABASE_URL ? `${SUPABASE_URL.slice(0, 20)}...` : ""
+
+      return NextResponse.json(
+        {
+          ok: false,
+          where: "env",
+          missingKeys,
+          got: {
+            urlPresent: !!SUPABASE_URL,
+            keyPresent: !!SERVICE_ROLE,
+            urlSample,
+          },
+        },
+        { status: 200 }
+      )
+    }
+
+    // Env URL basic validation before using Supabase client
+    const urlSample = `${SUPABASE_URL.slice(0, 20)}...`
+    if (!SUPABASE_URL.startsWith("https://") || !SUPABASE_URL.includes("supabase.co")) {
+      return NextResponse.json(
+        {
+          ok: false,
+          where: "env_url_invalid",
+          urlSample,
+        },
+        { status: 200 }
+      )
+    }
+
     const body = await req.json()
     const { userId, serviceId, recordDate, recordTime, mainStaffId, subStaffIds, payload } = body
 
@@ -24,46 +65,52 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("[case-records POST] Configuration error: missing Supabase environment variables")
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Server configuration error",
-          detail: "Missing Supabase environment variables",
-          where: "case-records POST",
-        },
-        { status: 500 }
-      )
-    }
-
     // Prepare record data with exact column names matching DB schema
+    // DB columns: service_id, user_id, record_date, payload ONLY
     const recordData = {
-      service_id: serviceId,    // Ensure snake_case to match DB columns
-      user_id: userId,          // Ensure snake_case to match DB columns
-      record_date: recordDate,  // Ensure snake_case to match DB columns
-      record_time: recordTime || null,
+      service_id: serviceId,
+      user_id: userId,
+      record_date: recordDate,
       payload: {
         ...payload,
+        recordTime,           // Move record_time into payload
         mainStaffId,
         subStaffIds,
       },
     }
 
-    console.log("[case-records POST] Inserting record:", {
+    console.log("[case-records POST] Upserting record:", {
       service_id: serviceId,
       user_id: userId,
       record_date: recordDate,
       payloadKeys: payload ? Object.keys(payload) : [],
     })
 
-    // Insert to Supabase without conflict handling for debugging
-    const { data, error } = await supabaseAdmin
-      .from("case_records")
-      .insert(recordData)
-      .select()
-      .single()
+    // Upsert to Supabase with explicit conflict columns (service_id, user_id, record_date)
+    let data, error
+    try {
+      const result = await supabaseAdmin
+        .from("case_records")
+        .upsert(recordData, {
+          onConflict: "service_id,user_id,record_date",
+        })
+        .select()
+        .single()
+      data = result.data
+      error = result.error
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      const cause = e && typeof e === "object" && "cause" in e ? (e as any).cause : undefined
+      return NextResponse.json(
+        {
+          ok: false,
+          where: message.includes("fetch failed") ? "supabase_fetch_failed" : "supabase_upsert_throw",
+          message,
+          cause,
+        },
+        { status: 200 }
+      )
+    }
 
     if (error) {
       console.error("[case-records POST] failed", {
@@ -80,7 +127,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: error.message,
-          detail: `Supabase insert failed: ${error.code}`,
+          detail: `Supabase upsert failed: ${error.code}`,
           where: "case-records POST",
         },
         { status: 500 }
@@ -88,7 +135,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data) {
-      console.error("[case-records POST] failed: no data returned from insert", {
+      console.error("[case-records POST] failed: no data returned from upsert", {
         userId,
         serviceId,
         recordDate,
@@ -97,7 +144,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: "No data returned from database",
-          detail: "Insert completed but returned empty result",
+          detail: "Upsert completed but returned empty result",
           where: "case-records POST",
         },
         { status: 500 }
