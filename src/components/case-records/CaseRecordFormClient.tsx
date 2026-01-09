@@ -70,7 +70,7 @@ export function CaseRecordFormClient({
       let result: any
       try {
         result = await response.json()
-      } catch (error) {
+      } catch {
         console.error("[CaseRecordFormClient] Invalid JSON response", {
           status: response.status,
           statusText: response.statusText,
@@ -103,7 +103,6 @@ export function CaseRecordFormClient({
       submittingRef.current = false
       setIsSubmitting(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [careReceiverId, serviceId, userId])
 
   // If template not found, show diagnostic message
