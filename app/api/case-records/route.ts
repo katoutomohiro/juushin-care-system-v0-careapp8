@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { userId, serviceId, recordDate, recordTime, mainStaffId, subStaffIds, payload } = body
+    const { userId, serviceId, recordDate, payload } = body
 
     // Validate required fields
     if (!userId || !serviceId || !recordDate) {
@@ -66,16 +66,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare record data with exact column names matching DB schema
-    // DB columns: service_id, user_id, record_date, payload ONLY
+    // DB columns: service_id, user_id, record_date, record_data ONLY
     const recordData = {
       service_id: serviceId,
       user_id: userId,
       record_date: recordDate,
-      payload: {
-        ...payload,
-        recordTime,           // Move record_time into payload
-        mainStaffId,
-        subStaffIds,
+      record_data: {
+        specialNotes: payload?.specialNotes ?? "",
+        familyNotes: payload?.familyNotes ?? "",
+        custom: payload?.custom ?? {},
       },
     }
 
