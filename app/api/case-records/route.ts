@@ -45,19 +45,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { userId, serviceId, recordDate, payload } = body
+    const { service_id, user_id, record_date, record_data } = body
 
     // Validate required fields
-    if (!userId || !serviceId || !recordDate) {
+    if (!user_id || !service_id || !record_date) {
       console.error("[case-records POST] Validation error: missing required fields", {
-        hasUserId: !!userId,
-        hasServiceId: !!serviceId,
-        hasRecordDate: !!recordDate,
+        hasUserId: !!user_id,
+        hasServiceId: !!service_id,
+        hasRecordDate: !!record_date,
       })
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing required fields: userId, serviceId, recordDate",
+          error: "Missing required fields: user_id, service_id, record_date",
           detail: "Validation failed",
           where: "case-records POST",
         },
@@ -68,21 +68,17 @@ export async function POST(req: NextRequest) {
     // Prepare record data with exact column names matching DB schema
     // DB columns: service_id, user_id, record_date, record_data ONLY
     const recordData = {
-      service_id: serviceId,
-      user_id: userId,
-      record_date: recordDate,
-      record_data: {
-        specialNotes: payload?.specialNotes ?? "",
-        familyNotes: payload?.familyNotes ?? "",
-        custom: payload?.custom ?? {},
-      },
+      service_id,
+      user_id,
+      record_date,
+      record_data: record_data ?? {},
     }
 
     console.log("[case-records POST] Upserting record:", {
-      service_id: serviceId,
-      user_id: userId,
-      record_date: recordDate,
-      payloadKeys: payload ? Object.keys(payload) : [],
+      service_id,
+      user_id,
+      record_date,
+      recordDataKeys: record_data ? Object.keys(record_data) : [],
     })
 
     // Upsert to Supabase with explicit conflict columns (service_id, user_id, record_date)
@@ -117,10 +113,10 @@ export async function POST(req: NextRequest) {
         code: error.code,
         details: error.details,
         hint: error.hint,
-        userId,
-        serviceId,
-        recordDate,
-        payloadKeys: payload ? Object.keys(payload) : [],
+        user_id,
+        service_id,
+        record_date,
+        recordDataKeys: record_data ? Object.keys(record_data) : [],
       })
       return NextResponse.json(
         {
@@ -135,9 +131,9 @@ export async function POST(req: NextRequest) {
 
     if (!data) {
       console.error("[case-records POST] failed: no data returned from upsert", {
-        userId,
-        serviceId,
-        recordDate,
+        user_id,
+        service_id,
+        record_date,
       })
       return NextResponse.json(
         {
@@ -152,9 +148,9 @@ export async function POST(req: NextRequest) {
 
     console.log("[case-records POST] success", {
       recordId: data.id,
-      userId,
-      serviceId,
-      recordDate,
+      user_id,
+      service_id,
+      record_date,
     })
 
     return NextResponse.json(

@@ -53,13 +53,13 @@ export function CaseRecordFormClient({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: userId,
-          serviceId: serviceId,
-          recordDate: values.date,
-          recordTime: values.time,
-          mainStaffId: values.mainStaffId,
-          subStaffIds: values.subStaffIds || [],
-          payload: {
+          service_id: serviceId,
+          user_id: userId,
+          record_date: values.date,
+          record_data: {
+            recordTime: values.time,
+            mainStaffId: values.mainStaffId,
+            subStaffIds: values.subStaffIds || [],
             specialNotes: values.specialNotes || "",
             familyNotes: values.familyNotes || "",
             custom: values.custom || {},
