@@ -67,7 +67,16 @@ export function CaseRecordFormClient({
         }),
       })
 
-      const result = await response.json()
+      let result: any
+      try {
+        result = await response.json()
+      } catch (error) {
+        console.error("[CaseRecordFormClient] Invalid JSON response", {
+          status: response.status,
+          statusText: response.statusText,
+        })
+        throw new Error("保存に失敗しました")
+      }
 
       if (!response.ok || !result.ok) {
         throw new Error(result.error || "保存に失敗しました")
