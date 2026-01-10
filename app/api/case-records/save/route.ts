@@ -50,7 +50,6 @@ export async function POST(req: NextRequest) {
       service_id: serviceId,
       user_id: userId,
       record_date: recordDate,
-      record_time: record?.meta?.recordTime ?? null,
       record_data: record,
     }
 

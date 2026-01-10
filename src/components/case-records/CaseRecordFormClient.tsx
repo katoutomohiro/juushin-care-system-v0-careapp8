@@ -18,21 +18,23 @@ export function CaseRecordFormClient({
   userId,
   serviceId,
   template,
+  initialDate,
+  initialTime,
 }: {
   careReceiverId: string
   userId: string
   serviceId: string
   template?: CareReceiverTemplate | null
+  initialDate?: string
+  initialTime?: string
 }) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const submittingRef = useRef(false)
 
-  // Get current date and time
-  const now = new Date()
-  const dateStr = now.toISOString().split("T")[0]
-  const timeStr = now.toTimeString().split(" ")[0].substring(0, 5)
+  const dateStr = initialDate ?? ""
+  const timeStr = initialTime ?? ""
 
   const handleSubmit = useCallback(async (values: any) => {
     // Double-submit guard: prevent concurrent submissions

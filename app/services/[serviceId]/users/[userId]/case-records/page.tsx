@@ -33,6 +33,9 @@ export default async function CaseRecordsPage({
 
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
+  const now = new Date()
+  const initialDate = now.toISOString().split("T")[0]
+  const initialTime = now.toTimeString().split(" ")[0].substring(0, 5)
 
   // Debug logging (always enabled for now to diagnose issues)
   console.log("[case-records] Debug info:", {
@@ -70,6 +73,8 @@ export default async function CaseRecordsPage({
           userId={internalUserId}
           serviceId={serviceId}
           template={template}
+          initialDate={initialDate}
+          initialTime={initialTime}
         />
       </main>
     </div>
