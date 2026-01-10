@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n-client"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
-import { DataBackupPanel } from "@/components/data-backup-panel"
+import dynamic from "next/dynamic"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
 import { SettingsPanel } from "@/components/settings-panel"
 import { A4RecordSheet } from "@/components/a4-record-sheet"
@@ -21,6 +21,14 @@ import { Suspense } from "react"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
+
+const DataBackupPanel = dynamic(
+  () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-[240px] w-full rounded-lg border border-border bg-card/50" />,
+  },
+)
 
 type Props = { initialCareReceiverId?: string }
 
