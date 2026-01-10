@@ -7,15 +7,12 @@ import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
-import { CaseRecordPayload } from "@/src/types/caseRecord"
-// Server Action import
-import { saveCaseRecord } from "@/lib/actions/caseRecordsActions"
 
-type StaffOption = {
-  value: string
-  label: string
-}
+const MOCK_STAFF_OPTIONS = [
+  { value: "staff-1", label: "スタッフA" },
+  { value: "staff-2", label: "スタッフB" },
+  { value: "staff-3", label: "スタッフC" },
+]
 
 export function CaseRecordFormClient({
   careReceiverId,
@@ -136,113 +133,46 @@ export function CaseRecordFormClient({
     setFieldErrors([])
     
     try {
-      // serviceId が取得できない場合は早期リターン
-      const resolvedServiceId = serviceUuid || values.serviceId || serviceId
-      if (!resolvedServiceId) {
-        toast({
-          variant: "destructive",
-          title: "サービス情報が取得できませんでした",
-          description: "ページを再読み込みしてください",
-        })
-        return
-      }
-      
-      // Development log: confirm serviceId is UUID before submit
-      if (process.env.NODE_ENV === "development") {
-        console.log("[CaseRecordFormClient] serviceId (UUID) to save:", resolvedServiceId)
-      }
-      const validationInput = {
-        ...values,
-        // careReceiverId を UUID で統一（props から渡される）
-        careReceiverId: careReceiverUuid || values.careReceiverId || "",
-        // serviceId は UUID 優先で検証
-        serviceId: serviceUuid || values.serviceId || serviceId,
-        // 方針1: 主担当は必須なので null/undefined を空文字にしてバリデーション
-        mainStaffId: values.mainStaffId ?? "",
-      }
+      console.log("[CaseRecordFormClient] Submitting:", values)
 
-      const validation = CaseRecordFormSchema.safeParse(validationInput)
-      if (!validation.success) {
-        const issue = validation.error.issues[0]
-        const message = issue?.message ?? "必須項目を入力してください"
-        const flattened = validation.error.flatten().fieldErrors
-        const collected = Object.entries(flattened)
-          .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
-          .filter(Boolean)
-        setFieldErrors(collected.length > 0 ? collected : [message])
-        
-        // フィールド固有のエラーを設定
-        setValidationErrors({
-          mainStaffId: flattened.mainStaffId?.[0],
-        })
-        
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
-        }
-        setStatusMessage("入力内容を確認してください")
-        toast({
-          variant: "destructive",
-          title: "入力内容を確認してください",
-          description: message,
-        })
-        return
-      }
-
-      // Build structured payload
-      const payload: CaseRecordPayload = {
-        version: 1,
-        sections: {
-          activity: {
-            text: (values.custom?.at_activity_content as string | undefined) || "",
-          },
-          restraint: {
-            has: (values.custom?.at_restraint_status as string | undefined) === "none" ? false : (values.custom?.at_restraint_status ? true : null),
-            method: (values.custom?.at_restraint_status as string | undefined) || null,
-            reason: (values.custom?.at_restraint_reason as string | undefined) || null,
-          },
-          note: {
-            text: (values.custom?.at_special_notes as string | undefined) || values.specialNotes || "",
-          },
-          rehab: {
-            title: (values.custom?.rehab_title as string | undefined) || "",
-            menu: (values.custom?.rehab_menu as string | undefined) || "",
-            detail: (values.custom?.rehab_detail as string | undefined) || "",
-            risk: (values.custom?.rehab_risk as string | undefined) || "",
-          },
-          staff: {
-            mainStaffId: values.mainStaffId ?? null,
-            subStaffIds: values.subStaffId ? [values.subStaffId] : [], // legacy shape inside payload
-          },
-          custom: values.custom || {},
+      // Send to API
+      const response = await fetch("/api/case-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        meta: {
-          createdByStaffId: values.mainStaffId ?? null,
-          tags: [],
-        },
-      }
-
-      // POST 構造化ペイロードを Server Action で保存
-      const apiResult = await saveCaseRecord({
-        careReceiverId: careReceiverUuid,
-        serviceId: resolvedServiceId,
-        date: values.date,
-        recordTime: new Date().toISOString().slice(11, 16),
-        mainStaffId: values.mainStaffId,
-        subStaffId: values.subStaffId || null,
-        recordData: payload,
+        body: JSON.stringify({
+          service_id: serviceId,
+          user_id: userId,
+          record_date: values.date,
+          record_data: {
+            recordTime: values.time,
+            mainStaffId: values.mainStaffId,
+            subStaffIds: values.subStaffIds || [],
+            specialNotes: values.specialNotes || "",
+            familyNotes: values.familyNotes || "",
+            custom: values.custom || {},
+          },
+        }),
       })
 
-      // Server Action 呼び出し結果を確認
-      // saveCaseRecord は { ok: boolean, error?: string, data?: any, message?: string } を返す
-      if (!apiResult?.ok) {
-        console.error("[CaseRecordFormClient] saveCaseRecord error", {
-          error: apiResult?.error,
+      let result: any
+      try {
+        result = await response.json()
+      } catch {
+        console.error("[CaseRecordFormClient] Invalid JSON response", {
+          status: response.status,
+          statusText: response.statusText,
         })
-        const errorMsg = apiResult?.error || "保存に失敗しました"
-        throw new Error(errorMsg)
+        throw new Error("保存に失敗しました")
       }
 
-      // Success: clear errors and set success message
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "保存に失敗しました")
+      }
+
+      console.log("[CaseRecordFormClient] Saved:", result.record)
+
       setStatusMessage("保存しました")
       setFieldErrors([])
       setValidationErrors({})

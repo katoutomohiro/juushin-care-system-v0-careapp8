@@ -28,27 +28,6 @@ export interface UserProfile {
   updatedAt: string
 }
 
-export type CaseRecordCategory = "vitals" | "excretion" | "hydration" | "meal" | "other"
-
-export interface CaseRecordEntry {
-  category: CaseRecordCategory
-  items: Array<Record<string, unknown>>
-}
-
-export interface CaseRecord {
-  userId: string
-  date: string
-  entries: CaseRecordEntry[]
-  meta?: {
-    recordTime?: string
-    mainStaffId?: string | null
-    subStaffId?: string | null
-    subStaffIds?: string[]
-    specialNotes?: string
-    familyNotes?: string
-  }
-}
-
 export class DataStorageService {
   private static readonly CARE_EVENTS_KEY = "careEvents"
   private static readonly USER_PROFILES_KEY = "userProfiles"
@@ -82,70 +61,6 @@ export class DataStorageService {
       localStorage.removeItem(key)
     } catch (e) {
       console.error("localStorage.removeItem failed", e)
-    }
-  }
-
-  static async saveCaseRecord(record: CaseRecord, serviceId: string, careReceiverId?: string): Promise<boolean> {
-    try {
-      console.log("[DataStorageService.saveCaseRecord] saving", { serviceId, date: record.date })
-      
-      if (!careReceiverId) {
-        throw new Error("careReceiverId is required")
-      }
-      
-      const { date, meta, ...recordRest } = record
-      const sanitizedRecord = this.stripNullish(recordRest)
-
-      // Convert sentinel __none__ to null for staff IDs
-      let mainStaffId = meta?.mainStaffId ?? null
-      let subStaffId = meta?.subStaffId ?? null
-
-      if (mainStaffId === "__none__") {
-        mainStaffId = null
-      }
-      if (subStaffId === "__none__") {
-        subStaffId = null
-      }
-      
-      if (!mainStaffId) {
-        throw new Error("mainStaffId is required")
-      }
-
-      // Build payload with UUID-based staff IDs
-      const payload = {
-        serviceId,
-        careReceiverId,
-        date,
-        recordTime: undefined,
-        mainStaffId,
-        subStaffId,
-        recordData: {
-          ...sanitizedRecord,
-          sections: {
-            ...(sanitizedRecord as any).sections,
-            staff: {
-              mainStaffId,
-              subStaffIds: subStaffId ? [subStaffId] : [],
-            },
-          },
-        },
-      }
-
-      const result = await saveCaseRecord(payload)
-      
-      if (!result?.ok) {
-        console.error("[DataStorageService.saveCaseRecord] Server Action error", {
-          error: result?.error,
-        })
-        const message = result?.error || "保存に失敗しました"
-        throw new Error(message)
-      }
-
-      console.log("[DataStorageService.saveCaseRecord] saved successfully", { recordId: result?.data?.id })
-      return true
-    } catch (error) {
-      console.error("[DataStorageService.saveCaseRecord] error:", error)
-      throw error instanceof Error ? error : new Error("ケース記録の保存に失敗しました")
     }
   }
 

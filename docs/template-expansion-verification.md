@@ -83,11 +83,7 @@ http://localhost:3000/services/life-care/users/TESTUSER01/case-records
 
 **期待リクエスト**:
 ```json
-<<<<<<< HEAD
-POST /api/case-records/save
-=======
 POST /api/case-records
->>>>>>> origin/main
 {
   "userId": "TESTUSER01",
   "serviceId": "life-care",
@@ -212,11 +208,7 @@ SELECT * FROM case_records WHERE user_id = 'TESTUSER01';
    ↓
 5. 保存クリック
    ↓
-<<<<<<< HEAD
-6. POST /api/case-records/save (payload.custom に test_* 含む)
-=======
 6. POST /api/case-records (payload.custom に test_* 含む)
->>>>>>> origin/main
    ↓
 7. 200 OK + 「保存しました」表示
    ↓
