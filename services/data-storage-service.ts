@@ -27,6 +27,26 @@ export interface UserProfile {
   updatedAt: string
 }
 
+export type CaseRecordCategory = "vitals" | "excretion" | "hydration" | "meal" | "other"
+
+export interface CaseRecordEntry {
+  category: CaseRecordCategory
+  items: Array<Record<string, unknown>>
+}
+
+export interface CaseRecord {
+  userId: string
+  date: string
+  entries: CaseRecordEntry[]
+  meta?: {
+    recordTime?: string
+    mainStaffId?: string | null
+    subStaffIds?: string[]
+    specialNotes?: string
+    familyNotes?: string
+  }
+}
+
 export class DataStorageService {
   private static readonly CARE_EVENTS_KEY = "careEvents"
   private static readonly USER_PROFILES_KEY = "userProfiles"
@@ -60,6 +80,29 @@ export class DataStorageService {
       localStorage.removeItem(key)
     } catch (e) {
       console.error("localStorage.removeItem failed", e)
+    }
+  }
+
+  static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<CaseRecord> {
+    try {
+      const response = await fetch("/api/case-records/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ serviceId, record }),
+      })
+
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.ok) {
+        const message = result?.error || "ケース記録の保存に失敗しました"
+        throw new Error(message)
+      }
+
+      return result.record as CaseRecord
+    } catch (error) {
+      console.error("Failed to save case record:", error)
+      throw new Error("ケース記録の保存に失敗しました")
     }
   }
 
@@ -329,7 +372,7 @@ export class DataStorageService {
             theme: "light",
             language: "ja",
             autoSave: true,
-            notifications: true,
+            notifications: false,
           }
     } catch (error) {
       console.error("Failed to load app settings:", error)

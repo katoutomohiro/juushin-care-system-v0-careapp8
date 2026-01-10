@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DataStorageService, type CaseRecord } from "@/services/data-storage-service"
 
 const MOCK_STAFF_OPTIONS = [
   { value: "staff-1", label: "スタッフA" },
@@ -46,43 +47,40 @@ export function CaseRecordFormClient({
     try {
       console.log("[CaseRecordFormClient] Submitting:", values)
 
-      // Send to API
-      const response = await fetch("/api/case-records", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          service_id: serviceId,
-          user_id: userId,
-          record_date: values.date,
-          record_data: {
-            recordTime: values.time,
-            mainStaffId: values.mainStaffId,
-            subStaffIds: values.subStaffIds || [],
-            specialNotes: values.specialNotes || "",
-            familyNotes: values.familyNotes || "",
-            custom: values.custom || {},
+      const record: CaseRecord = {
+        userId,
+        date: values.date,
+        entries: [
+          { category: "vitals", items: [] },
+          { category: "excretion", items: [] },
+          { category: "hydration", items: [] },
+          { category: "meal", items: [] },
+          {
+            category: "other",
+            items: [
+              {
+                recordTime: values.time,
+                mainStaffId: values.mainStaffId ?? null,
+                subStaffIds: values.subStaffIds || [],
+                specialNotes: values.specialNotes || "",
+                familyNotes: values.familyNotes || "",
+                custom: values.custom || {},
+              },
+            ],
           },
-        }),
-      })
-
-      let result: any
-      try {
-        result = await response.json()
-      } catch {
-        console.error("[CaseRecordFormClient] Invalid JSON response", {
-          status: response.status,
-          statusText: response.statusText,
-        })
-        throw new Error("保存に失敗しました")
+        ],
+        meta: {
+          recordTime: values.time,
+          mainStaffId: values.mainStaffId ?? null,
+          subStaffIds: values.subStaffIds || [],
+          specialNotes: values.specialNotes || "",
+          familyNotes: values.familyNotes || "",
+        },
       }
 
-      if (!response.ok || !result.ok) {
-        throw new Error(result.error || "保存に失敗しました")
-      }
+      const saved = await DataStorageService.saveCaseRecord(record, serviceId)
 
-      console.log("[CaseRecordFormClient] Saved:", result.record)
+      console.log("[CaseRecordFormClient] Saved:", saved)
 
       setStatusMessage("保存しました")
 

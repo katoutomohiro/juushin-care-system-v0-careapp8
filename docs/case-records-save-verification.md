@@ -113,7 +113,7 @@ Response (Preview タブ):
 ### Step 8: 更新テスト（同じ日付で再保存）
 1. フォームの内容を変更（例: 特記事項を「更新テスト」に変更）
 2. もう一度 **「保存」** をクリック
-3. Network タブで `POST /api/case-records` が `200` を返すことを確認
+3. Network タブで `POST /api/case-records/save` が `200` を返すことを確認
 4. Supabase で同じレコードが **UPDATE** されていることを確認:
    - `updated_at` が新しくなっている
    - `payload` の内容が更新されている
@@ -133,7 +133,7 @@ Response (Preview タブ):
 ### Case 2: 必須フィールド欠損
 **シミュレーション**: DevTools Console で実行
 ```javascript
-fetch('/api/case-records', {
+fetch('/api/case-records/save', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ serviceId: 'life-care' }) // userId欠損
@@ -224,7 +224,7 @@ fetch('/api/case-records', {
 - [ ] `/services/life-care/users/AT/case-records` にアクセス
 - [ ] DevTools Network タブを開く
 - [ ] フォームに入力して「保存」をクリック
-- [ ] `POST /api/case-records` が `200` を返す
+- [ ] `POST /api/case-records/save` が `200` を返す
 - [ ] Toast通知「✅ ケース記録を保存しました」が表示される
 - [ ] 「最終保存」バナーが表示される
 - [ ] Supabase `case_records` テーブルにレコードが作成される
