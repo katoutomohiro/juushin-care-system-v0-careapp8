@@ -1,29 +1,47 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
 
 export const runtime = "nodejs"
 
+function getSupabaseProjectInfo(url: string) {
+  if (!url) return { host: "", projectRef: "" }
+  try {
+    const host = new URL(url).host
+    const projectRef = host.split(".")[0] || ""
+    return { host, projectRef }
+  } catch {
+    return { host: "", projectRef: "" }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
     const ALLOW_MISSING_SERVICE_ID = process.env.ALLOW_MISSING_SERVICE_ID === "true"
 
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
-      const missingKeys: string[] = []
-      if (!SUPABASE_URL) missingKeys.push("NEXT_PUBLIC_SUPABASE_URL")
-      if (!SERVICE_ROLE) missingKeys.push("SUPABASE_SERVICE_ROLE_KEY")
+    const urlPrefix = supabaseAdminEnv.url ? `${supabaseAdminEnv.url.slice(0, 8)}...` : ""
+    const { host, projectRef } = getSupabaseProjectInfo(supabaseAdminEnv.url)
+    console.info("[case-records/save POST] supabase env", {
+      urlPrefix,
+      host,
+      projectRef,
+      urlSource: supabaseAdminEnv.urlSource,
+      keySource: supabaseAdminEnv.keySource,
+      branch: supabaseAdminEnv.branch,
+    })
 
-      const urlSample = SUPABASE_URL ? `${SUPABASE_URL.slice(0, 20)}...` : ""
+    if (!supabaseAdmin) {
+      const missingKeys =
+        supabaseAdminEnv.missingKeys.length > 0 ? supabaseAdminEnv.missingKeys : ["Supabase env not resolved"]
       return NextResponse.json(
         {
           ok: false,
-          where: "env",
-          missingKeys,
-          got: {
-            urlPresent: !!SUPABASE_URL,
-            keyPresent: !!SERVICE_ROLE,
-            urlSample,
+          where: "case-records/save POST",
+          error: "Supabase client not initialized",
+          detail: `Missing required env for Supabase client: ${missingKeys.join(", ")}`,
+          env: {
+            urlSource: supabaseAdminEnv.urlSource,
+            keySource: supabaseAdminEnv.keySource,
+            branch: supabaseAdminEnv.branch,
           },
         },
         { status: 500 },
@@ -65,18 +83,48 @@ export async function POST(req: NextRequest) {
       serviceSlug,
     )
     if (!isUuid) {
+      console.info("[case-records/save POST] service lookup", { serviceSlug })
       const { data: serviceData, error: serviceError } = await supabaseAdmin
         .from("services")
         .select("id")
         .eq("slug", serviceSlug)
         .maybeSingle()
 
-      if (serviceError || !serviceData?.id) {
+      if (serviceError) {
         console.warn("[case-records/save POST] service lookup failed", {
           serviceSlug,
           message: serviceError?.message,
           code: serviceError?.code,
         })
+        if (!ALLOW_MISSING_SERVICE_ID) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: "Service lookup failed",
+              detail: serviceError.message || "Unknown error",
+              hint: "Check Supabase project ref and ensure public.services exists",
+              where: "case-records/save POST",
+            },
+            { status: 400 },
+          )
+        }
+        serviceId = null
+      } else if (!serviceData?.id) {
+        console.warn("[case-records/save POST] service slug not found", {
+          serviceSlug,
+          projectRef,
+        })
+        if (!ALLOW_MISSING_SERVICE_ID) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: "Service slug not found",
+              detail: `No rows for services.slug='${serviceSlug}'. Check Supabase project ref or seed data.`,
+              where: "case-records/save POST",
+            },
+            { status: 400 },
+          )
+        }
         serviceId = null
       } else {
         serviceId = serviceData.id
