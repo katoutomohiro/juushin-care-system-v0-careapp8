@@ -86,12 +86,20 @@ export class DataStorageService {
   static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<CaseRecord> {
     try {
       console.log("[case-records] saving", { serviceId, userId: record.userId, date: record.date })
+      const { userId, date, ...recordRest } = record
+      const sanitizedRecord = this.stripNullish(recordRest)
+      const payload = {
+        serviceId,
+        userId,
+        date,
+        recordData: sanitizedRecord,
+      }
       const response = await fetch("/api/case-records/save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ serviceId, record }),
+        body: JSON.stringify(payload),
       })
 
       const result = await response.json().catch(() => null)
@@ -101,14 +109,18 @@ export class DataStorageService {
           statusText: response.statusText,
           result,
         })
-        const message = result?.error || "ケース記録の保存に失敗しました"
-        throw new Error(message)
+        const message = result?.error || `ケース記録の保存に失敗しました (${response.status})`
+        const detail = result?.detail || result?.message
+        throw new Error(detail ? `${message}: ${detail}` : message)
       }
 
       console.log("[case-records] saved", { recordId: result?.record?.id })
       return result.record as CaseRecord
     } catch (error) {
       console.error("Failed to save case record:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("ケース記録の保存に失敗しました")
     }
   }
@@ -399,6 +411,23 @@ export class DataStorageService {
   // Utility Methods
   private static generateId(): string {
     return generateSecureUUID()
+  }
+
+  private static stripNullish<T>(value: T): T {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => this.stripNullish(item))
+        .filter((item) => item !== null && item !== undefined) as T
+    }
+    if (value && typeof value === "object") {
+      const cleaned: Record<string, unknown> = {}
+      for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+        if (entry === null || entry === undefined) continue
+        cleaned[key] = this.stripNullish(entry)
+      }
+      return cleaned as T
+    }
+    return value
   }
 
   static clearAllData(): void {

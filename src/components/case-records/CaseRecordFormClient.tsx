@@ -6,6 +6,7 @@ import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataStorageService, type CaseRecord } from "@/services/data-storage-service"
+import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
 
 const MOCK_STAFF_OPTIONS = [
   { value: "staff-1", label: "スタッフA" },
@@ -48,9 +49,25 @@ export function CaseRecordFormClient({
     
     try {
       console.log("[CaseRecordFormClient] Submitting:", values)
+      const validation = CaseRecordFormSchema.safeParse(values)
+      if (!validation.success) {
+        const issue = validation.error.issues[0]
+        const message = issue?.message ?? "必須項目を入力してください"
+        console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
+        setStatusMessage("入力内容を確認してください")
+        toast({
+          variant: "destructive",
+          title: "入力内容を確認してください",
+          description: message,
+        })
+        return
+      }
+
+      const resolvedUserId = values.userId || userId
+      const resolvedServiceId = values.serviceId || serviceId
 
       const record: CaseRecord = {
-        userId,
+        userId: resolvedUserId,
         date: values.date,
         entries: [
           { category: "vitals", items: [] },
@@ -80,7 +97,7 @@ export function CaseRecordFormClient({
         },
       }
 
-      const saved = await DataStorageService.saveCaseRecord(record, serviceId)
+      const saved = await DataStorageService.saveCaseRecord(record, resolvedServiceId)
 
       console.log("[CaseRecordFormClient] Saved:", saved)
 
