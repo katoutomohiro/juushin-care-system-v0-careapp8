@@ -3,6 +3,14 @@ import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
 
 export const runtime = "nodejs"
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+type ResolvedId = {
+  id: string | null
+  source?: string
+  attempts: string[]
+}
+
 function getSupabaseProjectInfo(url: string) {
   if (!url) return { host: "", projectRef: "" }
   try {
@@ -14,10 +22,84 @@ function getSupabaseProjectInfo(url: string) {
   }
 }
 
+function normalizeDate(input: unknown): string | null {
+  if (!input) return null
+  if (input instanceof Date) {
+    if (Number.isNaN(input.getTime())) return null
+    return input.toISOString().slice(0, 10)
+  }
+
+  if (typeof input === "string") {
+    const trimmed = input.trim()
+    const slashMatch = /^(\d{4})[./-](\d{2})[./-](\d{2})$/.exec(trimmed)
+    if (slashMatch) {
+      const [, year, month, day] = slashMatch
+      return `${year}-${month}-${day}`
+    }
+    const parsed = new Date(trimmed)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10)
+    }
+  }
+
+  if (typeof input === "number") {
+    const parsed = new Date(input)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10)
+    }
+  }
+
+  return null
+}
+
+async function resolveUserId(rawUserId: string) {
+  const attempts: string[] = []
+  if (uuidRegex.test(rawUserId)) {
+    return { id: rawUserId, source: "direct", attempts } as ResolvedId
+  }
+
+  const candidates = [
+    { table: "users", column: "internal_user_id" },
+    { table: "users", column: "code" },
+    { table: "users", column: "slug" },
+    { table: "users", column: "name" },
+    { table: "profiles", column: "internal_user_id" },
+    { table: "profiles", column: "code" },
+    { table: "profiles", column: "slug" },
+    { table: "care_receivers", column: "code" },
+    { table: "care_receivers", column: "slug" },
+  ]
+
+  for (const candidate of candidates) {
+    const label = `${candidate.table}.${candidate.column}`
+    attempts.push(label)
+    const { data, error } = await supabaseAdmin!
+      .from(candidate.table)
+      .select("id")
+      .eq(candidate.column, rawUserId)
+      .maybeSingle()
+
+    if (error) {
+      console.warn("[case-records/save POST] user lookup failed", {
+        candidate: label,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
+      continue
+    }
+
+    if (data?.id) {
+      return { id: data.id, source: label, attempts } as ResolvedId
+    }
+  }
+
+  return { id: null, attempts } as ResolvedId
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const ALLOW_MISSING_SERVICE_ID = process.env.ALLOW_MISSING_SERVICE_ID === "true"
-
     const urlPrefix = supabaseAdminEnv.url ? `${supabaseAdminEnv.url.slice(0, 8)}...` : ""
     const { host, projectRef } = getSupabaseProjectInfo(supabaseAdminEnv.url)
     console.info("[case-records/save POST] supabase env", {
@@ -49,21 +131,57 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => null)
-    const serviceSlug = body?.serviceId ?? body?.serviceSlug ?? body?.service ?? null
+    const bodyKeys = body && typeof body === "object" ? Object.keys(body) : []
+    const serviceInput = body?.serviceId ?? body?.service_id ?? body?.serviceSlug ?? body?.service ?? null
     const record = body?.record ?? null
-    const recordData = body?.recordData ?? body?.record_data ?? null
-    const userId = record?.userId ?? body?.userId ?? null
-    const recordDate = record?.date ?? body?.date ?? body?.recordDate ?? body?.record_date ?? null
-    const recordTime =
+    const recordDataInput = body?.recordData ?? body?.record_data ?? record ?? null
+    const userId = record?.userId ?? record?.user_id ?? body?.userId ?? body?.user_id ?? null
+    const recordDateRaw = record?.date ?? body?.date ?? body?.recordDate ?? body?.record_date ?? null
+    const recordTimeRaw =
       record?.meta?.recordTime ??
       record?.recordTime ??
-      recordData?.meta?.recordTime ??
+      recordDataInput?.meta?.recordTime ??
       body?.recordTime ??
       body?.record_time ??
       null
 
+    const recordDate = normalizeDate(recordDateRaw)
+    const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
+    const recordData =
+      recordDataInput && typeof recordDataInput === "object" && !Array.isArray(recordDataInput)
+        ? { ...(recordDataInput as Record<string, unknown>) }
+        : {}
+
+    for (const key of [
+      "serviceId",
+      "service_id",
+      "serviceSlug",
+      "service",
+      "userId",
+      "user_id",
+      "date",
+      "recordDate",
+      "record_date",
+      "recordTime",
+      "record_time",
+    ]) {
+      if (key in recordData) delete recordData[key]
+    }
+
+    const recordDataKeys = Object.keys(recordData)
+    console.info("[case-records/save POST] request", {
+      serviceInput,
+      userId,
+      recordDateRaw,
+      recordDate,
+      recordTime,
+      recordDataKeys,
+      recordDataType: typeof recordDataInput,
+      bodyKeys,
+    })
+
     const missingFields: string[] = []
-    if (!serviceSlug) missingFields.push("serviceId")
+    if (!serviceInput) missingFields.push("serviceId")
     if (!userId) missingFields.push("userId")
     if (!recordDate) missingFields.push("recordDate")
 
@@ -73,76 +191,76 @@ export async function POST(req: NextRequest) {
           ok: false,
           error: `Missing required fields: ${missingFields.join(", ")}`,
           where: "case-records/save POST",
+          payloadKeys: bodyKeys,
         },
         { status: 400 },
       )
     }
 
-    let serviceId: string | null = serviceSlug
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      serviceSlug,
-    )
-    if (!isUuid) {
-      console.info("[case-records/save POST] service lookup", { serviceSlug })
+    let serviceId: string | null = null
+    if (uuidRegex.test(serviceInput)) {
+      serviceId = serviceInput
+    } else {
+      console.info("[case-records/save POST] service lookup", { serviceSlug: serviceInput })
       const { data: serviceData, error: serviceError } = await supabaseAdmin
         .from("services")
         .select("id")
-        .eq("slug", serviceSlug)
+        .eq("slug", serviceInput)
         .maybeSingle()
 
       if (serviceError) {
-        console.warn("[case-records/save POST] service lookup failed", {
-          serviceSlug,
-          message: serviceError?.message,
-          code: serviceError?.code,
+        console.error("[case-records/save POST] service lookup failed", {
+          serviceSlug: serviceInput,
+          message: serviceError.message,
+          code: serviceError.code,
+          details: serviceError.details,
+          hint: serviceError.hint,
         })
-        if (!ALLOW_MISSING_SERVICE_ID) {
-          return NextResponse.json(
-            {
-              ok: false,
-              error: "Service lookup failed",
-              detail: serviceError.message || "Unknown error",
-              hint: "Check Supabase project ref and ensure public.services exists",
-              where: "case-records/save POST",
-            },
-            { status: 400 },
-          )
-        }
-        serviceId = null
-      } else if (!serviceData?.id) {
-        console.warn("[case-records/save POST] service slug not found", {
-          serviceSlug,
-          projectRef,
-        })
-        if (!ALLOW_MISSING_SERVICE_ID) {
-          return NextResponse.json(
-            {
-              ok: false,
-              error: "Service slug not found",
-              detail: `No rows for services.slug='${serviceSlug}'. Check Supabase project ref or seed data.`,
-              where: "case-records/save POST",
-            },
-            { status: 400 },
-          )
-        }
-        serviceId = null
-      } else {
-        serviceId = serviceData.id
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Service lookup failed",
+            detail: serviceError.message || "Unknown error",
+            where: "case-records/save POST",
+            payloadKeys: bodyKeys,
+          },
+          { status: 400 },
+        )
       }
+
+      if (!serviceData?.id) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Service slug not found",
+            detail: `No rows for services.slug='${serviceInput}'. Check Supabase project ref or seed data.`,
+            where: "case-records/save POST",
+            payloadKeys: bodyKeys,
+          },
+          { status: 400 },
+        )
+      }
+
+      serviceId = serviceData.id
     }
 
-    const payloadData = { ...(recordData ?? record ?? {}) } as Record<string, unknown>
-    if (!serviceId && serviceSlug) {
-      payloadData.serviceSlug = serviceSlug
-    }
+    const resolvedUser = await resolveUserId(String(userId))
+    console.info("[case-records/save POST] resolved ids", {
+      serviceInput,
+      serviceId,
+      userInput: userId,
+      userId: resolvedUser.id,
+      userSource: resolvedUser.source,
+    })
 
-    if (!serviceId && !ALLOW_MISSING_SERVICE_ID) {
+    if (!resolvedUser.id) {
       return NextResponse.json(
         {
           ok: false,
-          error: "\u30b5\u30fc\u30d3\u30b9ID\u304c\u53d6\u5f97\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f",
-          detail: "services \u30c6\u30fc\u30d6\u30eb\u304c\u5b58\u5728\u3057\u306a\u3044\u304b\u8a72\u5f53\u30ec\u30b3\u30fc\u30c9\u304c\u3042\u308a\u307e\u305b\u3093",
+          error: "userId not found",
+          detail: `Could not resolve '${userId}'. Checked: ${resolvedUser.attempts.join(", ")}`,
           where: "case-records/save POST",
+          payloadKeys: bodyKeys,
         },
         { status: 400 },
       )
@@ -150,18 +268,16 @@ export async function POST(req: NextRequest) {
 
     const recordRow = {
       service_id: serviceId,
-      user_id: userId,
+      user_id: resolvedUser.id,
       record_date: recordDate,
       record_time: recordTime ?? null,
-      record_data: payloadData,
+      record_data: recordData,
     }
 
     const { data, error } = await supabaseAdmin
       .from("case_records")
-      .upsert(recordRow, {
-        onConflict: "service_id,user_id,record_date",
-      })
-      .select()
+      .insert([recordRow])
+      .select("*")
       .single()
 
     if (error) {
@@ -170,13 +286,15 @@ export async function POST(req: NextRequest) {
         code: error.code,
         details: error.details,
         hint: error.hint,
+        payload: recordRow,
       })
       return NextResponse.json(
         {
           ok: false,
-          error: error.message || "Supabase upsert failed",
-          detail: error.details ?? error.hint ?? `Supabase upsert failed: ${error.code ?? "unknown"}`,
+          error: error.message || "Supabase insert failed",
+          detail: error.details ?? error.hint ?? `Supabase insert failed: ${error.code ?? "unknown"}`,
           where: "case-records/save POST",
+          payloadKeys: Object.keys(recordRow),
         },
         { status: 500 },
       )
