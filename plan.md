@@ -38,6 +38,7 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 ## 進捗メモ（更新は段階的に反映してOK）
 
 - 旧 `/api/case-records` は停止し、保存は `/api/case-records/save` に一本化済み。
+- 旧API参照の残存チェックを実施し、ドキュメントも `/api/case-records/save` に統一済み。
 - `services/data-storage-service.ts` に `CaseRecord`（JSONベース）を追加し、保存ロジックを新APIへ切替済み。
 - 管理機能は一時的に無効化済み（最小構成で運用）。
 
