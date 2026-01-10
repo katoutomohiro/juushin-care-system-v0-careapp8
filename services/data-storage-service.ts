@@ -85,6 +85,7 @@ export class DataStorageService {
 
   static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<CaseRecord> {
     try {
+      console.log("[case-records] saving", { serviceId, userId: record.userId, date: record.date })
       const response = await fetch("/api/case-records/save", {
         method: "POST",
         headers: {
@@ -95,10 +96,16 @@ export class DataStorageService {
 
       const result = await response.json().catch(() => null)
       if (!response.ok || !result?.ok) {
+        console.error("[case-records] save failed", {
+          status: response.status,
+          statusText: response.statusText,
+          result,
+        })
         const message = result?.error || "ケース記録の保存に失敗しました"
         throw new Error(message)
       }
 
+      console.log("[case-records] saved", { recordId: result?.record?.id })
       return result.record as CaseRecord
     } catch (error) {
       console.error("Failed to save case record:", error)

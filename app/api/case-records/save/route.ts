@@ -30,12 +30,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => null)
-    const serviceId = body?.serviceId
+    const serviceSlug = body?.serviceId
     const record = body?.record
     const userId = record?.userId
     const recordDate = record?.date
 
-    if (!serviceId || !userId || !recordDate) {
+    if (!serviceSlug || !userId || !recordDate) {
       return NextResponse.json(
         {
           ok: false,
@@ -44,6 +44,36 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 },
       )
+    }
+
+    let serviceId = serviceSlug
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      serviceSlug,
+    )
+    if (!isUuid) {
+      const { data: serviceData, error: serviceError } = await supabaseAdmin
+        .from("services")
+        .select("id")
+        .eq("slug", serviceSlug)
+        .maybeSingle()
+
+      if (serviceError || !serviceData?.id) {
+        console.error("[case-records/save POST] service lookup failed", {
+          serviceSlug,
+          message: serviceError?.message,
+          code: serviceError?.code,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "サービスID取得に失敗しました",
+            detail: serviceError?.message ?? "Service not found",
+            where: "case-records/save POST",
+          },
+          { status: 400 },
+        )
+      }
+      serviceId = serviceData.id
     }
 
     const recordData = {
