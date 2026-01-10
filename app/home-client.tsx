@@ -31,6 +31,14 @@ const DataBackupPanel = dynamic(
   },
 )
 
+const DataBackupPanel = dynamic(
+  () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-[240px] w-full rounded-lg border border-border bg-card/50" />,
+  },
+)
+
 type Props = { initialCareReceiverId?: string }
 
 const users = [
