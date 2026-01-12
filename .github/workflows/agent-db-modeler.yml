@@ -18,7 +18,7 @@ jobs:
       - name: Run db-modeler
         run: python scripts/agent_run.py --topic "database schema analysis"
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: db-model-analysis
           path: artifacts/agent_reports/**
