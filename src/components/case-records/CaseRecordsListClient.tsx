@@ -14,14 +14,15 @@ interface CaseRecord {
   record_time: string | null
   created_at: string
   updated_at: string
+  record_data: any
 }
 
 export function CaseRecordsListClient({
-  serviceSlug,
+  serviceId,
   careReceiverId,
   refreshKey = 0,
 }: {
-  serviceSlug: string
+  serviceId: string
   careReceiverId: string
   refreshKey?: number
 }) {
@@ -29,6 +30,7 @@ export function CaseRecordsListClient({
   const [records, setRecords] = useState<CaseRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -36,7 +38,7 @@ export function CaseRecordsListClient({
       setError(null)
       try {
         const params = new URLSearchParams({
-          serviceSlug,
+          serviceId,
           careReceiverId,
           limit: "20",
           offset: "0",
@@ -74,7 +76,7 @@ export function CaseRecordsListClient({
     }
 
     fetchRecords()
-  }, [serviceSlug, careReceiverId, refreshKey, toast])
+  }, [serviceId, careReceiverId, refreshKey, toast])
 
   if (isLoading) {
     return (
@@ -137,21 +139,39 @@ export function CaseRecordsListClient({
       <CardContent>
         <div className="space-y-2">
           {records.map((record) => {
-            const displayDate = new Date(record.record_date).toLocaleDateString("ja-JP")
+            const displayDate = record.record_date ? new Date(record.record_date).toLocaleDateString("ja-JP") : "--"
             const displayTime = record.record_time || "--:--"
             const createdAt = new Date(record.created_at).toLocaleString("ja-JP")
+            const expanded = expandedId === record.id
 
             return (
               <div
                 key={record.id}
-                className="border border-border rounded-md px-4 py-3 flex flex-col gap-1 hover:shadow-sm transition-shadow"
+                className="border border-border rounded-md overflow-hidden hover:shadow-sm transition-shadow"
               >
-                <div className="text-xs text-muted-foreground">ID: <span className="font-mono">{record.id}</span></div>
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <span>{displayDate}</span>
-                  <span className="text-muted-foreground">{displayTime}</span>
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground">ID: <span className="font-mono">{record.id}</span></div>
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <span>{displayDate}</span>
+                      <span className="text-muted-foreground">{displayTime}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">作成: {createdAt}</div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setExpandedId(expanded ? null : record.id)}>
+                    {expanded ? "閉じる" : "詳細"}
+                  </Button>
                 </div>
-                <div className="text-xs text-muted-foreground">作成: {createdAt}</div>
+
+                {expanded && (
+                  <div className="border-t border-border px-4 py-3 bg-muted/20">
+                    <div className="bg-background rounded p-3 font-mono text-xs max-h-96 overflow-auto">
+                      <pre className="whitespace-pre-wrap break-words">
+                        {JSON.stringify(record.record_data, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}

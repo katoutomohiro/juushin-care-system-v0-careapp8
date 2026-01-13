@@ -17,15 +17,19 @@ const MOCK_STAFF_OPTIONS = [
 
 export function CaseRecordFormClient({
   careReceiverId,
+  careReceiverUuid,
   userId,
   serviceId,
+  serviceUuid,
   template,
   initialDate,
   initialTime,
 }: {
   careReceiverId: string
+  careReceiverUuid: string
   userId: string
   serviceId: string
+  serviceUuid: string
   template?: CareReceiverTemplate | null
   initialDate?: string
   initialTime?: string
@@ -192,8 +196,8 @@ export function CaseRecordFormClient({
 
       <div>
         <CaseRecordsListClient
-          serviceSlug={serviceId}
-          careReceiverId={careReceiverId}
+          serviceId={serviceUuid}
+          careReceiverId={careReceiverUuid}
           refreshKey={listRefreshKey}
         />
       </div>

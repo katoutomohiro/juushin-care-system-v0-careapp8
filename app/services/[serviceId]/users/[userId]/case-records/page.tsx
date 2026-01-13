@@ -1,9 +1,13 @@
 import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFormClient"
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { notFound } from "next/navigation"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
+
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export default async function CaseRecordsPage({
   params,
@@ -15,7 +19,7 @@ export default async function CaseRecordsPage({
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
 
-  const serviceId = resolvedParams.serviceId
+  const serviceIdInput = resolvedParams.serviceId
   const rawUserId = resolvedParams.userId
   let displayUserId = rawUserId
   try {
@@ -29,7 +33,52 @@ export default async function CaseRecordsPage({
 
   // Determine careReceiverId from searchParams or use normalized userId as fallback
   const idParam = resolvedSearchParams.careReceiverId
-  const careReceiverId = normalizeUserId(typeof idParam === "string" ? idParam : internalUserId) || internalUserId
+  const careReceiverCodeOrUuid = normalizeUserId(typeof idParam === "string" ? idParam : internalUserId) || internalUserId
+
+  // A) Resolve careReceiverId to UUID
+  let careReceiverUuid: string
+  if (uuidRegex.test(careReceiverCodeOrUuid)) {
+    careReceiverUuid = careReceiverCodeOrUuid
+  } else {
+    // Lookup by code
+    if (!supabaseAdmin) {
+      console.error("[case-records page] Supabase admin not available")
+      notFound()
+    }
+    const { data: careReceiver } = await supabaseAdmin
+      .from("care_receivers")
+      .select("id")
+      .eq("code", careReceiverCodeOrUuid)
+      .maybeSingle()
+    if (!careReceiver?.id) {
+      console.error("[case-records page] care_receiver not found for code:", careReceiverCodeOrUuid)
+      notFound()
+    }
+    careReceiverUuid = careReceiver.id
+  }
+
+  // Resolve serviceId to UUID (same pattern)
+  let serviceUuid: string
+  if (uuidRegex.test(serviceIdInput)) {
+    serviceUuid = serviceIdInput
+  } else {
+    if (!supabaseAdmin) {
+      console.error("[case-records page] Supabase admin not available")
+      notFound()
+    }
+    const { data: service } = await supabaseAdmin
+      .from("services")
+      .select("id")
+      .eq("slug", serviceIdInput)
+      .maybeSingle()
+    if (!service?.id) {
+      console.error("[case-records page] service not found for slug:", serviceIdInput)
+      notFound()
+    }
+    serviceUuid = service.id
+  }
+
+  const careReceiverId = careReceiverCodeOrUuid
 
   // Fetch template for this care receiver
   const template = getTemplate(careReceiverId)
@@ -43,6 +92,8 @@ export default async function CaseRecordsPage({
     displayUserId,
     internalUserId,
     careReceiverId,
+    careReceiverUuid,
+    serviceUuid,
     template_found: !!template,
     template_name: template?.name,
     template_fields_count: template?.customFields?.length ?? 0,
@@ -55,7 +106,7 @@ export default async function CaseRecordsPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <Link
-              href={`/services/${serviceId}/users/${encodeURIComponent(internalUserId)}`}
+              href={`/services/${serviceIdInput}/users/${encodeURIComponent(internalUserId)}`}
               className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
             >
               ← {displayUserId}の詳細に戻る
@@ -70,8 +121,10 @@ export default async function CaseRecordsPage({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CaseRecordFormClient
           careReceiverId={careReceiverId}
+          careReceiverUuid={careReceiverUuid}
           userId={internalUserId}
-          serviceId={serviceId}
+          serviceId={serviceIdInput}
+          serviceUuid={serviceUuid}
           template={template}
           initialDate={initialDate}
           initialTime={initialTime}
