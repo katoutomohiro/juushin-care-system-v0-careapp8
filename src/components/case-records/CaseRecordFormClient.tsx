@@ -80,21 +80,21 @@ export function CaseRecordFormClient({
         version: 1,
         sections: {
           activity: {
-            text: values.custom?.activity || "",
+            text: (values.custom?.activity as string | undefined) || "",
           },
           restraint: {
-            has: values.custom?.restraint_has ?? null,
-            method: values.custom?.restraint_method || null,
-            reason: values.custom?.restraint_reason || null,
+            has: (values.custom?.restraint_has as boolean | null) ?? null,
+            method: (values.custom?.restraint_method as string | undefined) || null,
+            reason: (values.custom?.restraint_reason as string | undefined) || null,
           },
           note: {
-            text: values.specialNotes || values.familyNotes || "",
+            text: values.specialNotes || "",
           },
           rehab: {
-            title: values.custom?.rehab_title || "",
-            menu: values.custom?.rehab_menu || "",
-            detail: values.custom?.rehab_detail || "",
-            risk: values.custom?.rehab_risk || "",
+            title: (values.custom?.rehab_title as string | undefined) || "",
+            menu: (values.custom?.rehab_menu as string | undefined) || "",
+            detail: (values.custom?.rehab_detail as string | undefined) || "",
+            risk: (values.custom?.rehab_risk as string | undefined) || "",
           },
           staff: {
             mainStaffId: values.mainStaffId ?? null,
@@ -110,7 +110,9 @@ export function CaseRecordFormClient({
 
       // Log structured payload before sending (development only)
       if (process.env.NODE_ENV === "development") {
-        console.log("[CaseRecordFormClient] Payload version:", payload.version)
+        console.log("[CaseRecordFormClient] Payload sections.activity.text:", payload.sections.activity?.text)
+        console.log("[CaseRecordFormClient] Payload sections.note.text:", payload.sections.note?.text)
+        console.log("[CaseRecordFormClient] Payload sections.restraint:", payload.sections.restraint)
       }
 
       // POST structured payload directly to API
