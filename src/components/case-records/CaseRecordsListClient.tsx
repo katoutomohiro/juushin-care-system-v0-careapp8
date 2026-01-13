@@ -111,7 +111,7 @@ export function CaseRecordsListClient({
     }
 
     fetchRecords()
-  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId])
+  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId, toast])
 
   if (isLoading) {
     return (
