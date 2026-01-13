@@ -105,52 +105,95 @@ export async function GET(req: NextRequest) {
       serviceId = serviceData.id
     }
 
-    // Resolve care receiver ID from code if needed
-    const careReceiverCode = normalizeUserId(careReceiverIdInput)
-    if (!careReceiverCode) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Invalid careReceiverId",
-          detail: "Could not normalize care receiver code from careReceiverId.",
-          where: "case-records GET",
-        },
-        { status: 400 },
-      )
-    }
+    // Resolve care receiver UUID (accepts UUID directly, or code -> UUID)
+    const isUuidCareReceiverInput = !!careReceiverIdInput && uuidRegex.test(careReceiverIdInput)
+    let careReceiverId: string | null = null
 
-    const { data: careReceiver, error: careReceiverError } = await supabaseAdmin
-      .from("care_receivers")
-      .select("id, code")
-      .eq("code", careReceiverCode)
-      .maybeSingle()
+    if (isUuidCareReceiverInput) {
+      const { data: careReceiverById, error: careReceiverByIdError } = await supabaseAdmin
+        .from("care_receivers")
+        .select("id, code")
+        .eq("id", careReceiverIdInput)
+        .maybeSingle()
 
-    if (careReceiverError) {
-      console.error("[case-records GET] care receiver lookup failed", {
-        code: careReceiverCode,
-        message: careReceiverError.message,
-      })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "care_receiver lookup failed",
-          detail: careReceiverError.message || "Unknown error",
-          where: "case-records GET",
-        },
-        { status: 400 },
-      )
-    }
+      if (careReceiverByIdError) {
+        console.error("[case-records GET] care receiver lookup by id failed", {
+          id: careReceiverIdInput,
+          message: careReceiverByIdError.message,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver lookup failed",
+            detail: careReceiverByIdError.message || "Unknown error",
+            where: "case-records GET",
+          },
+          { status: 400 },
+        )
+      }
 
-    if (!careReceiver?.id) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "care_receiver not found",
-          detail: `No care_receiver with code='${careReceiverCode}'`,
-          where: "case-records GET",
-        },
-        { status: 404 },
-      )
+      if (!careReceiverById?.id) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver not found",
+            detail: `No care_receiver with id='${careReceiverIdInput}'`,
+            where: "case-records GET",
+          },
+          { status: 404 },
+        )
+      }
+
+      careReceiverId = careReceiverById.id
+    } else {
+      const careReceiverCode = normalizeUserId(careReceiverIdInput)
+      if (!careReceiverCode) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Invalid careReceiverId",
+            detail: "Could not normalize care receiver code from careReceiverId.",
+            where: "case-records GET",
+          },
+          { status: 400 },
+        )
+      }
+
+      const { data: careReceiverByCode, error: careReceiverByCodeError } = await supabaseAdmin
+        .from("care_receivers")
+        .select("id, code")
+        .eq("code", careReceiverCode)
+        .maybeSingle()
+
+      if (careReceiverByCodeError) {
+        console.error("[case-records GET] care receiver lookup failed", {
+          code: careReceiverCode,
+          message: careReceiverByCodeError.message,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver lookup failed",
+            detail: careReceiverByCodeError.message || "Unknown error",
+            where: "case-records GET",
+          },
+          { status: 400 },
+        )
+      }
+
+      if (!careReceiverByCode?.id) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver not found",
+            detail: `No care_receiver with code='${careReceiverCode}'`,
+            where: "case-records GET",
+          },
+          { status: 404 },
+        )
+      }
+
+      careReceiverId = careReceiverByCode.id
     }
 
     // Build query
@@ -158,7 +201,7 @@ export async function GET(req: NextRequest) {
       .from("case_records")
       .select("id, service_id, care_receiver_id, record_date, record_time, created_at, updated_at", { count: "exact" })
       .eq("service_id", serviceId)
-      .eq("care_receiver_id", careReceiver.id)
+      .eq("care_receiver_id", careReceiverId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
 
