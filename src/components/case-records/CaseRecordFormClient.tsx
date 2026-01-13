@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
+import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataStorageService, type CaseRecord } from "@/services/data-storage-service"
@@ -150,7 +151,7 @@ export function CaseRecordFormClient({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {statusMessage && (
         <div
           className={`px-4 py-3 rounded ${
@@ -163,24 +164,34 @@ export function CaseRecordFormClient({
         </div>
       )}
       
-      <CaseRecordForm
-        initial={{
-          date: dateStr,
-          time: timeStr,
-          userId: userId,
-          serviceId: serviceId,
-          mainStaffId: null,
-          subStaffIds: [],
-          specialNotes: "",
-          familyNotes: "",
-          custom: {},
-        }}
-        staffOptions={MOCK_STAFF_OPTIONS}
-        templateFields={template.customFields || []}
-        onSubmit={handleSubmit}
-        submitLabel={isSubmitting ? "保存中..." : "保存"}
-        isSubmitting={isSubmitting}
-      />
+      <div>
+        <h2 className="text-lg font-semibold mb-4">新規ケース記録</h2>
+        <CaseRecordForm
+          initial={{
+            date: dateStr,
+            time: timeStr,
+            userId: userId,
+            serviceId: serviceId,
+            mainStaffId: null,
+            subStaffIds: [],
+            specialNotes: "",
+            familyNotes: "",
+            custom: {},
+          }}
+          staffOptions={MOCK_STAFF_OPTIONS}
+          templateFields={template.customFields || []}
+          onSubmit={handleSubmit}
+          submitLabel={isSubmitting ? "保存中..." : "保存"}
+          isSubmitting={isSubmitting}
+        />
+      </div>
+
+      <div>
+        <CaseRecordsListClient
+          serviceSlug={serviceId}
+          careReceiverId={careReceiverId}
+        />
+      </div>
     </div>
   )
 }
