@@ -156,6 +156,7 @@ export function CaseRecordsListClient({
               }
             }
             const summary = buildSummary(recordPayload)
+            const displaySummary = summary || "（記録なし）"
 
             return (
               <div
@@ -168,7 +169,7 @@ export function CaseRecordsListClient({
                       <span>{displayDate}</span>
                       <span className="text-muted-foreground">{displayTime}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground truncate">{summary}</div>
+                    <div className="text-sm text-muted-foreground truncate">{displaySummary}</div>
                   </div>
                   <Dialog open={detailDialogOpen && selectedRecord?.id === record.id} onOpenChange={(open) => {
                     setDetailDialogOpen(open)

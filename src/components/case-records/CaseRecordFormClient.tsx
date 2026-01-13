@@ -80,15 +80,15 @@ export function CaseRecordFormClient({
         version: 1,
         sections: {
           activity: {
-            text: (values.custom?.activity as string | undefined) || "",
+            text: (values.custom?.at_activity_content as string | undefined) || "",
           },
           restraint: {
-            has: (values.custom?.restraint_has as boolean | null) ?? null,
-            method: (values.custom?.restraint_method as string | undefined) || null,
-            reason: (values.custom?.restraint_reason as string | undefined) || null,
+            has: (values.custom?.at_restraint_status as string | undefined) === "none" ? false : (values.custom?.at_restraint_status ? true : null),
+            method: (values.custom?.at_restraint_status as string | undefined) || null,
+            reason: (values.custom?.at_restraint_reason as string | undefined) || null,
           },
           note: {
-            text: values.specialNotes || "",
+            text: (values.custom?.at_special_notes as string | undefined) || values.specialNotes || "",
           },
           rehab: {
             title: (values.custom?.rehab_title as string | undefined) || "",
@@ -110,9 +110,8 @@ export function CaseRecordFormClient({
 
       // Log structured payload before sending (development only)
       if (process.env.NODE_ENV === "development") {
-        console.log("[CaseRecordFormClient] Payload sections.activity.text:", payload.sections.activity?.text)
-        console.log("[CaseRecordFormClient] Payload sections.note.text:", payload.sections.note?.text)
-        console.log("[CaseRecordFormClient] Payload sections.restraint:", payload.sections.restraint)
+        console.log("[CaseRecordFormClient] payload.sections.activity.text:", payload.sections.activity?.text)
+        console.log("[CaseRecordFormClient] payload.sections.note.text:", payload.sections.note?.text)
       }
 
       // POST structured payload directly to API

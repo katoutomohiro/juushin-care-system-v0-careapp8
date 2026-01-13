@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:clean": "rimraf .next && next dev",
     "dev:ci": "PORT=3000 next dev",
     "dev:autosave": "node scripts/auto-commit.js",
     "lint": "eslint .",

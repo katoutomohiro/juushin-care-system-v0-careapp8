@@ -52,28 +52,30 @@ export function buildSummary(payload: unknown): string {
     const parts: string[] = []
 
     // Activity
-    if (sections.activity?.text) {
-      parts.push(sections.activity.text.trim())
+    const activityText = sections.activity?.text?.trim()
+    if (activityText) {
+      parts.push(activityText)
+    }
+
+    // Note
+    const noteText = sections.note?.text?.trim()
+    if (noteText) {
+      parts.push(noteText)
     }
 
     // Restraint
     if (sections.restraint?.has === true) {
-      const method = sections.restraint.method ? `(${sections.restraint.method})` : ""
-      parts.push(`拘束あり${method}`)
-    }
-
-    // Note
-    if (sections.note?.text) {
-      parts.push(sections.note.text.trim())
+      const method = sections.restraint.method?.trim()
+      parts.push(method ? `拘束あり(${method})` : "拘束あり")
     }
 
     // Rehab
-    if (sections.rehab?.title) {
-      parts.push(`リハ: ${sections.rehab.title}`)
+    if (sections.rehab?.title?.trim()) {
+      parts.push(`リハ: ${sections.rehab.title.trim()}`)
     }
 
     if (parts.length === 0) {
-      return "（記録なし）"
+      return ""
     }
 
     const summary = parts.join(" / ")
