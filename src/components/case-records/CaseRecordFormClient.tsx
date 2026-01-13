@@ -6,8 +6,8 @@ import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataStorageService, type CaseRecord } from "@/services/data-storage-service"
 import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
+import { CaseRecordPayload } from "@/src/types/caseRecord"
 
 const MOCK_STAFF_OPTIONS = [
   { value: "staff-1", label: "スタッフA" },
@@ -46,7 +46,9 @@ export function CaseRecordFormClient({
   const handleSubmit = useCallback(async (values: any) => {
     // Double-submit guard: prevent concurrent submissions
     if (submittingRef.current) {
-      console.warn("[CaseRecordFormClient] Already submitting, ignoring duplicate call")
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[CaseRecordFormClient] Already submitting, ignoring duplicate call")
+      }
       return
     }
     submittingRef.current = true
@@ -54,12 +56,13 @@ export function CaseRecordFormClient({
     setStatusMessage(null)
     
     try {
-      console.log("[CaseRecordFormClient] Submitting:", values)
       const validation = CaseRecordFormSchema.safeParse(values)
       if (!validation.success) {
         const issue = validation.error.issues[0]
         const message = issue?.message ?? "必須項目を入力してください"
-        console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
+        }
         setStatusMessage("入力内容を確認してください")
         toast({
           variant: "destructive",
@@ -72,40 +75,66 @@ export function CaseRecordFormClient({
       const resolvedUserId = values.userId || userId
       const resolvedServiceId = values.serviceId || serviceId
 
-      const record: CaseRecord = {
-        userId: resolvedUserId,
-        date: values.date,
-        entries: [
-          { category: "vitals", items: [] },
-          { category: "excretion", items: [] },
-          { category: "hydration", items: [] },
-          { category: "meal", items: [] },
-          {
-            category: "other",
-            items: [
-              {
-                recordTime: values.time,
-                mainStaffId: values.mainStaffId ?? null,
-                subStaffIds: values.subStaffIds || [],
-                specialNotes: values.specialNotes || "",
-                familyNotes: values.familyNotes || "",
-                custom: values.custom || {},
-              },
-            ],
+      // Build structured payload
+      const payload: CaseRecordPayload = {
+        version: 1,
+        sections: {
+          activity: {
+            text: values.custom?.activity || "",
           },
-        ],
+          restraint: {
+            has: values.custom?.restraint_has ?? null,
+            method: values.custom?.restraint_method || null,
+            reason: values.custom?.restraint_reason || null,
+          },
+          note: {
+            text: values.specialNotes || values.familyNotes || "",
+          },
+          rehab: {
+            title: values.custom?.rehab_title || "",
+            menu: values.custom?.rehab_menu || "",
+            detail: values.custom?.rehab_detail || "",
+            risk: values.custom?.rehab_risk || "",
+          },
+          staff: {
+            mainStaffId: values.mainStaffId ?? null,
+            subStaffIds: values.subStaffIds || [],
+          },
+          custom: values.custom || {},
+        },
         meta: {
-          recordTime: values.time,
-          mainStaffId: values.mainStaffId ?? null,
-          subStaffIds: values.subStaffIds || [],
-          specialNotes: values.specialNotes || "",
-          familyNotes: values.familyNotes || "",
+          createdByStaffId: values.mainStaffId ?? null,
+          tags: [],
         },
       }
 
-      const saved = await DataStorageService.saveCaseRecord(record, resolvedServiceId)
+      // Log structured payload before sending (development only)
+      if (process.env.NODE_ENV === "development") {
+        console.log("[CaseRecordFormClient] Payload version:", payload.version)
+      }
 
-      console.log("[CaseRecordFormClient] Saved:", saved)
+      // POST structured payload directly to API
+      const apiResponse = await fetch("/api/case-records/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceId: resolvedServiceId,
+          userId: resolvedUserId,
+          date: values.date,
+          recordTime: values.time,
+          record_data: payload, // Send structured payload (not stringified)
+        }),
+      })
+
+      const apiResult = await apiResponse.json()
+
+      if (!apiResponse.ok || !apiResult?.ok) {
+        const errorMsg = apiResult?.error || `保存に失敗しました (${apiResponse.status})`
+        const detail = apiResult?.detail || apiResult?.message
+        throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
+      }
 
       setStatusMessage("保存しました")
 

@@ -84,60 +84,37 @@ export async function POST(req: NextRequest) {
     const serviceInput = body?.serviceId ?? body?.service_id ?? body?.serviceSlug ?? body?.service ?? null
     const record = body?.record ?? null
     const recordDataInput = body?.recordData ?? body?.record_data ?? record ?? null
-    const careReceiverCodeInput =
-      record?.careReceiverCode ??
-      record?.userId ??
-      record?.user_id ??
-      body?.careReceiverCode ??
-      body?.userId ??
-      body?.user_id ??
-      null
-    const recordDateRaw = record?.date ?? body?.date ?? body?.recordDate ?? body?.record_date ?? null
-    const recordTimeRaw =
-      record?.meta?.recordTime ??
-      record?.recordTime ??
-      recordDataInput?.meta?.recordTime ??
-      body?.recordTime ??
-      body?.record_time ??
-      null
+    const careReceiverCodeInput = body?.userId ?? body?.user_id ?? null
+    const recordDateRaw = body?.date ?? body?.recordDate ?? body?.record_date ?? null
+    const recordTimeRaw = body?.recordTime ?? body?.record_time ?? null
 
     const recordDate = normalizeDate(recordDateRaw)
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
-    const recordData =
-      recordDataInput && typeof recordDataInput === "object" && !Array.isArray(recordDataInput)
-        ? { ...(recordDataInput as Record<string, unknown>) }
-        : {}
 
-    for (const key of [
-      "serviceId",
-      "service_id",
-      "serviceSlug",
-      "service",
-      "careReceiverCode",
-      "userId",
-      "user_id",
-      "date",
-      "recordDate",
-      "record_date",
-      "recordTime",
-      "record_time",
-    ]) {
-      if (key in recordData) delete recordData[key]
+    // Handle record_data: convert from string if needed, preserve structured format
+    let recordData: any
+    if (typeof recordDataInput === "string") {
+      try {
+        recordData = JSON.parse(recordDataInput)
+      } catch {
+        recordData = {}
+      }
+    } else if (recordDataInput && typeof recordDataInput === "object" && !Array.isArray(recordDataInput)) {
+      recordData = { ...(recordDataInput as Record<string, unknown>) }
+    } else {
+      recordData = {}
     }
 
-    const recordDataKeys = Object.keys(recordData)
     const careReceiverCode = normalizeUserId(careReceiverCodeInput == null ? "" : String(careReceiverCodeInput))
-    console.info("[case-records/save POST] request", {
-      serviceInput,
-      careReceiverCode,
-      careReceiverCodeRaw: careReceiverCodeInput,
-      recordDateRaw,
-      recordDate,
-      recordTime,
-      recordDataKeys,
-      recordDataType: typeof recordDataInput,
-      bodyKeys,
-    })
+    if (process.env.NODE_ENV === "development") {
+      console.info("[case-records/save POST] request", {
+        serviceInput,
+        careReceiverCode,
+        recordDate,
+        recordTime,
+        recordDataVersion: recordData?.version,
+      })
+    }
 
     const missingFields: string[] = []
     if (!serviceInput) missingFields.push("serviceId")

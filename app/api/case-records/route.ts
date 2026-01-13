@@ -33,14 +33,16 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Math.max(parseInt(limitStr) || 20, 1), 100) // 1-100
     const offset = Math.max(parseInt(offsetStr) || 0, 0)
 
-    console.info("[case-records GET] Query params", {
-      serviceId,
-      careReceiverId,
-      dateFrom,
-      dateTo,
-      limit,
-      offset,
-    })
+    if (process.env.NODE_ENV === "development") {
+      console.info("[case-records GET] Query params", {
+        serviceId,
+        careReceiverId,
+        dateFrom,
+        dateTo,
+        limit,
+        offset,
+      })
+    }
 
     // Validate required parameters
     const missingFields: string[] = []

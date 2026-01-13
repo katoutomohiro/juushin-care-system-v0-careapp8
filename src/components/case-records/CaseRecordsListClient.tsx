@@ -5,6 +5,8 @@ import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { buildSummary } from "@/src/types/caseRecord"
 
 interface CaseRecord {
   id: string
@@ -30,7 +32,8 @@ export function CaseRecordsListClient({
   const [records, setRecords] = useState<CaseRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedRecord, setSelectedRecord] = useState<CaseRecord | null>(null)
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -47,7 +50,9 @@ export function CaseRecordsListClient({
         const response = await fetch(`/api/case-records?${params}`)
         const data = await response.json()
 
-        console.log("[CaseRecordsListClient] Fetched:", data)
+        if (process.env.NODE_ENV === "development") {
+          console.log("[CaseRecordsListClient] Fetched:", data)
+        }
 
         if (!data.ok) {
           const errorMsg = data.detail || data.error || "不明なエラーが発生しました"
@@ -76,7 +81,7 @@ export function CaseRecordsListClient({
     }
 
     fetchRecords()
-  }, [serviceId, careReceiverId, refreshKey, toast])
+  }, [serviceId, careReceiverId, refreshKey])
 
   if (isLoading) {
     return (
@@ -141,37 +146,60 @@ export function CaseRecordsListClient({
           {records.map((record) => {
             const displayDate = record.record_date ? new Date(record.record_date).toLocaleDateString("ja-JP") : "--"
             const displayTime = record.record_time || "--:--"
-            const createdAt = new Date(record.created_at).toLocaleString("ja-JP")
-            const expanded = expandedId === record.id
+            // Handle record_data that might be string (backward compat)
+            let recordPayload: any = record.record_data
+            if (typeof recordPayload === "string") {
+              try {
+                recordPayload = JSON.parse(recordPayload)
+              } catch {
+                recordPayload = null
+              }
+            }
+            const summary = buildSummary(recordPayload)
 
             return (
               <div
                 key={record.id}
-                className="border border-border rounded-md overflow-hidden hover:shadow-sm transition-shadow"
+                className="border border-border rounded-md px-4 py-3 hover:shadow-sm transition-shadow"
               >
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-xs text-muted-foreground">ID: <span className="font-mono">{record.id}</span></div>
-                    <div className="flex items-center gap-2 text-sm font-semibold">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-semibold mb-1">
                       <span>{displayDate}</span>
                       <span className="text-muted-foreground">{displayTime}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">作成: {createdAt}</div>
+                    <div className="text-sm text-muted-foreground truncate">{summary}</div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setExpandedId(expanded ? null : record.id)}>
-                    {expanded ? "閉じる" : "詳細"}
-                  </Button>
+                  <Dialog open={detailDialogOpen && selectedRecord?.id === record.id} onOpenChange={(open) => {
+                    setDetailDialogOpen(open)
+                    if (!open) setSelectedRecord(null)
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRecord(record)
+                          setDetailDialogOpen(true)
+                        }}
+                      >
+                        詳細
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>記録詳細 - {displayDate} {displayTime}</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        <div className="bg-muted rounded-md p-4 font-mono text-xs">
+                          <pre className="whitespace-pre-wrap break-words overflow-x-auto">
+                            {JSON.stringify(record.record_data, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-
-                {expanded && (
-                  <div className="border-t border-border px-4 py-3 bg-muted/20">
-                    <div className="bg-background rounded p-3 font-mono text-xs max-h-96 overflow-auto">
-                      <pre className="whitespace-pre-wrap break-words">
-                        {JSON.stringify(record.record_data, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
