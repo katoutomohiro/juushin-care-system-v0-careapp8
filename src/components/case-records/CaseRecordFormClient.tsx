@@ -33,6 +33,7 @@ export function CaseRecordFormClient({
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [listRefreshKey, setListRefreshKey] = useState(0)
   const submittingRef = useRef(false)
 
   const dateStr = initialDate ?? ""
@@ -103,6 +104,9 @@ export function CaseRecordFormClient({
       console.log("[CaseRecordFormClient] Saved:", saved)
 
       setStatusMessage("保存しました")
+
+      // Refresh saved list after successful submit
+      setListRefreshKey((prev) => prev + 1)
 
       toast({
         variant: "default",
@@ -190,6 +194,7 @@ export function CaseRecordFormClient({
         <CaseRecordsListClient
           serviceSlug={serviceId}
           careReceiverId={careReceiverId}
+          refreshKey={listRefreshKey}
         />
       </div>
     </div>

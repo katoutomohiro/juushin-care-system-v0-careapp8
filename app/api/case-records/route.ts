@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(req.url)
-    const serviceSlugOrId = searchParams.get("serviceSlug") || searchParams.get("serviceId")
-    const careReceiverIdInput = searchParams.get("careReceiverId") || searchParams.get("userId")
+    const serviceSlug = searchParams.get("serviceSlug")?.trim() || null
+    const serviceSlugOrId = serviceSlug || searchParams.get("serviceId") || null
+    const careReceiverIdInput = searchParams.get("careReceiverId") || searchParams.get("userId") || null
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
     const limitStr = searchParams.get("limit") || "20"
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
     const offset = Math.max(parseInt(offsetStr) || 0, 0)
 
     console.info("[case-records GET] Query params", {
+      serviceSlug,
       serviceSlugOrId,
       careReceiverIdInput,
       dateFrom,
@@ -44,15 +46,15 @@ export async function GET(req: NextRequest) {
 
     // Validate required parameters
     const missingFields: string[] = []
-    if (!serviceSlugOrId) missingFields.push("serviceSlug or serviceId")
-    if (!careReceiverIdInput) missingFields.push("careReceiverId or userId")
+    if (!serviceSlugOrId) missingFields.push("serviceSlug")
+    if (!careReceiverIdInput) missingFields.push("careReceiverId (userId is accepted and mapped internally)")
 
     if (missingFields.length > 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: `Missing required query parameters: ${missingFields.join(", ")}`,
-          detail: "Provide serviceSlug (or serviceId) and careReceiverId (or userId)",
+          error: "Missing required query parameters",
+          detail: `Required: serviceSlug and careReceiverId. userId is accepted and mapped to careReceiverId. Missing: ${missingFields.join(", ")}`,
           where: "case-records GET",
         },
         { status: 400 },
@@ -154,7 +156,7 @@ export async function GET(req: NextRequest) {
     // Build query
     let query = supabaseAdmin
       .from("case_records")
-      .select("id, service_id, care_receiver_id, record_date, record_time, record_data, created_at, updated_at")
+      .select("id, service_id, care_receiver_id, record_date, record_time, created_at, updated_at", { count: "exact" })
       .eq("service_id", serviceId)
       .eq("care_receiver_id", careReceiver.id)
       .order("created_at", { ascending: false })
