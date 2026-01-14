@@ -145,6 +145,12 @@ export function CaseRecordFormClient({
           .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
           .filter(Boolean)
         setFieldErrors(collected.length > 0 ? collected : [message])
+        
+        // フィールド固有のエラーを設定
+        setValidationErrors({
+          mainStaffId: flattened.mainStaffId?.[0],
+        })
+        
         if (process.env.NODE_ENV === "development") {
           console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
         }
@@ -212,7 +218,6 @@ export function CaseRecordFormClient({
       setStatusMessage("保存しました")
       setFieldErrors([])
       setValidationErrors({})
-
       // Refresh saved list after successful submit
       setListRefreshKey((prev) => prev + 1)
 

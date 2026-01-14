@@ -24,7 +24,7 @@ export type CaseRecordFormProps = {
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
   isSubmitting?: boolean
-  validationErrors?: { mainStaffId?: string }
+  validationErrors?: { mainStaffId?: string }  // バリデーションエラー
   onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void
 }
 
