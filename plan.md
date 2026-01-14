@@ -52,17 +52,26 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 ### 2026-01-14: A・Tさんケース記録フォーム - 日付フォーマット機能の実装
 
 **実装内容:**
-- `src/components/case-records/HeaderFields.tsx` に日付フォーマット関数 `formatDateJapanese()` を追加
-- input type="date" で選択した日付を「YYYY/MM/DD(曜)」形式で画面上に自動表示
-- 内部保存は ISO形式（YYYY-MM-DD）を維持、表示だけをフォーマット
+- `src/components/fields/DateWithWeekdayField.tsx` を新規作成（共通コンポーネント）
+  - 表示用の読み取り専用テキスト入力（クリックで picker を開く）
+  - 裏の実 `input type="date"` で日付値を管理
+  - 選択日付を「YYYY/MM/DD(曜)」形式で表示
+  - Safari対策で「YYYY-MM-DD」を自動パース（new Date直渡し避ける）
+  
+- `src/components/case-records/HeaderFields.tsx` を更新
+  - 既存の日付フィールド実装を削除
+  - 新しい `DateWithWeekdayField` コンポーネントに置き換え
+  - 内部保存は ISO形式（YYYY-MM-DD）を維持
 
 **対象ファイル:**
-- `src/components/case-records/HeaderFields.tsx`
+- `src/components/fields/DateWithWeekdayField.tsx` (NEW)
+- `src/components/case-records/HeaderFields.tsx` (UPDATED)
 
 **受け入れ条件:**
-- ✅ A・Tさんのケース記録画面で日付をクリックするとカレンダーが出る
-- ✅ 日付選択後、「YYYY/MM/DD(曜)」が即座に表示される
-- ✅ 保存時に date が空でない形で送信される
+- ✅ A・Tさんのケース記録画面で日付欄をクリックするとカレンダーが出る
+- ✅ 日付選択後、「YYYY/MM/DD(曜)」が欄内に即座に表示される
+- ✅ 保存時に date が ISO形式（YYYY-MM-DD）で送信される
+- ✅ クロスブラウザ対応（Safari対策済み）
 
 ## 次のステップ（アイデアメモ）
 
