@@ -104,3 +104,21 @@
     @apply text-xl md:text-2xl;
   }
 }
+/* Hide time input picker indicator (clock icon) in all browsers */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+
+input[type="time"]::-webkit-clear-button {
+  display: none;
+}
+
+input[type="time"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+}

@@ -34,7 +34,7 @@ export default function TimeWithNowField({
         {label}
       </label>
 
-      <div className="relative">
+      <div className="relative w-full">
         <input
           id={name}
           name={name}
@@ -42,13 +42,13 @@ export default function TimeWithNowField({
           value={value}
           step={60}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full border rounded-md px-3 py-2 pr-16"
+          className="w-full border rounded-md px-3 py-2 pr-20"
         />
 
         <button
           type="button"
           onClick={handleNow}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded-md bg-white hover:bg-gray-50"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 text-sm rounded-md border bg-white hover:bg-gray-50"
         >
           今すぐ
         </button>
