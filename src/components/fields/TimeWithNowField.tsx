@@ -35,7 +35,7 @@ export default function TimeWithNowField({
         {label}
       </label>
 
-      <div className="relative w-full">
+      <div className="relative w-full min-w-0">
         <input
           type="time"
           name={name}

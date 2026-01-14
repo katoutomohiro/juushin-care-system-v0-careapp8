@@ -35,7 +35,7 @@ function formatJaWithWeekday(iso: string) {
   return `${ymd}(${wd})`
 }
 
-export function DateWithWeekdayField({
+export default function DateWithWeekdayField({
   label = "日付",
   value,
   onChange,

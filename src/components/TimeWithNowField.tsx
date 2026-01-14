@@ -1,1 +1,1 @@
-export { default } from "./fields/TimeWithNowField"
+export { TimeWithNowField } from "./fields/TimeWithNowField"
