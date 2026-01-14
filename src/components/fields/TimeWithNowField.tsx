@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 type Props = {
   name: string
@@ -24,9 +24,32 @@ export default function TimeWithNowField({
   value,
   onChange,
 }: Props) {
+  const [localValue, setLocalValue] = useState(value)
+
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
+  const emitChange = useCallback(
+    (next: string) => {
+      setLocalValue(next)
+      onChange(next)
+    },
+    [onChange],
+  )
+
   const handleNow = useCallback(() => {
-    onChange(nowHHmm())
-  }, [onChange])
+    emitChange(nowHHmm())
+  }, [emitChange])
+
+  const handleInputChange = (raw: string) => {
+    const next = raw.slice(0, 5)
+    if (/^\d{2}:\d{2}$/.test(next) || next === "") {
+      emitChange(next)
+    } else {
+      setLocalValue(next)
+    }
+  }
 
   return (
     <div className="w-full">
@@ -38,11 +61,14 @@ export default function TimeWithNowField({
         <input
           id={name}
           name={name}
-          type="time"
-          value={value}
-          step={60}
-          onChange={(e) => onChange(e.target.value)}
+          type="text"
+          inputMode="numeric"
+          pattern="\d{2}:\d{2}"
+          maxLength={5}
+          value={localValue}
+          onChange={(e) => handleInputChange(e.target.value)}
           className="w-full border rounded-md px-3 py-2 pr-20"
+          placeholder="HH:mm"
         />
 
         <button
