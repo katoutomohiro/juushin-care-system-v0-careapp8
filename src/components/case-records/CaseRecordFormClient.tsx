@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
@@ -33,6 +34,7 @@ export function CaseRecordFormClient({
   template?: CareReceiverTemplate | null
   initialDate?: string
 }) {
+  const router = useRouter()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
@@ -172,7 +174,7 @@ export function CaseRecordFormClient({
           },
           staff: {
             mainStaffId: values.mainStaffId ?? null,
-            subStaffIds: values.subStaffIds || [],
+            subStaffIds: values.subStaffId ? [values.subStaffId] : [], // legacy shape inside payload
           },
           custom: values.custom || {},
         },
@@ -201,7 +203,9 @@ export function CaseRecordFormClient({
           careReceiverName: careReceiverName, // Include display name for printing/snapshot
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           mainStaffId: values.mainStaffId, // 主担当職員ID (UUID)
-          subStaffIds: values.subStaffIds || [], // 副担当職員IDs (UUID配列)
+          subStaffId: values.subStaffId || null, // 副担当職員ID (UUID)
+          main_staff_id: values.mainStaffId,
+          sub_staff_id: values.subStaffId || null,
           record_data: payload, // Send structured payload (not stringified)
         }),
       })
@@ -227,6 +231,9 @@ export function CaseRecordFormClient({
       // Refresh saved list after successful submit
       setListRefreshKey((prev) => prev + 1)
 
+      // Ensure latest data reflects saved values
+      router.refresh()
+
       toast({
         variant: "default",
         title: "✅ ケース記録を保存しました",
@@ -247,7 +254,7 @@ export function CaseRecordFormClient({
       submittingRef.current = false
       setIsSubmitting(false)
     }
-  }, [careReceiverId, careReceiverName, careReceiverUuid, serviceId, serviceUuid, userId])
+  }, [careReceiverId, careReceiverName, careReceiverUuid, router, serviceId, serviceUuid, userId])
 
   // If template not found, show diagnostic message
   if (!template) {
@@ -318,7 +325,7 @@ export function CaseRecordFormClient({
               careReceiverName,
               serviceId: serviceUuid || serviceId, // UUID を優先
               mainStaffId: staffOptions[0]?.value || null, // デフォルトで最初の職員をセット
-              subStaffIds: [],
+              subStaffId: null,
               specialNotes: "",
               familyNotes: "",
               custom: {},

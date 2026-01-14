@@ -7,7 +7,7 @@ export function mapFormToModel(values: CaseRecordFormValues) {
       careReceiverId: values.careReceiverId,
       date: values.date,
       serviceType: undefined,
-      staffIds: [values.mainStaffId, ...(values.subStaffIds ?? [])]
+      staffIds: [values.mainStaffId, values.subStaffId]
         .filter((id) => id != null && id !== "") as string[],
     },
     notes: {
@@ -20,13 +20,13 @@ export function mapFormToModel(values: CaseRecordFormValues) {
 // 保存用モデル → フォーム値（最低限のパススルー実装）
 export function mapModelToForm(model: any): CaseRecordFormValues {
   const staffIds = (model?.header?.staffIds ?? []) as string[]
-  const [main, ...subs] = staffIds
+  const [main, sub] = staffIds
   return {
     careReceiverId: model?.header?.careReceiverId ?? "",
     serviceId: model?.header?.serviceId ?? "",
     date: model?.header?.date ?? "",
     mainStaffId: main ?? "",
-    subStaffIds: subs ?? [],
+    subStaffId: sub ?? null,
     specialNotes: model?.notes?.special ?? "",
     familyNotes: model?.notes?.family ?? "",
   }

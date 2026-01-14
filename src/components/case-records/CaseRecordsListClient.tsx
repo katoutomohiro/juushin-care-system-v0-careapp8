@@ -16,7 +16,8 @@ interface CaseRecord {
   recordTime: string | null
   mainStaffId: string | null
   mainStaffName: string | null
-  subStaffIds: string[]
+  subStaffId: string | null
+  subStaffName: string | null
   createdAt: string
   updatedAt: string
   recordData: any
@@ -149,7 +150,8 @@ export function CaseRecordsListClient({
           {records.map((record) => {
             const displayDate = record.recordDate ? new Date(record.recordDate).toLocaleDateString("ja-JP") : "--"
             const displayTime = record.recordTime || "--:--"
-            const mainStaffDisplay = record.mainStaffName ? `[${record.mainStaffName}]` : "[未設定]"
+            const mainStaffDisplay = record.mainStaffName ? `[主: ${record.mainStaffName}]` : "[主: 未設定]"
+            const subStaffDisplay = record.subStaffName ? `[副: ${record.subStaffName}]` : ""
             // Handle record_data that might be string (backward compat)
             let recordPayload: any = record.recordData
             if (typeof recordPayload === "string") {
@@ -173,6 +175,9 @@ export function CaseRecordsListClient({
                       <span>{displayDate}</span>
                       <span className="text-muted-foreground">{displayTime}</span>
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{mainStaffDisplay}</span>
+                      {subStaffDisplay && (
+                        <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">{subStaffDisplay}</span>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground truncate">{displaySummary}</div>
                   </div>

@@ -54,19 +54,20 @@ export async function GET(req: NextRequest) {
         care_receiver_id,
         record_date,
         record_time,
-        main_staff_id,
-        sub_staff_ids,
         record_data,
+        main_staff_id,
+        sub_staff_id,
+        main_staff:staff!case_records_main_staff_fk ( id, name ),
+        sub_staff:staff!case_records_sub_staff_fk ( id, name ),
         created_at,
-        updated_at,
-        staff!case_records_main_staff_id_fkey(id, name, sort_order)
+        updated_at
       `,
         { count: "exact" }
       )
       .eq("service_id", serviceId)
       .eq("care_receiver_id", careReceiverId)
       .order("record_date", { ascending: false })
-      .order("record_time", { ascending: false })
+      .order("id", { ascending: false })
 
     // Date range filter
     if (dateFrom) {
@@ -105,8 +106,10 @@ export async function GET(req: NextRequest) {
       recordDate: record.record_date,
       recordTime: record.record_time,
       mainStaffId: record.main_staff_id,
-      mainStaffName: record.staff?.name || null,
-      subStaffIds: record.sub_staff_ids || [],
+      mainStaffName: record.main_staff?.name || null,
+      subStaffIds: record.sub_staff_id ? [record.sub_staff_id] : [],
+      subStaffId: record.sub_staff_id,
+      subStaffName: record.sub_staff?.name || null,
       recordData: record.record_data,
       createdAt: record.created_at,
       updatedAt: record.updated_at,

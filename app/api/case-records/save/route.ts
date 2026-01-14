@@ -89,21 +89,11 @@ export async function POST(req: NextRequest) {
     const recordDateRaw = body?.date ?? body?.recordDate ?? body?.record_date ?? null
     const recordTimeRaw = body?.recordTime ?? body?.record_time ?? null
     const mainStaffId = body?.mainStaffId ?? body?.main_staff_id ?? null
-    const subStaffIdsInput = body?.subStaffIds ?? body?.sub_staff_ids ?? null
+    const subStaffId = body?.subStaffId ?? body?.sub_staff_id ?? null
 
     const recordDate = normalizeDate(recordDateRaw)
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
     
-    // Normalize subStaffIds to array
-    let subStaffIds: string[] = []
-    if (subStaffIdsInput) {
-      if (Array.isArray(subStaffIdsInput)) {
-        subStaffIds = subStaffIdsInput.filter((id) => typeof id === "string")
-      } else if (typeof subStaffIdsInput === "string") {
-        subStaffIds = [subStaffIdsInput]
-      }
-    }
-
     // Handle record_data: convert from string if needed, preserve structured format
     let recordData: any
     if (typeof recordDataInput === "string") {
@@ -288,7 +278,7 @@ export async function POST(req: NextRequest) {
       record_time: recordTime ?? null,
       record_data: recordData,
       main_staff_id: mainStaffId,
-      sub_staff_ids: subStaffIds.length > 0 ? subStaffIds : [],
+      sub_staff_id: subStaffId ?? null,
     }
 
     const { data, error } = await supabaseAdmin

@@ -16,7 +16,7 @@ export function useCaseRecordForm(options: UseCaseRecordFormOptions = {}) {
     serviceId: "",
     date: "",
     mainStaffId: "",
-    subStaffIds: [],
+    subStaffId: null,
     specialNotes: "",
     familyNotes: "",
     ...options.defaultValues,

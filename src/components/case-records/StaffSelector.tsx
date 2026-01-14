@@ -4,13 +4,13 @@ export type StaffOption = { value: string; label: string }
 
 export type StaffSelectorProps = {
   mainStaffId: string | null | undefined
-  subStaffIds: string[] | null | undefined
+  subStaffId: string | null | undefined
   options: StaffOption[]
-  onChange: (patch: { mainStaffId?: string | null; subStaffIds?: string[] | null }) => void
+  onChange: (patch: { mainStaffId?: string | null; subStaffId?: string | null }) => void
   validationError?: string | null  // エラーメッセージ
 }
 
-export function StaffSelector({ mainStaffId, subStaffIds, options, onChange, validationError }: StaffSelectorProps) {
+export function StaffSelector({ mainStaffId, subStaffId, options, onChange, validationError }: StaffSelectorProps) {
   const hasError = !!validationError
   
   return (
@@ -37,17 +37,14 @@ export function StaffSelector({ mainStaffId, subStaffIds, options, onChange, val
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-muted-foreground">副担当（複数可）</label>
+        <label className="text-sm text-muted-foreground">副担当</label>
         <select
           className="border rounded px-3 py-2"
-          multiple
           aria-label="副担当を選択"
-          value={subStaffIds ?? []}
-          onChange={(e) => {
-            const selected = Array.from(e.target.selectedOptions).map((o) => o.value)
-            onChange({ subStaffIds: selected })
-          }}
+          value={subStaffId ?? ""}
+          onChange={(e) => onChange({ subStaffId: e.target.value || null })}
         >
+          <option value="">（未選択）</option>
           {options.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}

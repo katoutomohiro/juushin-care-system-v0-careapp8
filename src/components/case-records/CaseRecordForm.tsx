@@ -14,7 +14,7 @@ export type CaseRecordFormProps = {
     careReceiverName: string  // 利用者名（読み取り専用）
     serviceId: string
     mainStaffId?: string | null
-    subStaffIds?: string[] | null
+    subStaffId?: string | null
     specialNotes?: string
     familyNotes?: string
     custom?: TemplateFormValues
@@ -65,7 +65,7 @@ export function CaseRecordForm({
 
       <StaffSelector
         mainStaffId={state.mainStaffId ?? null}
-        subStaffIds={state.subStaffIds ?? []}
+        subStaffId={state.subStaffId ?? null}
         options={staffOptions}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
         validationError={validationErrors?.mainStaffId}

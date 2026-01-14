@@ -41,6 +41,7 @@ export interface CaseRecord {
   meta?: {
     recordTime?: string
     mainStaffId?: string | null
+    subStaffId?: string | null
     subStaffIds?: string[]
     specialNotes?: string
     familyNotes?: string

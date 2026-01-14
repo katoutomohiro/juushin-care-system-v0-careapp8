@@ -21,7 +21,8 @@ export type CaseRecordPayload = {
     }
     staff?: {
       mainStaffId?: string | null
-      subStaffIds?: string[]
+      subStaffId?: string | null
+      subStaffIds?: string[] // legacy array shape
     }
     custom?: Record<string, any>
   }
