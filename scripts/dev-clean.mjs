@@ -1,17 +1,14 @@
-import { rmSync, existsSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { existsSync, rmSync } from "node:fs";
 import net from "node:net";
+import { spawn } from "node:child_process";
 
 const PORT_CANDIDATES = [3000, 3001, 3002, 3003, 3004, 3005];
-
-// Windows は pnpm.cmd を spawn しないと不安定になりやすい
-const PNPM_BIN = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
 function isPortInUse(port) {
   return new Promise((resolve) => {
     const server = net
       .createServer()
-      .once("error", (err) => resolve(err.code === "EADDRINUSE"))
+      .once("error", (err) => resolve(err?.code === "EADDRINUSE"))
       .once("listening", () => server.close(() => resolve(false)))
       .listen(port, "127.0.0.1");
   });
@@ -34,35 +31,35 @@ function cleanNext() {
   }
 }
 
-function spawnAndWait(cmd, args, opts = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, {
-      stdio: "inherit",
-      shell: false, // ★重要: Windowsでの不安定さ回避
-      env: opts.env ?? process.env,
-      cwd: opts.cwd ?? process.cwd(),
-    });
+function runNextDev(port) {
+  const env = { ...process.env, PORT: String(port) };
 
-    child.on("error", (e) => reject(e));
-    child.on("exit", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`${cmd} exited with code ${code}`));
-    });
+  const isWin = process.platform === "win32";
+  const command = isWin ? "cmd.exe" : "pnpm";
+  const args = isWin ? ["/c", "pnpm", "dev"] : ["dev"];
+
+  console.log(`[dev-clean] starting next dev on port ${port}...`);
+
+  const child = spawn(command, args, {
+    stdio: "inherit",
+    env,
+    shell: false,
+  });
+
+  child.on("exit", (code) => process.exit(code ?? 1));
+  child.on("error", (e) => {
+    console.error("[dev-clean] failed to start:", e);
+    process.exit(1);
   });
 }
 
 async function main() {
   cleanNext();
-
   const port = await pickPort();
-  console.log(`[dev-clean] starting next dev on port ${port}`);
-
-  await spawnAndWait(PNPM_BIN, ["dev"], {
-    env: { ...process.env, PORT: String(port) },
-  });
+  runNextDev(port);
 }
 
 main().catch((e) => {
-  console.error("[dev-clean] failed:", e?.message ?? e);
+  console.error("[dev-clean] fatal:", e);
   process.exit(1);
 });
