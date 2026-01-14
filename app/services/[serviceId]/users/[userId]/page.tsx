@@ -420,6 +420,7 @@ export default function UserDetailPage() {
       alert("保存に失敗しました。もう一度お試しください。")
     }
   }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
