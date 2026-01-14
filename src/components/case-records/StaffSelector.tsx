@@ -7,15 +7,20 @@ export type StaffSelectorProps = {
   subStaffIds: string[] | null | undefined
   options: StaffOption[]
   onChange: (patch: { mainStaffId?: string | null; subStaffIds?: string[] | null }) => void
+  validationError?: string | null  // エラーメッセージ
 }
 
-export function StaffSelector({ mainStaffId, subStaffIds, options, onChange }: StaffSelectorProps) {
+export function StaffSelector({ mainStaffId, subStaffIds, options, onChange, validationError }: StaffSelectorProps) {
+  const hasError = !!validationError
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">主担当</label>
         <select
-          className="border rounded px-3 py-2"
+          className={`border rounded px-3 py-2 ${
+            hasError ? "border-red-500 bg-red-50" : ""
+          }`}
           aria-label="主担当"
           value={mainStaffId ?? ""}
           onChange={(e) => onChange({ mainStaffId: e.target.value || null })}
@@ -25,6 +30,9 @@ export function StaffSelector({ mainStaffId, subStaffIds, options, onChange }: S
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
+        {hasError && (
+          <p className="text-sm text-red-600 mt-1">{validationError}</p>
+        )}
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">副担当（複数可）</label>

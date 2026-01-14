@@ -38,6 +38,7 @@ export function CaseRecordFormClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<string[]>([])
+  const [validationErrors, setValidationErrors] = useState<{ mainStaffId?: string }>({})
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const submittingRef = useRef(false)
 
@@ -76,6 +77,12 @@ export function CaseRecordFormClient({
           .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
           .filter(Boolean)
         setFieldErrors(collected.length > 0 ? collected : [message])
+        
+        // フィールド固有のエラーを設定
+        setValidationErrors({
+          mainStaffId: flattened.mainStaffId?.[0],
+        })
+        
         if (process.env.NODE_ENV === "development") {
           console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
         }
@@ -163,6 +170,7 @@ export function CaseRecordFormClient({
 
       setStatusMessage("保存しました")
       setFieldErrors([])
+      setValidationErrors({})
 
       // Refresh saved list after successful submit
       setListRefreshKey((prev) => prev + 1)
@@ -248,7 +256,7 @@ export function CaseRecordFormClient({
             careReceiverId: careReceiverUuid, // UUID を初期値として設定
             careReceiverName,
             serviceId: serviceUuid || serviceId, // UUID を優先
-            mainStaffId: null,
+            mainStaffId: MOCK_STAFF_OPTIONS[0]?.value || null, // デフォルトで最初の職員をセット
             subStaffIds: [],
             specialNotes: "",
             familyNotes: "",
@@ -258,8 +266,7 @@ export function CaseRecordFormClient({
           templateFields={template.customFields || []}
           onSubmit={handleSubmit}
           submitLabel={isSubmitting ? "保存中..." : "保存"}
-          isSubmitting={isSubmitting}
-        />
+          isSubmitting={isSubmitting}          validationErrors={validationErrors}        />
       </div>
 
       <div>
