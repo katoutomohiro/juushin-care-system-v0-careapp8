@@ -8,11 +8,7 @@ import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecords
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-const MOCK_STAFF_OPTIONS = [
-  { value: "staff-1", label: "スタッフA" },
-  { value: "staff-2", label: "スタッフB" },
-  { value: "staff-3", label: "スタッフC" },
-]
+type StaffOption = { value: string; label: string }
 
 export function CaseRecordFormClient({
   careReceiverId,
@@ -47,7 +43,6 @@ export function CaseRecordFormClient({
   const didFetchStaffRef = useRef(false)
 
   const dateStr = initialDate ?? ""
-
   // Fetch staff options from database
   useEffect(() => {
     if (didFetchStaffRef.current) return
@@ -135,20 +130,31 @@ export function CaseRecordFormClient({
     try {
       console.log("[CaseRecordFormClient] Submitting:", values)
 
-      // Send to API
-      const response = await fetch("/api/case-records", {
+      // Auto-generate recordTime (HH:mm) per plan
+      const recordTime: string = values.time ?? new Date().toISOString().slice(11, 16)
+
+      // Prefer UUIDs when available
+      const resolvedServiceId = serviceUuid || serviceId
+
+      // subStaffId (single) fallback from array if provided
+      const resolvedSubStaffId = values.subStaffId ?? (Array.isArray(values.subStaffIds) ? values.subStaffIds[0] ?? null : null)
+
+      // Use unified save endpoint
+      const apiResponse = await fetch("/api/case-records/save", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          service_id: serviceId,
-          user_id: userId,
-          record_date: values.date,
+          serviceId: resolvedServiceId,
+          userId,
+          date: values.date,
+          recordTime,
+          mainStaffId: values.mainStaffId,
+          subStaffId: resolvedSubStaffId,
+          // Keep flexible record payload; server enriches sections.staff
           record_data: {
-            recordTime: values.time,
+            recordTime,
             mainStaffId: values.mainStaffId,
-            subStaffIds: values.subStaffIds || [],
+            subStaffIds: values.subStaffIds || (resolvedSubStaffId ? [resolvedSubStaffId] : []),
             specialNotes: values.specialNotes || "",
             familyNotes: values.familyNotes || "",
             custom: values.custom || {},
@@ -158,17 +164,17 @@ export function CaseRecordFormClient({
 
       let result: any
       try {
-        result = await response.json()
+        result = await apiResponse.json()
       } catch {
         console.error("[CaseRecordFormClient] Invalid JSON response", {
-          status: response.status,
-          statusText: response.statusText,
+          status: apiResponse.status,
+          statusText: apiResponse.statusText,
         })
         throw new Error("保存に失敗しました")
       }
 
-      if (!response.ok || !result.ok) {
-        throw new Error(result.error || "保存に失敗しました")
+      if (!apiResponse.ok || !result?.ok) {
+        throw new Error(result?.error || `保存に失敗しました (${apiResponse.status})`)
       }
 
       console.log("[CaseRecordFormClient] Saved:", result.record)
@@ -281,7 +287,7 @@ export function CaseRecordFormClient({
             }}
             staffOptions={staffOptions}
             allStaff={allStaff}
-            templateFields={template.customFields || []}
+            templateFields={template?.customFields || []}
             onSubmit={handleSubmit}
             onUpdateStaff={handleUpdateStaff}
             submitLabel={isSubmitting ? "保存中..." : "保存"}

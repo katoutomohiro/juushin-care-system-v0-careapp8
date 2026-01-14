@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { HeaderFields } from "@/src/components/case-records/HeaderFields"
@@ -10,8 +10,8 @@ import { TemplateField, TemplateFormValues } from "@/lib/templates/schema"
 export type CaseRecordFormProps = {
   initial: {
     date: string
-    careReceiverId: string  // UUID を保存キーとして使う
-    careReceiverName: string  // 利用者名（読み取り専用）
+    careReceiverId: string
+    careReceiverName: string
     serviceId: string
     mainStaffId?: string | null
     subStaffId?: string | null
@@ -25,8 +25,8 @@ export type CaseRecordFormProps = {
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
   isSubmitting?: boolean
-  validationErrors?: { mainStaffId?: string }  // バリデーションエラー
-  onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void  // 保存後のstaffOptions更新
+  validationErrors?: { mainStaffId?: string }
+  onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void
 }
 
 export function CaseRecordForm({

@@ -1,10 +1,10 @@
-"use client"
+﻿"use client"
 
 import DateWithWeekdayField from "../fields/DateWithWeekdayField"
 
 export type HeaderFieldsProps = {
   date: string
-  careReceiverName: string  // 利用者名（読み取り専用）
+  careReceiverName: string
   onChange: (patch: Partial<HeaderFieldsProps>) => void
 }
 
