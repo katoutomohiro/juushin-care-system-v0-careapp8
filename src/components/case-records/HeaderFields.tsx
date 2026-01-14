@@ -2,7 +2,7 @@
 
 import type { ChangeEvent } from "react"
 import { DateWithWeekdayField } from "@/src/components/fields/DateWithWeekdayField"
-import TimeWithNowField from "@/src/components/fields/TimeWithNowField"
+import TimeWithNowField from "@/components/TimeWithNowField"
 
 export type HeaderFieldsProps = {
   date: string
@@ -24,7 +24,7 @@ export function HeaderFields({ date, time, userId, serviceId, onChange }: Header
       <TimeWithNowField
         name="time"
         value={time}
-        onChange={(nextTime) => onChange({ time: nextTime })}
+        onChange={({ target }) => onChange({ time: target.value })}
       />
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">利用者ID</label>
