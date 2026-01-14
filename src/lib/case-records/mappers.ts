@@ -4,10 +4,9 @@ import type { CaseRecordFormValues } from "@/src/lib/case-records/form-schemas"
 export function mapFormToModel(values: CaseRecordFormValues) {
   return {
     header: {
-      careReceiverId: values.careReceiverId,
       date: values.date,
       serviceType: undefined,
-      staffIds: [values.mainStaffId, values.subStaffId]
+      staffIds: [values.mainStaffId, ...(values.subStaffIds ?? [])]
         .filter((id) => id != null && id !== "") as string[],
     },
     notes: {
@@ -20,13 +19,12 @@ export function mapFormToModel(values: CaseRecordFormValues) {
 // 保存用モデル → フォーム値（最低限のパススルー実装）
 export function mapModelToForm(model: any): CaseRecordFormValues {
   const staffIds = (model?.header?.staffIds ?? []) as string[]
-  const [main, sub] = staffIds
+  const [main, ...subs] = staffIds
   return {
-    careReceiverId: model?.header?.careReceiverId ?? "",
     serviceId: model?.header?.serviceId ?? "",
     date: model?.header?.date ?? "",
     mainStaffId: main ?? "",
-    subStaffId: sub ?? null,
+    subStaffIds: subs ?? [],
     specialNotes: model?.notes?.special ?? "",
     familyNotes: model?.notes?.family ?? "",
   }

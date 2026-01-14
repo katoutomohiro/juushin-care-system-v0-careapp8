@@ -128,6 +128,35 @@ export function CaseRecordFormClient({
     setFieldErrors([])
     
     try {
+      const validationInput = {
+        ...values,
+        // serviceId は UUID 優先で検証
+        serviceId: serviceUuid || values.serviceId || serviceId,
+        // 方針1: 主担当は必須なので null/undefined を空文字にしてバリデーション
+        mainStaffId: values.mainStaffId ?? "",
+      }
+
+      const validation = CaseRecordFormSchema.safeParse(validationInput)
+      if (!validation.success) {
+        const issue = validation.error.issues[0]
+        const message = issue?.message ?? "必須項目を入力してください"
+        const flattened = validation.error.flatten().fieldErrors
+        const collected = Object.entries(flattened)
+          .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
+          .filter(Boolean)
+        setFieldErrors(collected.length > 0 ? collected : [message])
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
+        }
+        setStatusMessage("入力内容を確認してください")
+        toast({
+          variant: "destructive",
+          title: "入力内容を確認してください",
+          description: message,
+        })
+        return
+      }
+
       console.log("[CaseRecordFormClient] Submitting:", values)
 
       // Auto-generate recordTime (HH:mm) per plan
@@ -164,22 +193,21 @@ export function CaseRecordFormClient({
         }),
       })
 
-      let result: any
-      try {
-        result = await apiResponse.json()
-      } catch {
-        console.error("[CaseRecordFormClient] Invalid JSON response", {
-          status: apiResponse.status,
-          statusText: apiResponse.statusText,
-        })
-        throw new Error("保存に失敗しました")
+      const apiResult = await apiResponse.json()
+
+      if (!apiResponse.ok || !apiResult?.ok) {
+        const errorMsg = apiResult?.error || `保存に失敗しました (${apiResponse.status})`
+        const detail = apiResult?.detail || apiResult?.message
+        const apiFieldErrors: string[] = Array.isArray(apiResult?.fieldErrors)
+          ? apiResult.fieldErrors.filter((v: unknown) => typeof v === "string")
+          : []
+        if (apiFieldErrors.length > 0) {
+          setFieldErrors(apiFieldErrors)
+        }
+        throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
       }
 
-      if (!apiResponse.ok || !result?.ok) {
-        throw new Error(result?.error || `保存に失敗しました (${apiResponse.status})`)
-      }
-
-      console.log("[CaseRecordFormClient] Saved:", result.record)
+      console.log("[CaseRecordFormClient] Saved:", apiResult.record)
 
       setStatusMessage("保存しました")
       setFieldErrors([])
