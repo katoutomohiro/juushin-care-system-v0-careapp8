@@ -128,6 +128,21 @@ export function CaseRecordFormClient({
     setFieldErrors([])
     
     try {
+      // serviceId が取得できない場合は早期リターン
+      const resolvedServiceId = serviceUuid || values.serviceId || serviceId
+      if (!resolvedServiceId) {
+        toast({
+          variant: "destructive",
+          title: "サービス情報が取得できませんでした",
+          description: "ページを再読み込みしてください",
+        })
+        return
+      }
+      
+      // Development log: confirm serviceId is UUID before submit
+      if (process.env.NODE_ENV === "development") {
+        console.log("[CaseRecordFormClient] serviceId (UUID) to save:", resolvedServiceId)
+      }
       const validationInput = {
         ...values,
         // serviceId は UUID 優先で検証

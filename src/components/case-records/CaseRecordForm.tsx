@@ -63,7 +63,6 @@ export function CaseRecordForm({
       <HeaderFields
         date={state.date}
         careReceiverName={state.careReceiverName}
-        serviceId={state.serviceId}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
       />
 

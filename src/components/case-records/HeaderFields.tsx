@@ -5,11 +5,10 @@ import DateWithWeekdayField from "../fields/DateWithWeekdayField"
 export type HeaderFieldsProps = {
   date: string
   careReceiverName: string  // 利用者名（読み取り専用）
-  serviceId: string
   onChange: (patch: Partial<HeaderFieldsProps>) => void
 }
 
-export function HeaderFields({ date, careReceiverName, serviceId, onChange }: HeaderFieldsProps) {
+export function HeaderFields({ date, careReceiverName, onChange }: HeaderFieldsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <DateWithWeekdayField
@@ -25,15 +24,6 @@ export function HeaderFields({ date, careReceiverName, serviceId, onChange }: He
           value={careReceiverName}
           readOnly
           className="border rounded px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-sm text-muted-foreground">サービスID</label>
-        <input
-          aria-label="サービスID"
-          value={serviceId}
-          onChange={(e) => onChange({ serviceId: e.target.value })}
-          className="border rounded px-3 py-2"
         />
       </div>
     </div>
