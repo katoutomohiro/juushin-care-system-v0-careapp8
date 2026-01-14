@@ -146,6 +146,7 @@ export function CaseRecordFormClient({
         body: JSON.stringify({
           serviceId: resolvedServiceId,
           userId,
+          careReceiverName: careReceiverName,  // Include display name for printing/snapshot
           date: values.date,
           recordTime,
           mainStaffId: values.mainStaffId,
@@ -276,10 +277,9 @@ export function CaseRecordFormClient({
           <CaseRecordForm
             initial={{
               date: dateStr,
-              careReceiverId: careReceiverUuid, // UUID を初期値として設定
               careReceiverName,
-              serviceId: serviceUuid || serviceId, // UUID を優先
-              mainStaffId: staffOptions[0]?.value || null, // デフォルトで最初の職員をセット
+              serviceId: serviceUuid || serviceId,
+              mainStaffId: staffOptions[0]?.value || null,
               subStaffId: null,
               specialNotes: "",
               familyNotes: "",

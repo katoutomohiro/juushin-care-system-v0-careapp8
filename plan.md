@@ -10,9 +10,11 @@
 ## 📋 開発方針
 
 **リマインダー（変更不可）**
-- 最初は A・T さんを完璧に仕上げる → その後 23 名を個別に順番対応
-- 共通項目 + 利用者ごとの個別項目がある前提で、利用者ごとに慎重に作成する
+- **Phase 1**: A・T さんのケース記録フォームを「完璧な状態」まで完成させる（最優先）
+- **Phase 2**: Phase 1 で完成した仕組みを「テンプレート」として、他 23 名の利用者を個別に順番対応
+- 各利用者によって「共通項目＋個別項目」の構成が異なる前提で、1 人ずつ慎重に作成する
 - 仕様変更が入るたびに必ずこの plan.md を更新し、履歴を残す
+- **見た目は利用者名・内部はuserIdで統一**（DBリレーション用の紐付けは userId を使うが、UIには出さない）
 
 ### A・Tさんを基準とした段階的開発
 
@@ -102,6 +104,38 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - `services/data-storage-service.ts` に `CaseRecord`（JSONベース）を追加し、保存ロジックを新APIへ切替済み。
 - 管理機能は一時的に無効化済み（最小構成で運用）。
 - ✅ **2026-01-14**: ヘッダーから時刻UIを完全削除、`TimeWithNowField` コンポーネント削除、`recordTime` は自動生成へ変更
+
+### 2026-01-14: A・Tさんケース記録フォーム - 利用者表示をID→名前に変更
+
+**実装内容:**
+- ケース記録フォームのヘッダーで「利用者ID」入力欄を削除
+- 代わりに「利用者名」を readOnly で表示
+- ページコンポーネントで care_receivers テーブルから display_name（または name）を取得
+- 利用者詳細で氏名を編集したら、ケース記録ページ再読み込みで自動反映
+
+**対象ファイル:**
+- `src/components/case-records/HeaderFields.tsx` (更新: userId → careReceiverName, readOnly 表示)
+- `src/components/case-records/CaseRecordForm.tsx` (更新: initial.userId → initial.careReceiverName)
+- `src/components/case-records/CaseRecordFormClient.tsx` (更新: careReceiverName prop 追加、payload に careReceiverName 含める)
+- `app/services/[serviceId]/users/[userId]/case-records/page.tsx` (更新: 利用者名取得ロジック追加、prop 渡し)
+
+**保存 payload:**
+```json
+{
+  "serviceId": "...",
+  "userId": "...",      // 内部ID（DB紐付け用）
+  "careReceiverName": "A・T",  // 表示用（スナップショット）
+  "date": "2026-01-14",
+  "recordTime": "14:30",
+  "record_data": { ... }
+}
+```
+
+**受け入れ条件:**
+- ✅ ケース記録フォームで「利用者名」が readOnly で表示される
+- ✅ 利用者詳細で氏名を変更 → ケース記録ページ再読み込みで最新名が表示される
+- ✅ 保存時に userId（内部ID）と careReceiverName（表示用）の両方が payload に含まれる
+- ✅ 「利用者ID」という入力欄は完全に消えている
 
 ### 2026-01-14: A・Tさんケース記録フォーム - 時刻入力廃止・自動タイムスタンプ化（Phase 1）
 

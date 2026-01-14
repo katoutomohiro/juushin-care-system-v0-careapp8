@@ -88,26 +88,20 @@ export default async function CaseRecordsPage({
   const now = new Date()
   const initialDate = now.toISOString().split("T")[0]
 
-  // Fetch care receiver details to get the latest name (DB first)
-  let careReceiverName = ""
-  
+  // Fetch care receiver details to get the name
+  let careReceiverName = displayUserId  // Fallback to displayUserId
   if (supabaseAdmin && careReceiverUuid) {
     const { data: careReceiver } = await supabaseAdmin
       .from("care_receivers")
-      .select("name")
+      .select("name, display_name")
       .eq("id", careReceiverUuid)
       .maybeSingle()
-
-    if (careReceiver?.name) {
+    if (careReceiver?.display_name) {
+      careReceiverName = careReceiver.display_name
+    } else if (careReceiver?.name) {
       careReceiverName = careReceiver.name
     }
   }
-
-  // Last-resort fallback to URL userId if DB lookup failed (keeps UI stable)
-  if (!careReceiverName) {
-    careReceiverName = displayUserId
-  }
-
   // Debug logging (disabled in production)
   if (process.env.NODE_ENV !== "production") {
     console.log("[case-records] Debug info:", {
@@ -117,6 +111,7 @@ export default async function CaseRecordsPage({
       careReceiverId,
       careReceiverUuid,
       serviceUuid,
+      careReceiverName,
       template_found: !!template,
       template_name: template?.name,
       template_fields_count: template?.customFields?.length ?? 0,
