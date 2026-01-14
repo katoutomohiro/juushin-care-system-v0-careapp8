@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null)
     const bodyKeys = body && typeof body === "object" ? Object.keys(body) : []
     const serviceInput = body?.serviceId ?? body?.service_id ?? body?.serviceSlug ?? body?.service ?? null
+    const careReceiverIdInput = body?.careReceiverId ?? body?.care_receiver_id ?? null
     const record = body?.record ?? null
     const recordDataInput = body?.recordData ?? body?.record_data ?? record ?? null
     const careReceiverCodeInput = body?.userId ?? body?.user_id ?? null
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     const missingFields: string[] = []
     if (!serviceInput) missingFields.push("serviceId")
-    if (!careReceiverCodeInput) missingFields.push("userId")
+    if (!careReceiverIdInput && !careReceiverCodeInput) missingFields.push("careReceiverId or userId")
     if (!recordDate) missingFields.push("recordDate")
 
     if (missingFields.length > 0) {
@@ -128,9 +129,15 @@ export async function POST(req: NextRequest) {
           error: `Missing required fields: ${missingFields.join(", ")}`,
           where: "case-records/save POST",
           payloadKeys: bodyKeys,
+          fieldErrors: missingFields,
         },
         { status: 400 },
       )
+    }
+
+    let careReceiverId: string | null = null
+    if (careReceiverIdInput && uuidRegex.test(String(careReceiverIdInput))) {
+      careReceiverId = String(careReceiverIdInput)
     }
 
     let serviceId: string | null = null
@@ -180,12 +187,12 @@ export async function POST(req: NextRequest) {
       serviceId = serviceData.id
     }
 
-    if (!careReceiverCode) {
+    if (!careReceiverId && !careReceiverCode) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Invalid userId",
-          detail: "Could not normalize care receiver code from userId.",
+          error: "Invalid care receiver",
+          detail: "Could not resolve care receiver id or code.",
           where: "case-records/save POST",
           payloadKeys: bodyKeys,
         },
@@ -193,29 +200,59 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { data: careReceiver, error: careReceiverError } = await supabaseAdmin
-      .from("care_receivers")
-      .select("id, code")
-      .eq("code", careReceiverCode)
-      .maybeSingle()
+    let careReceiver = null
+    if (careReceiverId) {
+      const { data, error: careReceiverIdError } = await supabaseAdmin
+        .from("care_receivers")
+        .select("id, code")
+        .eq("id", careReceiverId)
+        .maybeSingle()
+      if (careReceiverIdError) {
+        console.error("[case-records/save POST] care receiver lookup by id failed", {
+          id: careReceiverId,
+          message: careReceiverIdError.message,
+          details: careReceiverIdError.details,
+          hint: careReceiverIdError.hint,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver lookup failed",
+            detail: careReceiverIdError.message || "Unknown error",
+            where: "case-records/save POST",
+            payloadKeys: bodyKeys,
+          },
+          { status: 400 },
+        )
+      }
+      careReceiver = data
+    } else {
+      const { data, error: careReceiverError } = await supabaseAdmin
+        .from("care_receivers")
+        .select("id, code")
+        .eq("code", careReceiverCode)
+        .maybeSingle()
 
-    if (careReceiverError) {
-      console.error("[case-records/save POST] care receiver lookup failed", {
-        code: careReceiverCode,
-        message: careReceiverError.message,
-        details: careReceiverError.details,
-        hint: careReceiverError.hint,
-      })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "care_receiver lookup failed",
-          detail: careReceiverError.message || "Unknown error",
-          where: "case-records/save POST",
-          payloadKeys: bodyKeys,
-        },
-        { status: 400 },
-      )
+      if (careReceiverError) {
+        console.error("[case-records/save POST] care receiver lookup failed", {
+          code: careReceiverCode,
+          message: careReceiverError.message,
+          details: careReceiverError.details,
+          hint: careReceiverError.hint,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "care_receiver lookup failed",
+            detail: careReceiverError.message || "Unknown error",
+            where: "case-records/save POST",
+            payloadKeys: bodyKeys,
+          },
+          { status: 400 },
+        )
+      }
+
+      careReceiver = data
     }
 
     if (!careReceiver?.id) {

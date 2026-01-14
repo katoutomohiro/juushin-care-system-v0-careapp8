@@ -37,6 +37,7 @@ export function CaseRecordFormClient({
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<string[]>([])
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const submittingRef = useRef(false)
 
@@ -53,12 +54,26 @@ export function CaseRecordFormClient({
     submittingRef.current = true
     setIsSubmitting(true)
     setStatusMessage(null)
+    setFieldErrors([])
     
     try {
-      const validation = CaseRecordFormSchema.safeParse(values)
+      const validationInput = {
+        ...values,
+        // serviceId は UUID 優先で検証
+        serviceId: serviceUuid || values.serviceId || serviceId,
+        // 方針1: 主担当は必須なので null/undefined を空文字にしてバリデーション
+        mainStaffId: values.mainStaffId ?? "",
+      }
+
+      const validation = CaseRecordFormSchema.safeParse(validationInput)
       if (!validation.success) {
         const issue = validation.error.issues[0]
         const message = issue?.message ?? "必須項目を入力してください"
+        const flattened = validation.error.flatten().fieldErrors
+        const collected = Object.entries(flattened)
+          .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
+          .filter(Boolean)
+        setFieldErrors(collected.length > 0 ? collected : [message])
         if (process.env.NODE_ENV === "development") {
           console.warn("[CaseRecordFormClient] Validation failed", validation.error.flatten())
         }
@@ -136,10 +151,17 @@ export function CaseRecordFormClient({
       if (!apiResponse.ok || !apiResult?.ok) {
         const errorMsg = apiResult?.error || `保存に失敗しました (${apiResponse.status})`
         const detail = apiResult?.detail || apiResult?.message
+        const apiFieldErrors: string[] = Array.isArray(apiResult?.fieldErrors)
+          ? apiResult.fieldErrors.filter((v: unknown) => typeof v === "string")
+          : []
+        if (apiFieldErrors.length > 0) {
+          setFieldErrors(apiFieldErrors)
+        }
         throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
       }
 
       setStatusMessage("保存しました")
+      setFieldErrors([])
 
       // Refresh saved list after successful submit
       setListRefreshKey((prev) => prev + 1)
@@ -152,6 +174,9 @@ export function CaseRecordFormClient({
     } catch (error) {
       console.error("[CaseRecordFormClient] Submit error:", error)
       setStatusMessage("保存に失敗しました")
+      if (error instanceof Error && error.message) {
+        setFieldErrors((prev) => prev.length ? prev : [error.message])
+      }
       toast({
         variant: "destructive",
         title: "保存に失敗しました",
@@ -201,6 +226,16 @@ export function CaseRecordFormClient({
           }`}
         >
           {statusMessage}
+        </div>
+      )}
+      {fieldErrors.length > 0 && (
+        <div className="px-4 py-3 rounded bg-red-50 border border-red-200 text-red-800">
+          <p className="font-semibold mb-1">入力エラー</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            {fieldErrors.map((err, idx) => (
+              <li key={`${err}-${idx}`}>{err}</li>
+            ))}
+          </ul>
         </div>
       )}
       
