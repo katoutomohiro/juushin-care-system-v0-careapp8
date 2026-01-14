@@ -18,6 +18,7 @@ const MOCK_STAFF_OPTIONS = [
 export function CaseRecordFormClient({
   careReceiverId,
   careReceiverUuid,
+  careReceiverName,
   userId,
   serviceId,
   serviceUuid,
@@ -26,6 +27,7 @@ export function CaseRecordFormClient({
 }: {
   careReceiverId: string
   careReceiverUuid: string
+  careReceiverName: string
   userId: string
   serviceId: string
   serviceUuid: string
@@ -120,6 +122,7 @@ export function CaseRecordFormClient({
         body: JSON.stringify({
           serviceId: resolvedServiceId,
           userId: resolvedUserId,
+          careReceiverName: careReceiverName,  // Include display name for printing/snapshot
           date: values.date,
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           record_data: payload, // Send structured payload (not stringified)
@@ -204,7 +207,7 @@ export function CaseRecordFormClient({
         <CaseRecordForm
           initial={{
             date: dateStr,
-            userId: userId,
+            careReceiverName,
             serviceId: serviceId,
             mainStaffId: null,
             subStaffIds: [],
