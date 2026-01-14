@@ -3,6 +3,7 @@ import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import { notFound } from "next/navigation"
+import { unstable_noStore as noStore } from "next/cache"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
@@ -17,6 +18,7 @@ export default async function CaseRecordsPage({
   params: Promise<{ serviceId: string; userId: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  noStore()
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
 

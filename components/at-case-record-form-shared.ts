@@ -14,6 +14,7 @@ type AtCaseRecordFormConfig = {
 export function buildAtCaseRecordInitial(): CaseRecordFormProps["initial"] {
   return {
     date: "",
+    careReceiverId: "", // UUID を保存キーとして使う
     careReceiverName: "",
     serviceId: "",
     mainStaffId: null,

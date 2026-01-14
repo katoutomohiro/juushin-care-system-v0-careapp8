@@ -10,6 +10,7 @@ import { TemplateField, TemplateFormValues } from "@/lib/templates/schema"
 export type CaseRecordFormProps = {
   initial: {
     date: string
+    careReceiverId: string  // UUID を保存キーとして使う
     careReceiverName: string  // 利用者名（読み取り専用）
     serviceId: string
     mainStaffId?: string | null
@@ -36,14 +37,14 @@ export function CaseRecordForm({
   const [state, setState] = useState(initial)
   const customData = state.custom ?? {}
 
-  // Sync props.initial changes to state (especially careReceiverName)
+  // Sync props.initial changes to state (especially careReceiverName, careReceiverId)
   useEffect(() => {
     setState((prevState) => ({
       ...prevState,
       ...initial,
       custom: initial.custom ?? prevState.custom,
     }))
-  }, [initial.careReceiverName, initial.date, initial.serviceId])
+  }, [initial.careReceiverId, initial.careReceiverName, initial.date, initial.serviceId])
 
   return (
     <form

@@ -4,6 +4,7 @@ import type { CaseRecordFormValues } from "@/src/lib/case-records/form-schemas"
 export function mapFormToModel(values: CaseRecordFormValues) {
   return {
     header: {
+      careReceiverId: values.careReceiverId,
       date: values.date,
       serviceType: undefined,
       staffIds: [values.mainStaffId, ...(values.subStaffIds ?? [])]
@@ -21,6 +22,7 @@ export function mapModelToForm(model: any): CaseRecordFormValues {
   const staffIds = (model?.header?.staffIds ?? []) as string[]
   const [main, ...subs] = staffIds
   return {
+    careReceiverId: model?.header?.careReceiverId ?? "",
     serviceId: model?.header?.serviceId ?? "",
     date: model?.header?.date ?? "",
     mainStaffId: main ?? "",

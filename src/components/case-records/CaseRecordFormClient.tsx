@@ -59,6 +59,8 @@ export function CaseRecordFormClient({
     try {
       const validationInput = {
         ...values,
+        // careReceiverId を UUID で統一（props から渡される）
+        careReceiverId: careReceiverUuid || values.careReceiverId || "",
         // serviceId は UUID 優先で検証
         serviceId: serviceUuid || values.serviceId || serviceId,
         // 方針1: 主担当は必須なので null/undefined を空文字にしてバリデーション
@@ -86,7 +88,7 @@ export function CaseRecordFormClient({
         return
       }
 
-      const resolvedUserId = values.userId || userId
+      const resolvedUserId = values.careReceiverId || userId
       // API保存には UUID を優先して送る
       const resolvedServiceId = serviceUuid || values.serviceId || serviceId
 
@@ -136,11 +138,10 @@ export function CaseRecordFormClient({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け
-          serviceId: resolvedServiceId,
-          userId: resolvedUserId,
-          careReceiverName: careReceiverName, // Include display name for printing/snapshot
+          careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け（userId は送らない）
+          serviceId: resolvedServiceId, // UUID
           date: values.date,
+          careReceiverName: careReceiverName, // Include display name for printing/snapshot
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           record_data: payload, // Send structured payload (not stringified)
         }),
@@ -244,8 +245,9 @@ export function CaseRecordFormClient({
         <CaseRecordForm
           initial={{
             date: dateStr,
+            careReceiverId: careReceiverUuid, // UUID を初期値として設定
             careReceiverName,
-            serviceId: serviceId,
+            serviceId: serviceUuid || serviceId, // UUID を優先
             mainStaffId: null,
             subStaffIds: [],
             specialNotes: "",
