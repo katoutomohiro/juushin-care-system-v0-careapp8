@@ -55,7 +55,7 @@ export function CaseRecordFormClient({
 
     const fetchStaff = async () => {
       try {
-        const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}`)
+        const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}`, { cache: "no-store" })
         const result = await response.json()
 
         if (response.ok && result.staffOptions) {

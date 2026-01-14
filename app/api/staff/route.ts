@@ -85,12 +85,20 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null)
     
-    if (!body?.id) {
+      if (!body?.id) {
       return NextResponse.json(
         { error: "id is required" },
         { status: 400 }
       )
     }
+
+      const serviceId = body?.serviceId || body?.service_id
+      if (!serviceId || typeof serviceId !== "string") {
+        return NextResponse.json(
+          { error: "serviceId is required" },
+          { status: 400 }
+        )
+      }
 
     if (!supabaseAdmin) {
       console.error("[PUT /api/staff] Supabase admin not available")
@@ -135,11 +143,41 @@ export async function PUT(req: NextRequest) {
       )
     }
 
+    // Verify the staff belongs to the specified service
+    const { data: existingStaff, error: existingError } = await supabaseAdmin
+      .from("staff")
+      .select("id, service_id")
+      .eq("id", body.id)
+      .maybeSingle()
+
+    if (existingError) {
+      console.error("[PUT /api/staff] Supabase lookup error:", existingError)
+      return NextResponse.json(
+        { error: "Failed to verify staff", detail: existingError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!existingStaff) {
+      return NextResponse.json(
+        { error: "Staff not found" },
+        { status: 404 }
+      )
+    }
+
+    if (existingStaff.service_id !== serviceId) {
+      return NextResponse.json(
+        { error: "Service mismatch for staff" },
+        { status: 403 }
+      )
+    }
+
     const { data, error } = await supabaseAdmin
       .from("staff")
       .update(updates)
       .eq("id", body.id)
-      .select("id, name, sort_order, is_active")
+      .eq("service_id", serviceId)
+      .select("id, name, sort_order, is_active, service_id")
       .single()
 
     if (error) {

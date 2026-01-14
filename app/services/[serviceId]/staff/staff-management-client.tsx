@@ -45,7 +45,9 @@ export function StaffManagementClient({
   const fetchStaff = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/staff?serviceId=${serviceId}&activeOnly=false`)
+      const response = await fetch(`/api/staff?serviceId=${serviceId}&activeOnly=false`, {
+        cache: "no-store",
+      })
       const result = await response.json()
 
       if (response.ok && result.staff) {
@@ -91,6 +93,7 @@ export function StaffManagementClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
+          serviceId,
           name: editForm.name,
           sortOrder: editForm.sortOrder,
           isActive: editForm.isActive,

@@ -4,7 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import ClickableCard from "@/components/clickable-card"
 import { formUrl, buildUserDiaryUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -12,8 +12,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DataStorageService } from "@/services/data-storage-service"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -305,12 +307,31 @@ export default function UserDetailPage() {
   const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
   const [currentDate, setCurrentDate] = useState<string>("")
 
-  useEffect(() => {
-    const profile = DataStorageService.getUserProfile(userId)
-    if (profile?.name) {
-      setDisplayName(profile.name)
+  const fetchCareReceiverName = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
+        cache: "no-store",
+      })
+      const result = await response.json()
+
+      if (response.ok && result?.careReceiver) {
+        const latestName = result.careReceiver.name || userId
+        setDisplayName(latestName)
+        setEditedUser((prev) => ({ ...prev, name: latestName }))
+        return latestName
+      }
+
+      console.error("[UserDetailPage] Failed to fetch care receiver name", result?.error)
+    } catch (error) {
+      console.error("[UserDetailPage] Error fetching care receiver name", error)
     }
-  }, [userId])
+
+    return null
+  }, [normalizedUserId, userId])
+
+  useEffect(() => {
+    void fetchCareReceiverName()
+  }, [fetchCareReceiverName])
 
   useEffect(() => {
     setCurrentDate(
@@ -361,27 +382,12 @@ export default function UserDetailPage() {
         console.log("[handleSaveUser] Successfully updated Supabase care_receivers.name")
       }
 
-      // Update localStorage
-      if (newName !== oldName) {
-        DataStorageService.updateUserNameInProfiles(oldName, newName)
-        DataStorageService.updateUserNameInEvents(oldName, newName)
-
-        const customNames = DataStorageService.getCustomUserNames()
-        const updatedNames = new Set(customNames)
-        if (updatedNames.has(oldName)) {
-          updatedNames.delete(oldName)
-        }
-        updatedNames.add(newName)
-        DataStorageService.saveCustomUserNames(Array.from(updatedNames))
-
-        alert(`氏名を「${oldName}」から「${newName}」に変更しました。`)
-      }
-
       userDetails[userId] = { ...editedUser, name: newName }
       setDisplayName(newName)
       setIsEditDialogOpen(false)
       // ケース記録ページなど他の関連ページをリロード
       router.refresh()
+      await fetchCareReceiverName()
     } catch (error) {
       console.error("Failed to save user information:", error)
       alert("保存に失敗しました。もう一度お試しください。")
