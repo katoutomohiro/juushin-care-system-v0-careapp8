@@ -363,6 +363,8 @@ export default function UserDetailPage() {
     userDetails[userId] = { ...editedUser, name: newName }
     setDisplayName(newName)
     setIsEditDialogOpen(false)
+    // ケース記録ページなど他の関連ページをリロード
+    router.refresh()
   }
 
   return (

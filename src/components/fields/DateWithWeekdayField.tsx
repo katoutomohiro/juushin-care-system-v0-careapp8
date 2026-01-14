@@ -53,9 +53,9 @@ export default function DateWithWeekdayField({
     // focusしてからpicker
     hiddenRef.current.focus()
     // Chromium系は showPicker がある
-    // @ts-expect-error
-    if (typeof hiddenRef.current.showPicker === "function")
-      hiddenRef.current.showPicker()
+    const input = hiddenRef.current as HTMLInputElement & { showPicker?: () => void }
+    if (typeof input.showPicker === "function")
+      input.showPicker()
     else hiddenRef.current.click()
   }
 

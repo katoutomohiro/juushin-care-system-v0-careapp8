@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { HeaderFields } from "@/src/components/case-records/HeaderFields"
 import { StaffSelector, type StaffOption } from "@/src/components/case-records/StaffSelector"
 import { NotesSection } from "@/src/components/case-records/NotesSection"
@@ -35,6 +35,15 @@ export function CaseRecordForm({
 }: CaseRecordFormProps) {
   const [state, setState] = useState(initial)
   const customData = state.custom ?? {}
+
+  // Sync props.initial changes to state (especially careReceiverName)
+  useEffect(() => {
+    setState((prevState) => ({
+      ...prevState,
+      ...initial,
+      custom: initial.custom ?? prevState.custom,
+    }))
+  }, [initial.careReceiverName, initial.date, initial.serviceId])
 
   return (
     <form

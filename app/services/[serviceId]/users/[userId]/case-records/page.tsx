@@ -2,6 +2,7 @@ import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFo
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { DataStorageService } from "@/services/data-storage-service"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 
@@ -87,6 +88,8 @@ export default async function CaseRecordsPage({
 
   // Fetch care receiver details to get the name
   let careReceiverName = displayUserId  // Fallback to displayUserId
+  
+  // Try to get from Supabase first
   if (supabaseAdmin && careReceiverUuid) {
     const { data: careReceiver } = await supabaseAdmin
       .from("care_receivers")
@@ -97,6 +100,14 @@ export default async function CaseRecordsPage({
       careReceiverName = careReceiver.display_name
     } else if (careReceiver?.name) {
       careReceiverName = careReceiver.name
+    }
+  }
+
+  // Fallback to DataStorageService (localStorage-based) if Supabase failed
+  if (careReceiverName === displayUserId) {
+    const customNames = DataStorageService.getCustomUserNames()
+    if (customNames.includes(displayUserId)) {
+      careReceiverName = displayUserId
     }
   }
 

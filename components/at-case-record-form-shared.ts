@@ -14,8 +14,7 @@ type AtCaseRecordFormConfig = {
 export function buildAtCaseRecordInitial(): CaseRecordFormProps["initial"] {
   return {
     date: "",
-    time: "",
-    userId: "",
+    careReceiverName: "",
     serviceId: "",
     mainStaffId: null,
     subStaffIds: [],
