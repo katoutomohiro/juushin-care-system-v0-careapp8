@@ -45,6 +45,12 @@ Continue building your app on:
 
 **[https://v0.app/chat/projects/PfVKEiHybWJ](https://v0.app/chat/projects/PfVKEiHybWJ)**
 
+## Development
+
+- 通常起動: `pnpm dev`
+- 不具合時: `pnpm dev:clean`
+- `dev:clean` は `.next` を削除し、`3000-3005` の空きポートを自動選択して起動します
+
 ## How It Works
 
 1. Create and modify your project using [v0.app](https://v0.app)
