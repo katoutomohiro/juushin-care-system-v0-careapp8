@@ -41,13 +41,13 @@ export default function TimeWithNowField({
           name={name}
           value={value || ""}
           onChange={(e) => onChange({ target: { name, value: e.target.value } })}
-          className="w-full border rounded-md px-3 py-2 pr-20"
+          className="w-full border rounded-md px-3 py-2 pr-16"
         />
 
         <button
           type="button"
           onClick={handleNow}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-sm border rounded-md px-3 py-1 bg-white"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-2 text-xs border rounded-md bg-white"
         >
           今すぐ
         </button>

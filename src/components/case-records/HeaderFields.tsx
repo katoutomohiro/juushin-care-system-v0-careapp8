@@ -21,11 +21,14 @@ export function HeaderFields({ date, time, userId, serviceId, onChange }: Header
         name="date"
         id="date"
       />
-      <TimeWithNowField
-        name="time"
-        value={time}
-        onChange={({ target }) => onChange({ time: target.value })}
-      />
+      <div className="min-w-0">
+        <TimeWithNowField
+          name="time"
+          value={time}
+          onChange={({ target }) => onChange({ time: target.value })}
+          className="w-full"
+        />
+      </div>
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">利用者ID</label>
         <input
