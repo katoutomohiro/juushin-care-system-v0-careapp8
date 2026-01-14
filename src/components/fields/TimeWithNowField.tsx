@@ -1,60 +1,54 @@
 "use client"
 
-import * as React from "react"
+import { useCallback } from "react"
 
 type Props = {
+  name: string
   label?: string
-  value: string // HH:mm format
-  onChange: (nextTime: string) => void
-  name?: string
-  id?: string
-  disabled?: boolean
-  required?: boolean
+  value: string // "HH:mm"
+  onChange: (v: string) => void // 親フォームへ確実に返す
 }
 
-function getCurrentTimeHHmm(): string {
-  const now = new Date()
-  const hours = String(now.getHours()).padStart(2, "0")
-  const minutes = String(now.getMinutes()).padStart(2, "0")
-  return `${hours}:${minutes}`
+function pad2(n: number) {
+  return String(n).padStart(2, "0")
 }
 
-export function TimeWithNowField({
+function nowHHmm() {
+  const d = new Date()
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
+export default function TimeWithNowField({
+  name,
   label = "時刻",
   value,
   onChange,
-  name = "time",
-  id = "time",
-  disabled,
-  required,
 }: Props) {
-  const handleNowClick = () => {
-    const currentTime = getCurrentTimeHHmm()
-    onChange(currentTime)
-  }
+  const handleNow = useCallback(() => {
+    onChange(nowHHmm())
+  }, [onChange])
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm text-muted-foreground">
+    <div className="w-full">
+      <label className="block text-sm mb-1" htmlFor={name}>
         {label}
       </label>
+
       <div className="relative">
         <input
-          id={id}
+          id={name}
           name={name}
           type="time"
           value={value}
+          step={60}
           onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          required={required}
-          className="w-full border rounded px-3 py-2 pr-16"
-          aria-label={label}
+          className="w-full border rounded-md px-3 py-2 pr-16"
         />
+
         <button
           type="button"
-          onClick={handleNowClick}
-          disabled={disabled}
-          className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          onClick={handleNow}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded-md bg-white hover:bg-gray-50"
         >
           今すぐ
         </button>
