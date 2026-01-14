@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { buildSummary } from "@/src/types/caseRecord"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface CaseRecord {
   id: string
@@ -38,6 +40,24 @@ export function CaseRecordsListClient({
   const [error, setError] = useState<string | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<CaseRecord | null>(null)
+  const [filterDate, setFilterDate] = useState<string>("")
+  const [filterMainStaffId, setFilterMainStaffId] = useState<string>("")
+  const [staffOptions, setStaffOptions] = useState<{ value: string; label: string }[]>([])
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const response = await fetch(`/api/staff?serviceId=${serviceId}`)
+        const result = await response.json()
+        if (response.ok && Array.isArray(result.staffOptions)) {
+          setStaffOptions(result.staffOptions)
+        }
+      } catch (error) {
+        console.error("[CaseRecordsListClient] staff fetch error", error)
+      }
+    }
+    void fetchStaff()
+  }, [serviceId])
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -50,6 +70,9 @@ export function CaseRecordsListClient({
           limit: "50",
           offset: "0",
         })
+
+        if (filterDate) params.set("date", filterDate)
+        if (filterMainStaffId) params.set("mainStaffId", filterMainStaffId)
 
         const response = await fetch(`/api/case-records/list?${params}`)
         const data = await response.json()
@@ -85,7 +108,7 @@ export function CaseRecordsListClient({
     }
 
     fetchRecords()
-  }, [serviceId, careReceiverId, refreshKey])
+  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId])
 
   if (isLoading) {
     return (
@@ -143,7 +166,39 @@ export function CaseRecordsListClient({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>保存済み記録一覧 ({records.length}件)</CardTitle>
+        <div className="flex flex-col gap-3">
+          <CardTitle>保存済み記録一覧 ({records.length}件)</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">日付</span>
+              <Input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="h-9 w-44"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">主担当</span>
+              <Select value={filterMainStaffId} onValueChange={setFilterMainStaffId}>
+                <SelectTrigger className="h-9 w-52">
+                  <SelectValue placeholder="すべて" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">すべて</SelectItem>
+                  {staffOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => { setFilterDate(""); setFilterMainStaffId("") }}>
+              クリア
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">

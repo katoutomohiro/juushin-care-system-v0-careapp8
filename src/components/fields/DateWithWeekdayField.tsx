@@ -12,13 +12,6 @@ type Props = {
   required?: boolean
 }
 
-function toIsoDate(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${y}-${m}-${day}`
-}
-
 function formatJaWithWeekday(iso: string) {
   if (!iso) return ""
   // Safari対策で "YYYY-MM-DD" をそのまま new Date(iso) しない

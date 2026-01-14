@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     // Build query
     let query = supabaseAdmin
       .from("staff")
-      .select("id, name, sort_order, is_active")
+      .select("id, name, sort_order, is_active, service_id")
       .eq("service_id", serviceId)
       .order("sort_order", { ascending: true })
 
@@ -54,10 +54,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform to options format for UI
-    const staffOptions = (data || []).map((staff) => ({
-      value: staff.id,
-      label: staff.name,
-    }))
+    const staffOptions = (data || [])
+      .filter((staff) => staff.is_active)
+      .map((staff) => ({
+        value: staff.id,
+        label: staff.name,
+      }))
 
     return NextResponse.json({
       ok: true,
@@ -76,29 +78,33 @@ export async function GET(req: NextRequest) {
 /**
  * PUT /api/staff
  * Body:
- *   - id: uuid (required)
- *   - name: string (optional)
- *   - sortOrder: number (optional)
- *   - isActive: boolean (optional)
+ *   - serviceId: uuid (required)
+ *   - staff: Array<{
+ *       id?: uuid
+ *       name: string
+ *       sort_order?: number
+ *       is_active?: boolean
+ *     }>
  */
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null)
-    
-      if (!body?.id) {
+    const serviceId = body?.serviceId || body?.service_id
+    const staffInput = Array.isArray(body?.staff) ? body.staff : null
+
+    if (!serviceId || typeof serviceId !== "string") {
       return NextResponse.json(
-        { error: "id is required" },
+        { error: "serviceId is required" },
         { status: 400 }
       )
     }
 
-      const serviceId = body?.serviceId || body?.service_id
-      if (!serviceId || typeof serviceId !== "string") {
-        return NextResponse.json(
-          { error: "serviceId is required" },
-          { status: 400 }
-        )
-      }
+    if (!staffInput || staffInput.length === 0) {
+      return NextResponse.json(
+        { error: "staff array is required" },
+        { status: 400 }
+      )
+    }
 
     if (!supabaseAdmin) {
       console.error("[PUT /api/staff] Supabase admin not available")
@@ -107,91 +113,39 @@ export async function PUT(req: NextRequest) {
         { status: 503 }
       )
     }
-
-    // Build update object
-    const updates: Record<string, any> = {}
-    
-    if (body.name !== undefined) {
-      updates.name = String(body.name).trim()
-      if (!updates.name) {
-        return NextResponse.json(
-          { error: "name cannot be empty" },
-          { status: 400 }
-        )
+    const now = new Date().toISOString()
+    const rows = staffInput.map((row: any) => {
+      const trimmedName = typeof row?.name === "string" ? row.name.trim() : ""
+      if (!trimmedName) {
+        throw new Error("name cannot be empty")
       }
-    }
-    
-    if (body.sortOrder !== undefined) {
-      updates.sort_order = parseInt(String(body.sortOrder), 10)
-      if (isNaN(updates.sort_order)) {
-        return NextResponse.json(
-          { error: "sortOrder must be a number" },
-          { status: 400 }
-        )
+      const parsedSort = row?.sort_order ?? row?.sortOrder
+      const sortOrder = parsedSort == null ? null : Number.parseInt(String(parsedSort), 10)
+      if (sortOrder !== null && Number.isNaN(sortOrder)) {
+        throw new Error("sort_order must be a number")
       }
-    }
-    
-    if (body.isActive !== undefined) {
-      updates.is_active = Boolean(body.isActive)
-    }
-
-    // Ensure at least one field is being updated
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { error: "No fields to update" },
-        { status: 400 }
-      )
-    }
-
-    // Verify the staff belongs to the specified service
-    const { data: existingStaff, error: existingError } = await supabaseAdmin
-      .from("staff")
-      .select("id, service_id")
-      .eq("id", body.id)
-      .maybeSingle()
-
-    if (existingError) {
-      console.error("[PUT /api/staff] Supabase lookup error:", existingError)
-      return NextResponse.json(
-        { error: "Failed to verify staff", detail: existingError.message },
-        { status: 500 }
-      )
-    }
-
-    if (!existingStaff) {
-      return NextResponse.json(
-        { error: "Staff not found" },
-        { status: 404 }
-      )
-    }
-
-    if (existingStaff.service_id !== serviceId) {
-      return NextResponse.json(
-        { error: "Service mismatch for staff" },
-        { status: 403 }
-      )
-    }
+      return {
+        id: row?.id ?? undefined,
+        service_id: serviceId,
+        name: trimmedName,
+        sort_order: sortOrder ?? 0,
+        is_active: row?.is_active ?? row?.isActive ?? true,
+        updated_at: now,
+      }
+    })
 
     const { data, error } = await supabaseAdmin
       .from("staff")
-      .update(updates)
-      .eq("id", body.id)
-      .eq("service_id", serviceId)
+      .upsert(rows, { onConflict: "id" })
       .select("id, name, sort_order, is_active, service_id")
-      .single()
+      .eq("service_id", serviceId)
+      .order("sort_order", { ascending: true })
 
     if (error) {
-      console.error("[PUT /api/staff] Supabase error:", error)
+      console.error("[PUT /api/staff] Supabase upsert error:", error)
       return NextResponse.json(
-        { error: "Failed to update staff", detail: error.message },
+        { error: "Failed to upsert staff", detail: error.message },
         { status: 500 }
-      )
-    }
-
-    if (!data) {
-      return NextResponse.json(
-        { error: "Staff not found" },
-        { status: 404 }
       )
     }
 
@@ -200,9 +154,10 @@ export async function PUT(req: NextRequest) {
       staff: data,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
     console.error("[PUT /api/staff] Unexpected error:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: message || "Internal server error" },
       { status: 500 }
     )
   }

@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     const careReceiverId = searchParams.get("careReceiverId")
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
+    const dateExact = searchParams.get("date")
     const mainStaffId = searchParams.get("mainStaffId")
     const limit = parseInt(searchParams.get("limit") || "50", 10)
     const offset = parseInt(searchParams.get("offset") || "0", 10)
@@ -70,11 +71,15 @@ export async function GET(req: NextRequest) {
       .order("id", { ascending: false })
 
     // Date range filter
-    if (dateFrom) {
-      query = query.gte("record_date", dateFrom)
-    }
-    if (dateTo) {
-      query = query.lte("record_date", dateTo)
+    if (dateExact) {
+      query = query.gte("record_date", dateExact).lte("record_date", dateExact)
+    } else {
+      if (dateFrom) {
+        query = query.gte("record_date", dateFrom)
+      }
+      if (dateTo) {
+        query = query.lte("record_date", dateTo)
+      }
     }
 
     // Main staff filter

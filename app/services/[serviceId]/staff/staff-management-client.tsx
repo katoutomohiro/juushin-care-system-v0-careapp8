@@ -80,6 +80,20 @@ export function StaffManagementClient({
     })
   }
 
+  const addNewRow = () => {
+    const nextSort = staff.length > 0 ? Math.max(...staff.map((s) => s.sort_order || 0)) + 1 : 1
+    const tempId = `temp-${crypto.randomUUID?.() || Date.now()}`
+    const newRow: Staff = {
+      id: tempId,
+      name: "",
+      sort_order: nextSort,
+      is_active: true,
+    }
+    setStaff((prev) => [...prev, newRow])
+    setEditingId(tempId)
+    setEditForm({ name: "", sortOrder: nextSort, isActive: true })
+  }
+
   const cancelEdit = () => {
     setEditingId(null)
     setEditForm({ name: "", sortOrder: 0, isActive: true })
@@ -92,20 +106,25 @@ export function StaffManagementClient({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id,
           serviceId,
-          name: editForm.name,
-          sortOrder: editForm.sortOrder,
-          isActive: editForm.isActive,
+          staff: [
+            {
+              id: id.startsWith("temp-") ? undefined : id,
+              name: editForm.name,
+              sort_order: editForm.sortOrder,
+              is_active: editForm.isActive,
+            },
+          ],
         }),
       })
 
       const result = await response.json()
 
       if (response.ok && result.ok) {
+        const firstName = Array.isArray(result.staff) ? result.staff[0]?.name : result.staff?.name
         toast({
           title: "✅ 保存しました",
-          description: `${result.staff.name} の情報を更新しました`,
+          description: firstName ? `${firstName} の情報を更新しました` : "職員情報を更新しました",
         })
         setEditingId(null)
         await fetchStaff()
@@ -148,7 +167,12 @@ export function StaffManagementClient({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>職員一覧 ({staff.length}人)</CardTitle>
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle>職員一覧 ({staff.length}人)</CardTitle>
+          <Button size="sm" onClick={addNewRow} variant="outline">
+            ＋ 新規追加
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

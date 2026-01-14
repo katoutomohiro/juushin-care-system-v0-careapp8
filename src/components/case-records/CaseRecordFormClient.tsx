@@ -149,8 +149,6 @@ export function CaseRecordFormClient({
         return
       }
 
-      const resolvedUserId = values.careReceiverId || userId
-
       // Build structured payload
       const payload: CaseRecordPayload = {
         version: 1,
