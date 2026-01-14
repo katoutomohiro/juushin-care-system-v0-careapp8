@@ -2,6 +2,7 @@
 
 import type { ChangeEvent } from "react"
 import { DateWithWeekdayField } from "@/src/components/fields/DateWithWeekdayField"
+import { TimeWithNowField } from "@/src/components/fields/TimeWithNowField"
 
 export type HeaderFieldsProps = {
   date: string
@@ -20,16 +21,12 @@ export function HeaderFields({ date, time, userId, serviceId, onChange }: Header
         name="date"
         id="date"
       />
-      <div className="flex flex-col gap-1">
-        <label className="text-sm text-muted-foreground">時刻</label>
-        <input
-          type="time"
-          aria-label="時刻"
-          value={time}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onChange({ time: e.target.value })}
-          className="border rounded px-3 py-2"
-        />
-      </div>
+      <TimeWithNowField
+        value={time}
+        onChange={(nextTime) => onChange({ time: nextTime })}
+        name="time"
+        id="time"
+      />
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">利用者ID</label>
         <input

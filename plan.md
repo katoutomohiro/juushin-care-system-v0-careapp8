@@ -73,6 +73,37 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ 保存時に date が ISO形式（YYYY-MM-DD）で送信される
 - ✅ クロスブラウザ対応（Safari対策済み）
 
+### 2026-01-14: A・Tさんケース記録フォーム - 時刻「今すぐ」ボタン機能の実装
+
+**実装内容:**
+- `src/components/fields/TimeWithNowField.tsx` を新規作成（共通コンポーネント）
+  - 時刻入力欄（type="time"、HH:mm形式）
+  - 右側に「今すぐ」ボタン（absolute配置）
+  - ボタン押下で現在時刻を自動入力（例：10:30）
+  - 手入力による修正は常に可能
+
+- `src/components/case-records/HeaderFields.tsx` を更新
+  - 既存の時刻フィールド実装を削除
+  - 新しい `TimeWithNowField` コンポーネントに置き換え
+
+**対象ファイル:**
+- `src/components/fields/TimeWithNowField.tsx` (NEW)
+- `src/components/case-records/HeaderFields.tsx` (UPDATED)
+
+**時刻仕様（次の利用者追加時の参考）:**
+- 表示形式: HH:mm（24時間制）
+- 「今すぐ」ボタンで現在時刻を自動入力
+- 手入力で修正可能
+- 保存・印刷で同じ値を使用
+- 内部保存形式: HH:mm
+
+**受け入れ条件:**
+- ✅ A・Tさんのケース記録画面で「今すぐ」ボタンが表示される
+- ✅ ボタン押下で現在時刻が HH:mm 形式で入力される
+- ✅ 時刻を手入力で修正可能
+- ✅ 保存時に time が HH:mm 形式で送信される
+- ✅ Console にエラーなし
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
