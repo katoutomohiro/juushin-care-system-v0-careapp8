@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
@@ -9,11 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
 import { CaseRecordPayload } from "@/src/types/caseRecord"
 
-const MOCK_STAFF_OPTIONS = [
-  { value: "staff-1", label: "スタッフA" },
-  { value: "staff-2", label: "スタッフB" },
-  { value: "staff-3", label: "スタッフC" },
-]
+type StaffOption = {
+  value: string
+  label: string
+}
 
 export function CaseRecordFormClient({
   careReceiverId,
@@ -40,9 +39,47 @@ export function CaseRecordFormClient({
   const [fieldErrors, setFieldErrors] = useState<string[]>([])
   const [validationErrors, setValidationErrors] = useState<{ mainStaffId?: string }>({})
   const [listRefreshKey, setListRefreshKey] = useState(0)
+  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true)
   const submittingRef = useRef(false)
+  const didFetchStaffRef = useRef(false)
 
   const dateStr = initialDate ?? ""
+
+  // Fetch staff options from database
+  useEffect(() => {
+    if (didFetchStaffRef.current) return
+    didFetchStaffRef.current = true
+
+    const fetchStaff = async () => {
+      try {
+        const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}`)
+        const result = await response.json()
+
+        if (response.ok && result.staffOptions) {
+          setStaffOptions(result.staffOptions)
+        } else {
+          console.error("[CaseRecordFormClient] Failed to fetch staff:", result.error)
+          toast({
+            variant: "destructive",
+            title: "職員データの取得に失敗しました",
+            description: result.error || "もう一度お試しください",
+          })
+        }
+      } catch (error) {
+        console.error("[CaseRecordFormClient] Error fetching staff:", error)
+        toast({
+          variant: "destructive",
+          title: "職員データの取得に失敗しました",
+          description: "ネットワーク接続を確認してください",
+        })
+      } finally {
+        setIsLoadingStaff(false)
+      }
+    }
+
+    void fetchStaff()
+  }, [serviceId, serviceUuid, toast])
 
   const handleSubmit = useCallback(async (values: any) => {
     // Double-submit guard: prevent concurrent submissions
@@ -163,6 +200,8 @@ export function CaseRecordFormClient({
           date: values.date,
           careReceiverName: careReceiverName, // Include display name for printing/snapshot
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
+          mainStaffId: values.mainStaffId, // 主担当職員ID (UUID)
+          subStaffId: values.subStaffIds?.[0] || null, // 副担当職員ID (UUID, single value for now)
           record_data: payload, // Send structured payload (not stringified)
         }),
       })
@@ -263,23 +302,35 @@ export function CaseRecordFormClient({
       
       <div>
         <h2 className="text-lg font-semibold mb-4">新規ケース記録</h2>
-        <CaseRecordForm
-          initial={{
-            date: dateStr,
-            careReceiverId: careReceiverUuid, // UUID を初期値として設定
-            careReceiverName,
-            serviceId: serviceUuid || serviceId, // UUID を優先
-            mainStaffId: MOCK_STAFF_OPTIONS[0]?.value || null, // デフォルトで最初の職員をセット
-            subStaffIds: [],
-            specialNotes: "",
-            familyNotes: "",
-            custom: {},
-          }}
-          staffOptions={MOCK_STAFF_OPTIONS}
-          templateFields={template.customFields || []}
-          onSubmit={handleSubmit}
-          submitLabel={isSubmitting ? "保存中..." : "保存"}
-          isSubmitting={isSubmitting}          validationErrors={validationErrors}        />
+        {isLoadingStaff ? (
+          <div className="px-4 py-3 rounded bg-blue-50 border border-blue-200 text-blue-800">
+            職員データを読み込み中...
+          </div>
+        ) : staffOptions.length === 0 ? (
+          <div className="px-4 py-3 rounded bg-amber-50 border border-amber-200 text-amber-800">
+            職員データが登録されていません。管理者に連絡してください。
+          </div>
+        ) : (
+          <CaseRecordForm
+            initial={{
+              date: dateStr,
+              careReceiverId: careReceiverUuid, // UUID を初期値として設定
+              careReceiverName,
+              serviceId: serviceUuid || serviceId, // UUID を優先
+              mainStaffId: staffOptions[0]?.value || null, // デフォルトで最初の職員をセット
+              subStaffIds: [],
+              specialNotes: "",
+              familyNotes: "",
+              custom: {},
+            }}
+            staffOptions={staffOptions}
+            templateFields={template.customFields || []}
+            onSubmit={handleSubmit}
+            submitLabel={isSubmitting ? "保存中..." : "保存"}
+            isSubmitting={isSubmitting}
+            validationErrors={validationErrors}
+          />
+        )}
       </div>
 
       <div>

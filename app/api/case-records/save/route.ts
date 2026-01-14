@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
     const careReceiverCodeInput = body?.userId ?? body?.user_id ?? null
     const recordDateRaw = body?.date ?? body?.recordDate ?? body?.record_date ?? null
     const recordTimeRaw = body?.recordTime ?? body?.record_time ?? null
+    const mainStaffId = body?.mainStaffId ?? body?.main_staff_id ?? null
+    const subStaffId = body?.subStaffId ?? body?.sub_staff_id ?? null
 
     const recordDate = normalizeDate(recordDateRaw)
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
@@ -275,6 +277,8 @@ export async function POST(req: NextRequest) {
       record_date: recordDate,
       record_time: recordTime ?? null,
       record_data: recordData,
+      main_staff_id: mainStaffId,
+      sub_staff_id: subStaffId,
     }
 
     const { data, error } = await supabaseAdmin
