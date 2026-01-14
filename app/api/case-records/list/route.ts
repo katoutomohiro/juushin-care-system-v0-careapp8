@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Transform response to include main staff name
+    // Transform response to include staff names
     const records = (data || []).map((record: any) => ({
       id: record.id,
       serviceId: record.service_id,
@@ -112,7 +112,6 @@ export async function GET(req: NextRequest) {
       recordTime: record.record_time,
       mainStaffId: record.main_staff_id,
       mainStaffName: record.main_staff?.name || null,
-      subStaffIds: record.sub_staff_id ? [record.sub_staff_id] : [],
       subStaffId: record.sub_staff_id,
       subStaffName: record.sub_staff?.name || null,
       recordData: record.record_data,

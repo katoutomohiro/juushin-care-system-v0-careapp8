@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
     const recordTimeRaw = body?.recordTime ?? body?.record_time ?? null
     const mainStaffId = body?.mainStaffId ?? body?.main_staff_id ?? null
     const subStaffId = body?.subStaffId ?? body?.sub_staff_id ?? null
+    const recordId = body?.id ?? body?.recordId ?? null
 
     const recordDate = normalizeDate(recordDateRaw)
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
     if (!serviceInput) missingFields.push("serviceId")
     if (!careReceiverIdInput && !careReceiverCodeInput) missingFields.push("careReceiverId or userId")
     if (!recordDate) missingFields.push("recordDate")
+    if (!mainStaffId) missingFields.push("mainStaffId")
 
     if (missingFields.length > 0) {
       return NextResponse.json(
@@ -281,11 +283,27 @@ export async function POST(req: NextRequest) {
       sub_staff_id: subStaffId ?? null,
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("case_records")
-      .insert([recordRow])
-      .select("*")
-      .single()
+    let data: any = null
+    let error: any = null
+
+    if (recordId && uuidRegex.test(String(recordId))) {
+      const updateResult = await supabaseAdmin
+        .from("case_records")
+        .update(recordRow)
+        .eq("id", recordId)
+        .select("*")
+        .maybeSingle()
+      data = updateResult.data
+      error = updateResult.error
+    } else {
+      const insertResult = await supabaseAdmin
+        .from("case_records")
+        .insert([recordRow])
+        .select("*")
+        .single()
+      data = insertResult.data
+      error = insertResult.error
+    }
 
     if (error) {
       console.error("[case-records/save POST] failed", {
@@ -294,12 +312,13 @@ export async function POST(req: NextRequest) {
         details: error.details,
         hint: error.hint,
         payload: recordRow,
+        recordId,
       })
       return NextResponse.json(
         {
           ok: false,
-          error: error.message || "Supabase insert failed",
-          detail: error.details ?? error.hint ?? `Supabase insert failed: ${error.code ?? "unknown"}`,
+          error: error.message || "Supabase save failed",
+          detail: error.details ?? error.hint ?? `Supabase save failed: ${error.code ?? "unknown"}`,
           where: "case-records/save POST",
           payloadKeys: Object.keys(recordRow),
         },

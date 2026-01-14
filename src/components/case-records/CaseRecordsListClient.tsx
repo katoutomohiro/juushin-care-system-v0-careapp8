@@ -47,7 +47,7 @@ export function CaseRecordsListClient({
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const response = await fetch(`/api/staff?serviceId=${serviceId}`)
+        const response = await fetch(`/api/staff?serviceId=${serviceId}`, { cache: "no-store" })
         const result = await response.json()
         if (response.ok && Array.isArray(result.staffOptions)) {
           setStaffOptions(result.staffOptions)

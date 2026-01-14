@@ -50,8 +50,13 @@ export function StaffManagementClient({
       })
       const result = await response.json()
 
-      if (response.ok && result.staff) {
-        setStaff(result.staff)
+      if (response.ok && (result.staff || Array.isArray(result))) {
+        const list: Staff[] = Array.isArray(result) ? result : result.staff
+        setStaff(list.map((s) => ({
+          ...s,
+          sort_order: (s as any).sortOrder ?? s.sort_order ?? 0,
+          is_active: (s as any).isActive ?? s.is_active,
+        })))
       } else {
         toast({
           variant: "destructive",

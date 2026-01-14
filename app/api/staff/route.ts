@@ -53,17 +53,21 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Transform to options format for UI
-    const staffOptions = (data || [])
-      .filter((staff) => staff.is_active)
-      .map((staff) => ({
-        value: staff.id,
-        label: staff.name,
-      }))
+    const staffList = (data || []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      sortOrder: row.sort_order ?? 0,
+      isActive: row.is_active,
+      serviceId: row.service_id,
+    }))
+
+    const staffOptions = staffList
+      .filter((staff) => staff.isActive)
+      .map((staff) => ({ value: staff.id, label: staff.name }))
 
     return NextResponse.json({
       ok: true,
-      staff: data,
+      staff: staffList,
       staffOptions,
     })
   } catch (error) {
@@ -90,7 +94,11 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null)
     const serviceId = body?.serviceId || body?.service_id
-    const staffInput = Array.isArray(body?.staff) ? body.staff : null
+    const staffInputArray = Array.isArray(body?.staff)
+      ? body.staff
+      : body && typeof body === "object"
+        ? [body]
+        : null
 
     if (!serviceId || typeof serviceId !== "string") {
       return NextResponse.json(
@@ -99,7 +107,7 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    if (!staffInput || staffInput.length === 0) {
+    if (!staffInputArray || staffInputArray.length === 0) {
       return NextResponse.json(
         { error: "staff array is required" },
         { status: 400 }
@@ -114,7 +122,7 @@ export async function PUT(req: NextRequest) {
       )
     }
     const now = new Date().toISOString()
-    const rows = staffInput.map((row: any) => {
+    const rows = staffInputArray.map((row: any) => {
       const trimmedName = typeof row?.name === "string" ? row.name.trim() : ""
       if (!trimmedName) {
         throw new Error("name cannot be empty")
