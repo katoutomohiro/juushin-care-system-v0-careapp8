@@ -10,13 +10,16 @@ import { buildSummary } from "@/src/types/caseRecord"
 
 interface CaseRecord {
   id: string
-  service_id: string
-  care_receiver_id: string
-  record_date: string
-  record_time: string | null
-  created_at: string
-  updated_at: string
-  record_data: any
+  serviceId: string
+  careReceiverId: string
+  recordDate: string
+  recordTime: string | null
+  mainStaffId: string | null
+  mainStaffName: string | null
+  subStaffIds: string[]
+  createdAt: string
+  updatedAt: string
+  recordData: any
 }
 
 export function CaseRecordsListClient({
@@ -43,11 +46,11 @@ export function CaseRecordsListClient({
         const params = new URLSearchParams({
           serviceId,
           careReceiverId,
-          limit: "20",
+          limit: "50",
           offset: "0",
         })
 
-        const response = await fetch(`/api/case-records?${params}`)
+        const response = await fetch(`/api/case-records/list?${params}`)
         const data = await response.json()
 
         if (process.env.NODE_ENV === "development") {
@@ -144,10 +147,11 @@ export function CaseRecordsListClient({
       <CardContent>
         <div className="space-y-2">
           {records.map((record) => {
-            const displayDate = record.record_date ? new Date(record.record_date).toLocaleDateString("ja-JP") : "--"
-            const displayTime = record.record_time || "--:--"
+            const displayDate = record.recordDate ? new Date(record.recordDate).toLocaleDateString("ja-JP") : "--"
+            const displayTime = record.recordTime || "--:--"
+            const mainStaffDisplay = record.mainStaffName ? `[${record.mainStaffName}]` : "[未設定]"
             // Handle record_data that might be string (backward compat)
-            let recordPayload: any = record.record_data
+            let recordPayload: any = record.recordData
             if (typeof recordPayload === "string") {
               try {
                 recordPayload = JSON.parse(recordPayload)
@@ -168,6 +172,7 @@ export function CaseRecordsListClient({
                     <div className="flex items-center gap-2 text-sm font-semibold mb-1">
                       <span>{displayDate}</span>
                       <span className="text-muted-foreground">{displayTime}</span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{mainStaffDisplay}</span>
                     </div>
                     <div className="text-sm text-muted-foreground truncate">{displaySummary}</div>
                   </div>
@@ -194,7 +199,7 @@ export function CaseRecordsListClient({
                       <div className="mt-4">
                         <div className="bg-muted rounded-md p-4 font-mono text-xs">
                           <pre className="whitespace-pre-wrap break-words overflow-x-auto">
-                            {JSON.stringify(record.record_data, null, 2)}
+                            {JSON.stringify(record.recordData, null, 2)}
                           </pre>
                         </div>
                       </div>

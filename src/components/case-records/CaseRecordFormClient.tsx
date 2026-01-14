@@ -201,7 +201,7 @@ export function CaseRecordFormClient({
           careReceiverName: careReceiverName, // Include display name for printing/snapshot
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           mainStaffId: values.mainStaffId, // 主担当職員ID (UUID)
-          subStaffId: values.subStaffIds?.[0] || null, // 副担当職員ID (UUID, single value for now)
+          subStaffIds: values.subStaffIds || [], // 副担当職員IDs (UUID配列)
           record_data: payload, // Send structured payload (not stringified)
         }),
       })
