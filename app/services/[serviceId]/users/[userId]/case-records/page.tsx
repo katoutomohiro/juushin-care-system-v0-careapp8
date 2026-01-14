@@ -2,7 +2,6 @@ import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFo
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { DataStorageService } from "@/services/data-storage-service"
 import { notFound } from "next/navigation"
 import { unstable_noStore as noStore } from "next/cache"
 import Link from "next/link"
@@ -89,29 +88,26 @@ export default async function CaseRecordsPage({
   const now = new Date()
   const initialDate = now.toISOString().split("T")[0]
 
-  // Fetch care receiver details to get the name
-  let careReceiverName = displayUserId  // Fallback to displayUserId
+  // Fetch care receiver details to get the latest display name (DB first)
+  let careReceiverName = ""
   
-  // Try to get from Supabase first
   if (supabaseAdmin && careReceiverUuid) {
     const { data: careReceiver } = await supabaseAdmin
       .from("care_receivers")
       .select("name, display_name")
       .eq("id", careReceiverUuid)
       .maybeSingle()
+
     if (careReceiver?.display_name) {
       careReceiverName = careReceiver.display_name
     } else if (careReceiver?.name) {
       careReceiverName = careReceiver.name
     }
   }
-  
-  // Fallback to DataStorageService (localStorage-based) if Supabase failed
-  if (careReceiverName === displayUserId) {
-    const customNames = DataStorageService.getCustomUserNames()
-    if (customNames.includes(displayUserId)) {
-      careReceiverName = displayUserId
-    }
+
+  // Last-resort fallback to URL userId if DB lookup failed (keeps UI stable)
+  if (!careReceiverName) {
+    careReceiverName = displayUserId
   }
 
   // Debug logging (disabled in production)

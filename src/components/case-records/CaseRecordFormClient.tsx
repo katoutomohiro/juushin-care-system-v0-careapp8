@@ -144,6 +144,7 @@ export function CaseRecordFormClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け
           serviceId: resolvedServiceId,
           userId,
           careReceiverName: careReceiverName,  // Include display name for printing/snapshot
