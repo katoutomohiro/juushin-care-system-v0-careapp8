@@ -47,9 +47,20 @@ Continue building your app on:
 
 ## Development
 
-- 通常起動: `pnpm dev`
-- 不具合時: `pnpm dev:clean`
-- `dev:clean` は `.next` を削除し、`3000-3005` の空きポートを自動選択して起動します
+### 起動手順
+
+1. **通常起動**: `pnpm dev`
+2. **トラブル時**（画面真っ白 / ChunkLoadError / Invalid token）:
+   ```powershell
+   pnpm dev:clean
+   pnpm dev
+   ```
+
+### dev:clean の動作
+
+- `.next` ビルドキャッシュを削除するだけ（起動はしません）
+- **Windows + Node v24 環境での安定性のため、起動は必ず `pnpm dev` で行ってください**
+- spawn 経由のプロセス起動は EINVAL エラーの原因となるため、キャッシュ削除と起動を分離しています
 
 ## How It Works
 
