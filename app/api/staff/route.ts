@@ -72,3 +72,100 @@ export async function GET(req: NextRequest) {
     )
   }
 }
+
+/**
+ * PUT /api/staff
+ * Body:
+ *   - id: uuid (required)
+ *   - name: string (optional)
+ *   - sortOrder: number (optional)
+ *   - isActive: boolean (optional)
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => null)
+    
+    if (!body?.id) {
+      return NextResponse.json(
+        { error: "id is required" },
+        { status: 400 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      console.error("[PUT /api/staff] Supabase admin not available")
+      return NextResponse.json(
+        { error: "Database connection not available" },
+        { status: 503 }
+      )
+    }
+
+    // Build update object
+    const updates: Record<string, any> = {}
+    
+    if (body.name !== undefined) {
+      updates.name = String(body.name).trim()
+      if (!updates.name) {
+        return NextResponse.json(
+          { error: "name cannot be empty" },
+          { status: 400 }
+        )
+      }
+    }
+    
+    if (body.sortOrder !== undefined) {
+      updates.sort_order = parseInt(String(body.sortOrder), 10)
+      if (isNaN(updates.sort_order)) {
+        return NextResponse.json(
+          { error: "sortOrder must be a number" },
+          { status: 400 }
+        )
+      }
+    }
+    
+    if (body.isActive !== undefined) {
+      updates.is_active = Boolean(body.isActive)
+    }
+
+    // Ensure at least one field is being updated
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 }
+      )
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("staff")
+      .update(updates)
+      .eq("id", body.id)
+      .select("id, name, sort_order, is_active")
+      .single()
+
+    if (error) {
+      console.error("[PUT /api/staff] Supabase error:", error)
+      return NextResponse.json(
+        { error: "Failed to update staff", detail: error.message },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: "Staff not found" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      ok: true,
+      staff: data,
+    })
+  } catch (error) {
+    console.error("[PUT /api/staff] Unexpected error:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
