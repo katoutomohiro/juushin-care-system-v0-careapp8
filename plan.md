@@ -143,6 +143,27 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ 保存時に time が HH:mm 形式で送信される
 - ✅ Console にエラーなし
 
+### 2026-01-14: A・Tさんケース記録フォーム - 時刻フィールド修正（Phase2、import整合）
+
+**実装内容:**
+- `TimeWithNowField` を default export に統一し、呼び出し側の import 不整合を解消
+- 時計アイコン非表示のうえ、入力枠内右端に「今すぐ」ボタンを絶対配置（枠内固定）
+- onClick で現在時刻 HH:mm を生成し、`{ target: { name, value } }` 形式で親に返却
+- type="time" + 右 padding を確保（pr-20）し、UI崩れを防止
+
+**対象ファイル:**
+- `src/components/fields/TimeWithNowField.tsx` (UPDATED)
+- `src/components/TimeWithNowField.tsx` (RE-EXPORT)
+- `src/components/case-records/HeaderFields.tsx` (UPDATED)
+- `app/globals.css` (time picker icon 非表示)
+
+**受け入れ条件:**
+- ✅ モジュール解決エラー（Module not found: Can't resolve '@/components/TimeWithNowField'）が解消されビルドが通る
+- ✅ 時刻欄の右端に「今すぐ」が枠内表示され、時計アイコンは表示されない
+- ✅ 「今すぐ」押下で現在時刻が HH:mm で即反映、手入力も可能
+- ✅ 保存時に payload の time が HH:mm で送信される
+- ✅ Console にエラーなし
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
