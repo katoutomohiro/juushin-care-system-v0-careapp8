@@ -6,7 +6,7 @@ export const CaseRecordHeaderSchema = z.object({
   serviceId: z.string().min(1, "必須です"),
   // 方針1: 主担当は必須
   mainStaffId: z.string().min(1, "主担当は必須です"),
-  subStaffIds: z.array(z.string()).nullable().optional(),
+  subStaffId: z.string().nullable().optional(),
 })
 
 // メモ/備考（共通）

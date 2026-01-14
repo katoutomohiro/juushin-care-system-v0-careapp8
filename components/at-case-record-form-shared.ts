@@ -17,7 +17,7 @@ export function buildAtCaseRecordInitial(): CaseRecordFormProps["initial"] {
     careReceiverName: "",
     serviceId: "",
     mainStaffId: null,
-    subStaffIds: [],
+    subStaffId: null,
     specialNotes: "",
     familyNotes: "",
     custom: {},

@@ -28,6 +28,27 @@ export interface UserProfile {
   updatedAt: string
 }
 
+export type CaseRecordCategory = "vitals" | "excretion" | "hydration" | "meal" | "other"
+
+export interface CaseRecordEntry {
+  category: CaseRecordCategory
+  items: Array<Record<string, unknown>>
+}
+
+export interface CaseRecord {
+  userId: string
+  date: string
+  entries: CaseRecordEntry[]
+  meta?: {
+    recordTime?: string
+    mainStaffId?: string | null
+    subStaffId?: string | null
+    subStaffIds?: string[]
+    specialNotes?: string
+    familyNotes?: string
+  }
+}
+
 export class DataStorageService {
   private static readonly CARE_EVENTS_KEY = "careEvents"
   private static readonly USER_PROFILES_KEY = "userProfiles"
