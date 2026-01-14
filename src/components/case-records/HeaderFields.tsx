@@ -1,7 +1,7 @@
 "use client"
 
 import type { ChangeEvent } from "react"
-import { DateWithWeekdayField } from "@/src/components/fields/DateWithWeekdayField"
+import { DateWithWeekdayField } from "@/components/fields/DateWithWeekdayField"
 import TimeWithNowField from "@/components/TimeWithNowField"
 
 export type HeaderFieldsProps = {
