@@ -88,20 +88,18 @@ export default async function CaseRecordsPage({
   const now = new Date()
   const initialDate = now.toISOString().split("T")[0]
 
-  // Fetch care receiver details to get the latest display name (DB first)
+  // Fetch care receiver details to get the latest name (DB first)
   let careReceiverName = ""
   
   if (supabaseAdmin && careReceiverUuid) {
     const { data: careReceiver } = await supabaseAdmin
       .from("care_receivers")
-      .select("name, display_name")
+      .select("name")
       .eq("id", careReceiverUuid)
       .maybeSingle()
 
     if (careReceiver?.name) {
       careReceiverName = careReceiver.name
-    } else if (careReceiver?.display_name) {
-      careReceiverName = careReceiver.display_name
     }
   }
 

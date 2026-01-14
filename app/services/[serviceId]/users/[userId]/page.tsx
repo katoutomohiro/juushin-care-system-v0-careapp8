@@ -335,12 +335,34 @@ export default function UserDetailPage() {
         name: displayName,
       }
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     const oldName = displayName
     const newName = editedUser.name.trim() || userId
 
-    if (newName !== oldName) {
-      try {
+    try {
+      // Update Supabase first
+      if (newName !== oldName) {
+        const response = await fetch("/api/care-receivers/update-display-name", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: normalizedUserId,
+            name: newName,
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          console.error("Failed to update care receiver in Supabase:", error)
+          alert("Supabase への保存に失敗しました。入力内容を確認してください。")
+          return
+        }
+
+        console.log("[handleSaveUser] Successfully updated Supabase care_receivers.name")
+      }
+
+      // Update localStorage
+      if (newName !== oldName) {
         DataStorageService.updateUserNameInProfiles(oldName, newName)
         DataStorageService.updateUserNameInEvents(oldName, newName)
 
@@ -353,18 +375,17 @@ export default function UserDetailPage() {
         DataStorageService.saveCustomUserNames(Array.from(updatedNames))
 
         alert(`氏名を「${oldName}」から「${newName}」に変更しました。`)
-      } catch (error) {
-        console.error("Failed to update user name:", error)
-        alert("氏名の変更に失敗しました。もう一度お試しください。")
-        return
       }
-    }
 
-    userDetails[userId] = { ...editedUser, name: newName }
-    setDisplayName(newName)
-    setIsEditDialogOpen(false)
-    // ケース記録ページなど他の関連ページをリロード
-    router.refresh()
+      userDetails[userId] = { ...editedUser, name: newName }
+      setDisplayName(newName)
+      setIsEditDialogOpen(false)
+      // ケース記録ページなど他の関連ページをリロード
+      router.refresh()
+    } catch (error) {
+      console.error("Failed to save user information:", error)
+      alert("保存に失敗しました。もう一度お試しください。")
+    }
   }
 
   return (
