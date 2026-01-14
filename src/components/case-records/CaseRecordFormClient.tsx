@@ -72,7 +72,8 @@ export function CaseRecordFormClient({
       }
 
       const resolvedUserId = values.userId || userId
-      const resolvedServiceId = values.serviceId || serviceId
+      // API保存には UUID を優先して送る
+      const resolvedServiceId = serviceUuid || values.serviceId || serviceId
 
       // Build structured payload
       const payload: CaseRecordPayload = {
@@ -120,9 +121,10 @@ export function CaseRecordFormClient({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け
           serviceId: resolvedServiceId,
           userId: resolvedUserId,
-          careReceiverName: careReceiverName,  // Include display name for printing/snapshot
+          careReceiverName: careReceiverName, // Include display name for printing/snapshot
           date: values.date,
           recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           record_data: payload, // Send structured payload (not stringified)
@@ -145,7 +147,7 @@ export function CaseRecordFormClient({
       toast({
         variant: "default",
         title: "✅ ケース記録を保存しました",
-        description: `${careReceiverId} の記録が正常に保存されました (${new Date().toLocaleTimeString("ja-JP")})`,
+        description: `${careReceiverName || careReceiverId} の記録が正常に保存されました (${new Date().toLocaleTimeString("ja-JP")})`,
       })
     } catch (error) {
       console.error("[CaseRecordFormClient] Submit error:", error)
@@ -159,7 +161,7 @@ export function CaseRecordFormClient({
       submittingRef.current = false
       setIsSubmitting(false)
     }
-  }, [careReceiverId, serviceId, userId])
+  }, [careReceiverId, careReceiverName, careReceiverUuid, serviceId, serviceUuid, userId])
 
   // If template not found, show diagnostic message
   if (!template) {

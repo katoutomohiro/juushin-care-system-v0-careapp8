@@ -2,11 +2,11 @@ import { CaseRecordFormClient } from "@/src/components/case-records/CaseRecordFo
 import { getTemplate } from "@/lib/templates/getTemplate"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { DataStorageService } from "@/services/data-storage-service"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -86,29 +86,26 @@ export default async function CaseRecordsPage({
   const now = new Date()
   const initialDate = now.toISOString().split("T")[0]
 
-  // Fetch care receiver details to get the name
-  let careReceiverName = displayUserId  // Fallback to displayUserId
+  // Fetch care receiver details to get the latest display name (DB first)
+  let careReceiverName = ""
   
-  // Try to get from Supabase first
   if (supabaseAdmin && careReceiverUuid) {
     const { data: careReceiver } = await supabaseAdmin
       .from("care_receivers")
       .select("name, display_name")
       .eq("id", careReceiverUuid)
       .maybeSingle()
-    if (careReceiver?.display_name) {
-      careReceiverName = careReceiver.display_name
-    } else if (careReceiver?.name) {
+
+    if (careReceiver?.name) {
       careReceiverName = careReceiver.name
+    } else if (careReceiver?.display_name) {
+      careReceiverName = careReceiver.display_name
     }
   }
 
-  // Fallback to DataStorageService (localStorage-based) if Supabase failed
-  if (careReceiverName === displayUserId) {
-    const customNames = DataStorageService.getCustomUserNames()
-    if (customNames.includes(displayUserId)) {
-      careReceiverName = displayUserId
-    }
+  // Last-resort fallback to URL userId if DB lookup failed (keeps UI stable)
+  if (!careReceiverName) {
+    careReceiverName = displayUserId
   }
 
   // Debug logging (always enabled for now to diagnose issues)
@@ -134,11 +131,11 @@ export default async function CaseRecordsPage({
               href={`/services/${serviceIdInput}/users/${encodeURIComponent(internalUserId)}`}
               className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
             >
-              ← {displayUserId}の詳細に戻る
+              ← {careReceiverName || displayUserId}の詳細に戻る
             </Link>
             <div>
               <h1 className="text-2xl font-bold">ケース記録</h1>
-              <p className="text-sm text-muted-foreground">{displayUserId}</p>
+              <p className="text-sm text-muted-foreground">{careReceiverName || displayUserId}</p>
             </div>
           </div>
         </div>
