@@ -28,9 +28,8 @@
 
 **共通項目（全利用者対象）:**
 - 日付（YYYY/MM/DD(曜)形式表示、内部は ISO形式）
-- 時刻（HH:mm形式、「今すぐ」ボタン付き）
-- 利用者ID、サービスID
-- スタッフ（主・副）
+- 利用者ID、サービスID、スタッフ（主・副）
+- ※時刻は廃止（ヘッダーから削除、記録作成時に自動タイムスタンプ）
 
 **個別項目（利用者ごと）:**
 - バイタル（測定項目は人による）
@@ -38,6 +37,22 @@
 - 排泄
 - 理学療法 / 作業療法（障害種別により異なる）
 - 特記事項
+- ※将来：各項目に `recordedTime: "HH:mm"` フィールド追加予定
+
+### 🔄 時刻記録の設計変更（2026-01-14）
+
+**廃止・変更:**
+- ヘッダーの「時刻」入力欄を完全削除（UI崩れ・ボタン配置問題の根本解決）
+
+**新方針:**
+- 記録の作成時刻は**自動タイムスタンプ**（サーバー側で `recordTime` を `new Date().toHHmm()` で設定）
+- **将来：個別項目を操作した時点でその項目に時刻を自動記録**
+  - 例：排泄記録を入力した時刻を自動付与 → 「いつ測定/記録したか」の追跡可能
+  
+**実装進捗:**
+- ✅ **Phase 1（2026-01-14 完了）**: ヘッダー時刻削除 + クライアント側で `recordTime` を現在時刻で自動生成
+- 🔲 **Phase 2（今後）**: 個別項目テンプレートに `recordedTime` フィールド追加、入力時に自動セット
+- 🔲 **Phase 3（今後）**: 必要に応じて「時刻更新ボタン」を各項目に追加
 
 ### 変更・修正・追加が都度入る前提での運用
 
@@ -87,8 +102,35 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - 旧API参照の残存チェックを実施し、ドキュメントも `/api/case-records/save` に統一済み。
 - `services/data-storage-service.ts` に `CaseRecord`（JSONベース）を追加し、保存ロジックを新APIへ切替済み。
 - 管理機能は一時的に無効化済み（最小構成で運用）。
+- ✅ **2026-01-14**: ヘッダーから時刻UIを完全削除、`TimeWithNowField` コンポーネント削除、`recordTime` は自動生成へ変更
 
-### 2026-01-14: A・Tさんケース記録フォーム - 日付フォーマット機能の実装
+### 2026-01-14: A・Tさんケース記録フォーム - 時刻入力廃止・自動タイムスタンプ化（Phase 1）
+
+**削除内容:**
+- `src/components/fields/TimeWithNowField.tsx` を完全削除
+- `src/components/case-records/HeaderFields.tsx` から時刻入力欄を削除
+- `CaseRecordForm`、`CaseRecordFormClient`、ページコンポーネントから`time`フィールドを削除
+
+**変更内容:**
+- `CaseRecordFormClient.handleSubmit` で `recordTime` を自動生成
+  - `new Date().toISOString().slice(11, 16)` で HH:mm 形式で現在時刻を設定
+  - サーバー側で記録の作成時刻として保存される
+  
+- ヘッダーは date / userId / serviceId のみ（4列グリッドから3列へ縮小）
+
+**対象ファイル:**
+- `src/components/fields/DateWithWeekdayField.tsx` (維持)
+- `src/components/fields/TimeWithNowField.tsx` (削除)
+- `src/components/case-records/HeaderFields.tsx` (更新)
+- `src/components/case-records/CaseRecordForm.tsx` (更新)
+- `src/components/case-records/CaseRecordFormClient.tsx` (更新)
+- `app/services/[serviceId]/users/[userId]/case-records/page.tsx` (更新)
+
+**受け入れ条件:**
+- ✅ ヘッダーに時刻欄が表示されない
+- ✅ Module not found / build error が無い
+- ✅ 保存時に `recordTime: "HH:mm"` がペイロードに含まれる（現在時刻で自動セット）
+- ✅ UI崩れがなく、3列グリッドが正常に表示される
 
 **実装内容:**
 - `src/components/fields/DateWithWeekdayField.tsx` を新規作成（共通コンポーネント）

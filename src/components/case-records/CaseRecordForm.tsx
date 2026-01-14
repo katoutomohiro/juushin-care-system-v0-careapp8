@@ -10,7 +10,6 @@ import { TemplateField, TemplateFormValues } from "@/lib/templates/schema"
 export type CaseRecordFormProps = {
   initial: {
     date: string
-    time: string
     userId: string
     serviceId: string
     mainStaffId?: string | null
@@ -48,7 +47,6 @@ export function CaseRecordForm({
     >
       <HeaderFields
         date={state.date}
-        time={state.time}
         userId={state.userId}
         serviceId={state.serviceId}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}

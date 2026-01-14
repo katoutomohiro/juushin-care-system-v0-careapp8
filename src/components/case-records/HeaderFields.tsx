@@ -2,17 +2,15 @@
 
 import type { ChangeEvent } from "react"
 import DateWithWeekdayField from "../fields/DateWithWeekdayField"
-import TimeWithNowField from "../fields/TimeWithNowField"
 
 export type HeaderFieldsProps = {
   date: string
-  time: string
   userId: string
   serviceId: string
   onChange: (patch: Partial<HeaderFieldsProps>) => void
 }
 
-export function HeaderFields({ date, time, userId, serviceId, onChange }: HeaderFieldsProps) {
+export function HeaderFields({ date, userId, serviceId, onChange }: HeaderFieldsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <DateWithWeekdayField
@@ -20,11 +18,6 @@ export function HeaderFields({ date, time, userId, serviceId, onChange }: Header
         onChange={(nextDate) => onChange({ date: nextDate })}
         name="date"
         id="date"
-      />
-      <TimeWithNowField
-        name="time"
-        value={time}
-        onChange={({ target }) => onChange({ time: target.value })}
       />
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">利用者ID</label>

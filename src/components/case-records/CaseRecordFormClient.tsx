@@ -23,7 +23,6 @@ export function CaseRecordFormClient({
   serviceUuid,
   template,
   initialDate,
-  initialTime,
 }: {
   careReceiverId: string
   careReceiverUuid: string
@@ -32,7 +31,6 @@ export function CaseRecordFormClient({
   serviceUuid: string
   template?: CareReceiverTemplate | null
   initialDate?: string
-  initialTime?: string
 }) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,7 +39,6 @@ export function CaseRecordFormClient({
   const submittingRef = useRef(false)
 
   const dateStr = initialDate ?? ""
-  const timeStr = initialTime ?? ""
 
   const handleSubmit = useCallback(async (values: any) => {
     // Double-submit guard: prevent concurrent submissions
@@ -124,7 +121,7 @@ export function CaseRecordFormClient({
           serviceId: resolvedServiceId,
           userId: resolvedUserId,
           date: values.date,
-          recordTime: values.time,
+          recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
           record_data: payload, // Send structured payload (not stringified)
         }),
       })
@@ -207,7 +204,6 @@ export function CaseRecordFormClient({
         <CaseRecordForm
           initial={{
             date: dateStr,
-            time: timeStr,
             userId: userId,
             serviceId: serviceId,
             mainStaffId: null,
