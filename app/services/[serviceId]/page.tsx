@@ -12,6 +12,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = false
+
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
   "after-school": { name: "放課後等デイサービス", icon: "🎓", color: "bg-green-50" },
@@ -217,13 +220,25 @@ const userDetails: {
   },
 }
 
+type CareReceiver = {
+  id: string
+  code: string
+  name: string
+  age?: number
+  gender?: string
+  careLevel?: string
+  condition?: string
+  medicalCare?: string
+}
+
 export default function ServiceUsersPage() {
   const params = useParams()
   const router = useRouter()
   const serviceId = params.serviceId as string
   const service = welfareServices[serviceId]
 
-  const [users, setUsers] = useState<string[]>([])
+  const [users, setUsers] = useState<CareReceiver[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newUser, setNewUser] = useState({
     name: "",
@@ -234,13 +249,35 @@ export default function ServiceUsersPage() {
     medicalCare: "",
   })
 
-  useEffect(() => {
-    const filteredUsers = Object.entries(userDetails)
-      .filter(([_, details]) => details.service.includes(serviceId))
-      .map(([name, _]) => name)
+  const fetchUsers = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/care-receivers`, { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data.careReceivers || [])
+      }
+    } catch (error) {
+      console.error('[ServiceUsersPage] Failed to fetch users:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-    setUsers(filteredUsers)
+  useEffect(() => {
+    fetchUsers()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceId])
+
+  // Refresh when window gains focus (user navigates back from detail page)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchUsers()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleAddUser = () => {
     if (!newUser.name.trim()) {
@@ -248,25 +285,9 @@ export default function ServiceUsersPage() {
       return
     }
 
-    userDetails[newUser.name] = {
-      age: newUser.age,
-      gender: newUser.gender,
-      careLevel: newUser.careLevel,
-      condition: newUser.condition,
-      medicalCare: newUser.medicalCare,
-      service: [serviceId],
-    }
-
-    setUsers([...users, newUser.name])
+    // TODO: Implement API call to create new care receiver
+    alert("新規追加機能は準備中です")
     setIsAddDialogOpen(false)
-    setNewUser({
-      name: "",
-      age: 0,
-      gender: "不明",
-      careLevel: "全介助",
-      condition: "",
-      medicalCare: "",
-    })
   }
 
   if (!service) {
@@ -386,60 +407,69 @@ export default function ServiceUsersPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {users.map((user) => {
-            const details = userDetails[user]
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-sm text-muted-foreground">読み込み中...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {users.map((user) => {
+              const details = userDetails[user.code] || {}
+              const displayName = user.name || user.code
 
-            return (
-              <ClickableCard
-                key={user}
-                onClick={() => {
-                  // 内部IDへ正規化してURLセグメントに使用
-                  const internalId = normalizeUserId(user)
-                  router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
-                }}
-                className={`group border-2 hover:border-primary/30 ${service.color}`}
-                particleColors={["#FFB6C1", "#FFD700", "#DDA0DD"]}
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
-                      {details.gender === "男性" || details.gender === "男児"
-                        ? "👨"
-                        : details.gender === "女性" || details.gender === "女児"
-                          ? "👩"
-                          : "👤"}
+              return (
+                <ClickableCard
+                  key={user.id}
+                  onClick={() => {
+                    const internalId = normalizeUserId(user.code)
+                    router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
+                  }}
+                  className={`group border-2 hover:border-primary/30 ${service.color}`}
+                  particleColors={["#FFB6C1", "#FFD700", "#DDA0DD"]}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
+                        {details.gender === "男性" || details.gender === "男児"
+                          ? "👨"
+                          : details.gender === "女性" || details.gender === "女児"
+                            ? "👩"
+                            : "👤"}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-semibold">{displayName}</CardTitle>
+                        <p className="text-sm text-muted-foreground">まってぃー</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold">{user}</CardTitle>
-                      <p className="text-sm text-muted-foreground">まってぃー</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">サービス:</span>
+                        <span className="font-medium">{service.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">年齢:</span>
+                        <span className="font-medium">{details.age || '-'}歳</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">性別:</span>
+                        <span className="font-medium">{details.gender || '不明'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">介護度:</span>
+                        <span className="font-medium">{details.careLevel || '不明'}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">サービス:</span>
-                      <span className="font-medium">{service.name}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">年齢:</span>
-                      <span className="font-medium">{details.age}歳</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">性別:</span>
-                      <span className="font-medium">{details.gender}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">介護度:</span>
-                      <span className="font-medium">{details.careLevel}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </ClickableCard>
-            )
-          })}
-        </div>
+                  </CardContent>
+                </ClickableCard>
+              )
+            })}
+          </div>
+        )}
       </main>
     </div>
   )
