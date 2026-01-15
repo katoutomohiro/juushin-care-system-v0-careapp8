@@ -3,7 +3,8 @@
 /**
  * check-server.mjs
  * 
- * Dev サーバーが http://localhost:3000 で起動しているか確認するスクリプト
+ * Checks if dev server is running on http://localhost:3000
+ * Returns exit code 0 if successful, 1 if failed
  * 
  * Usage:
  *   node scripts/check-server.mjs
@@ -13,8 +14,9 @@
 import http from 'http'
 
 const PORT = 3000
-const TIMEOUT = 3000
-const MAX_RETRIES = 3
+const TIMEOUT = 2000
+const MAX_RETRIES = 5
+const RETRY_DELAY = 1000
 
 async function checkServer(attempt = 1) {
   return new Promise((resolve) => {
@@ -27,7 +29,8 @@ async function checkServer(attempt = 1) {
         timeout: TIMEOUT,
       },
       (res) => {
-        console.log(`✅ Server is running on http://localhost:${PORT}`)
+        // Accept 200, 302, 404 etc - any response means server is running
+        console.log(`✅ Server is responding on http://localhost:${PORT}`)
         console.log(`   Status: ${res.statusCode}`)
         resolve(true)
       }
@@ -35,11 +38,11 @@ async function checkServer(attempt = 1) {
 
     req.on('error', (err) => {
       if (attempt < MAX_RETRIES) {
-        console.log(`⏳ Attempt ${attempt}/${MAX_RETRIES}: Connection failed, retrying...`)
-        setTimeout(() => resolve(checkServer(attempt + 1)), 1000)
+        process.stdout.write(`.`)
+        setTimeout(() => resolve(checkServer(attempt + 1)), RETRY_DELAY)
       } else {
-        console.error(`❌ Server not responding on http://localhost:${PORT}`)
-        console.error(`   Error: ${err.message}`)
+        console.error(`\n❌ Server not responding on http://localhost:${PORT}`)
+        console.error(`   Error: ${err.code || err.message}`)
         console.error(`\n💡 Try: pnpm run reboot`)
         resolve(false)
       }
@@ -48,10 +51,11 @@ async function checkServer(attempt = 1) {
     req.on('timeout', () => {
       req.destroy()
       if (attempt < MAX_RETRIES) {
-        console.log(`⏳ Attempt ${attempt}/${MAX_RETRIES}: Timeout, retrying...`)
-        setTimeout(() => resolve(checkServer(attempt + 1)), 1000)
+        process.stdout.write(`.`)
+        setTimeout(() => resolve(checkServer(attempt + 1)), RETRY_DELAY)
       } else {
-        console.error(`❌ Server timeout on http://localhost:${PORT}`)
+        console.error(`\n❌ Server timeout on http://localhost:${PORT}`)
+        console.error(`\n💡 Try: pnpm run reboot`)
         resolve(false)
       }
     })
@@ -59,6 +63,9 @@ async function checkServer(attempt = 1) {
     req.end()
   })
 }
+
+// Show what we're checking
+process.stdout.write(`⏳ Checking http://localhost:${PORT} `)
 
 // Run check
 const success = await checkServer()

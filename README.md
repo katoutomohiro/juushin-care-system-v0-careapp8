@@ -53,73 +53,80 @@ Continue building your app on:
 - **pnpm**: v8+
 - **OS**: Windows PowerShell 推奨（MacOS/Linux も対応）
 
-### 🚀 起動フロー（Windows PowerShell）
-
-#### **通常の開発サイクル**
+### 🚀 推奨スタートアップ
 
 ```powershell
-# ターミナル1: Dev サーバー起動（一度起動したら触らない）
-pnpm run dev
-
-# ターミナル2: コード編集 & コミット
-# (自由に編集・テスト)
-pnpm lint
-pnpm typecheck
-git commit ...
-```
-
-**重要**: `pnpm run dev` は独立したターミナルで起動し、そのターミナルでは他のコマンドを実行しないでください。
-
-#### **トラブル時（画面真っ白 / ChunkLoadError / 接続拒否）**
-
-```powershell
-# ワンコマンドで復旧
+# 【最初はこれだけ】
 pnpm run reboot
-
-# または手動で段階実行
-pnpm run port:free     # ポート3000を解放
-pnpm run dev:clean     # キャッシュ削除 + 起動
 ```
 
-#### **ブラウザ確認**
+これで以下が自動実行されます：
+1. ポート3000を掴んでるプロセスをKill
+2. `.next` キャッシュを削除
+3. 新しいPowerShellウィンドウでNext.js dev サーバー起動
 
-- **常に** `http://localhost:3000` にアクセス
-- もし `3001` などに飛んだ → dev サーバーが起動していない → `pnpm run reboot` で復旧
+**重要**: 起動後、新しいPowerShellウィンドウが開きます。そのウィンドウは閉じずに放置してください。
+
+### ✅ 接続確認
+
+```powershell
+# サーバーが起動しているか確認
+pnpm run check-server
+```
+
+成功すると以下が表示されます：
+```
+⏳ Checking http://localhost:3000 .....
+✅ Server is responding on http://localhost:3000
+   Status: 404
+```
+
+その後、ブラウザで `http://localhost:3000` を開いてアプリが見えるか確認。
 
 ### 📋 Scripts 一覧
 
 | Command | 説明 |
 |---------|------|
-| `pnpm dev` | ポート3000でNext.jsを起動（常時稼働）|
-| `pnpm dev:clean` | .nextキャッシュ削除 + 起動 |
-| `pnpm port:free` | ポート3000を掴むプロセスをKill |
-| `pnpm reboot` | port:free + dev:clean（フル復旧） |
+| `pnpm run reboot` | ✅ **推奨**：ワンコマンド復旧（port解放→キャッシュ削除→起動） |
+| `pnpm run check-server` | サーバー接続テスト（失敗時は詳細メッセージ） |
+| `pnpm run port:free` | ポート3000を掴むプロセスをKill |
+| `pnpm dev` | Next.jsサーバー直接起動（ポート3000） |
+| `pnpm dev:clean` | .nextキャッシュ削除のみ |
 | `pnpm lint` | ESLint実行 |
 | `pnpm typecheck` | TypeScript型チェック |
 | `pnpm build` | 本番ビルド |
 
-### ✅ Dev サーバー起動確認
+### 🔧 トラブル対応
 
-`pnpm run dev` 実行後、ターミナルに以下が表示されることを確認：
-
-```
-✓ Ready in Xs
-- Local:        http://localhost:3000
-- Environments: .env.local
-```
-
-**✅ OK**: プロンプトが戻らず、上記ログが表示され続ける  
-**❌ NG**: プロンプトが戻る、エラーが出ている
-
-### 🔧 ポート3000が既に使用中の場合
+#### 問題: ERR_CONNECTION_REFUSED が出る
 
 ```powershell
-# 自動解放
-pnpm run port:free
+# 解決策1：ワンコマンド復旧
+pnpm run reboot
 
-# または手動確認
+# その後確認
+pnpm run check-server
+```
+
+#### 問題: 画面が真っ白 / ChunkLoadError
+
+```powershell
+pnpm run port:free
+pnpm run dev:clean
+pnpm run reboot
+```
+
+#### 問題: ポート3000がどうしても塞がっている
+
+```powershell
+# 手動確認
 netstat -ano | findstr :3000
+
+# 結果の PID をKill
 taskkill /PID <PID> /F
+
+# その後
+pnpm run reboot
 ```
 
 ### 📝 Dev:clean の動作
