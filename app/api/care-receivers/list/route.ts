@@ -108,3 +108,127 @@ export async function GET(req: NextRequest) {
     )
   }
 }
+/**
+ * POST /api/care-receivers/list
+ * 
+ * Create a new care receiver
+ * 
+ * Body:
+ *   - code: string (required, unique identifier)
+ *   - display_name: string (required, user-facing name)
+ *   - service_code: string (required, "life-care" | "after-school" | etc.)
+ *   - age?: number
+ *   - gender?: string
+ *   - care_level?: number
+ *   - condition?: string
+ *   - medical_care?: string
+ *   - notes?: string
+ * 
+ * Returns:
+ *   - Success: { ok: true, user: {...} }
+ *   - Error: { ok: false, error: "message" }
+ */
+export async function POST(req: NextRequest) {
+  try {
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { ok: false, error: "Database connection not available" },
+        { status: 500 }
+      )
+    }
+
+    const body = await req.json()
+    const {
+      code,
+      display_name,
+      service_code,
+      age,
+      gender,
+      care_level,
+      condition,
+      medical_care,
+      notes,
+    } = body
+
+    // Validation
+    if (!code || !display_name || !service_code) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "code, display_name, and service_code are required",
+        },
+        { status: 400 }
+      )
+    }
+
+    // Check if code already exists
+    const { data: existing } = await supabaseAdmin
+      .from("care_receivers")
+      .select("id")
+      .eq("code", code)
+      .eq("service_code", service_code)
+      .single()
+
+    if (existing) {
+      return NextResponse.json(
+        { ok: false, error: `Code "${code}" already exists in this service` },
+        { status: 400 }
+      )
+    }
+
+    // Create care receiver
+    const { data, error } = await supabaseAdmin
+      .from("care_receivers")
+      .insert([
+        {
+          code,
+          display_name,
+          service_code,
+          age,
+          gender,
+          care_level,
+          condition,
+          medical_care,
+          notes,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[POST /api/care-receivers/list] Insert error:", error)
+      return NextResponse.json(
+        { ok: false, error: "Failed to create care receiver" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        user: {
+          id: data.id,
+          code: data.code,
+          name: data.display_name,
+          service_code: data.service_code,
+          age: data.age,
+          gender: data.gender,
+          care_level: data.care_level,
+          condition: data.condition,
+          medical_care: data.medical_care,
+          notes: data.notes,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        },
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[POST /api/care-receivers/list] Unexpected error:", error)
+    return NextResponse.json(
+      { ok: false, error: "Internal server error", detail: message },
+      { status: 500 }
+    )
+  }
+}
