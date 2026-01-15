@@ -328,6 +328,48 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ pnpm lint が通る（警告なし）
 - ✅ Select empty value エラーが再発しない
 
+## STEP 1: 保存基盤の安定化（2026-01-15）
+
+**テーマ:** ケース記録の保存処理を「絶対に壊れない形」に安定化。既存仕様は変えず、エラーハンドリングとレスポンス形式のみを整理。
+
+**実装内容:**
+
+### 【app/api/case-records/save/route.ts】
+- ✅ try/catch 構造を確認・強化
+- ✅ 成功時: `{ ok: true, record: data }`
+- ✅ 失敗時: `{ ok: false, error: message, detail?, fieldErrors? }`
+- ✅ HTTP status: 成功=200, クライアント側エラー=400, サーバーエラー=500
+- ✅ Supabase error は message を そのまま返す（throw しない）
+- ✅ console.error で error details + stack を記録
+
+### 【services/data-storage-service.ts】
+- ✅ `saveCaseRecord()` の戻り値を `boolean` に統一（`CaseRecord` → `true`）
+- ✅ fetch 後に `response.ok` + `result.ok` の両方をチェック
+- ✅ HTTP error / API result.ok=false の両方で error を throw
+- ✅ エラーメッセージに detail を含めて詳細情報を伝える
+- ✅ UI責務は持たず、throw Error のみを返す（呼び出し元で try/catch）
+
+### 【src/components/case-records/CaseRecordFormClient.tsx】
+- ✅ 保存処理を `try { await fetch → json() → check ok } catch (e) { setError(e.message) }` に統一
+- ✅ `apiResponse.ok` チェック → HTTP エラーを早期検出
+- ✅ `apiResult?.ok` チェック → API エラーを検出
+- ✅ 両方失敗時は Error を throw → catch で error.message 表示
+- ✅ 成功時は `setStatusMessage("保存しました")` 表示 + toast
+- ✅ console.error は残す（診断用）
+
+**禁止事項:**
+- ❌ 新しい保存API作成
+- ❌ payload 項目の増減
+- ❌ UI構造変更
+- ❌ 型を any に逃がす
+
+**受け入れ条件:**
+- ✅ pnpm typecheck が通る（型エラーなし）
+- ✅ pnpm lint が通る（警告なし）
+- ✅ 保存失敗時に理由が画面で分かる
+- ✅ 保存成功が必ず分かる（statusMessage + toast）
+- ✅ 新しいエラーが発生しない
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）

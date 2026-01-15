@@ -220,10 +220,28 @@ export function CaseRecordFormClient({
         }),
       })
 
-      const apiResult = await apiResponse.json()
+      const apiResult = await apiResponse.json().catch(() => null)
 
-      if (!apiResponse.ok || !apiResult?.ok) {
-        const errorMsg = apiResult?.error || `保存に失敗しました (${apiResponse.status})`
+      // Check HTTP response status first
+      if (!apiResponse.ok) {
+        console.error("[CaseRecordFormClient] API HTTP error", {
+          status: apiResponse.status,
+          statusText: apiResponse.statusText,
+          result: apiResult,
+        })
+        const errorMsg = apiResult?.error || `保存に失敗しました (HTTP ${apiResponse.status})`
+        const detail = apiResult?.detail || apiResult?.message
+        throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
+      }
+
+      // Check API result.ok flag
+      if (!apiResult?.ok) {
+        console.error("[CaseRecordFormClient] API result.ok=false", {
+          error: apiResult?.error,
+          detail: apiResult?.detail,
+          fieldErrors: apiResult?.fieldErrors,
+        })
+        const errorMsg = apiResult?.error || "保存に失敗しました"
         const detail = apiResult?.detail || apiResult?.message
         const apiFieldErrors: string[] = Array.isArray(apiResult?.fieldErrors)
           ? apiResult.fieldErrors.filter((v: unknown) => typeof v === "string")
@@ -234,6 +252,7 @@ export function CaseRecordFormClient({
         throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
       }
 
+      // Success: clear errors and set success message
       setStatusMessage("保存しました")
       setFieldErrors([])
       setValidationErrors({})

@@ -346,7 +346,8 @@ export async function POST(req: NextRequest) {
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error("[case-records/save POST] failed", { message })
+    const errorDetails = error instanceof Error ? error.stack : undefined
+    console.error("[case-records/save POST] unexpected error", { message, errorDetails })
     return NextResponse.json(
       {
         ok: false,

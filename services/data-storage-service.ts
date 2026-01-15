@@ -84,9 +84,9 @@ export class DataStorageService {
     }
   }
 
-  static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<CaseRecord> {
+  static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<boolean> {
     try {
-      console.log("[case-records] saving", { serviceId, userId: record.userId, date: record.date })
+      console.log("[DataStorageService.saveCaseRecord] saving", { serviceId, userId: record.userId, date: record.date })
       const { userId, date, ...recordRest } = record
       const sanitizedRecord = this.stripNullish(recordRest)
       const payload = {
@@ -104,25 +104,33 @@ export class DataStorageService {
       })
 
       const result = await response.json().catch(() => null)
-      if (!response.ok || !result?.ok) {
-        console.error("[case-records] save failed", {
+      
+      // Strict check: both response.ok AND result.ok must be true
+      if (!response.ok) {
+        console.error("[DataStorageService.saveCaseRecord] HTTP error", {
           status: response.status,
           statusText: response.statusText,
-          result,
         })
-        const message = result?.error || `ケース記録の保存に失敗しました (${response.status})`
+        const message = result?.error || `HTTP ${response.status}`
         const detail = result?.detail || result?.message
         throw new Error(detail ? `${message}: ${detail}` : message)
       }
 
-      console.log("[case-records] saved", { recordId: result?.record?.id })
-      return result.record as CaseRecord
-    } catch (error) {
-      console.error("Failed to save case record:", error)
-      if (error instanceof Error) {
-        throw error
+      if (!result?.ok) {
+        console.error("[DataStorageService.saveCaseRecord] API error", {
+          error: result?.error,
+          detail: result?.detail,
+        })
+        const message = result?.error || "保存に失敗しました"
+        const detail = result?.detail || result?.message
+        throw new Error(detail ? `${message}: ${detail}` : message)
       }
-      throw new Error("ケース記録の保存に失敗しました")
+
+      console.log("[DataStorageService.saveCaseRecord] saved successfully", { recordId: result?.record?.id })
+      return true
+    } catch (error) {
+      console.error("[DataStorageService.saveCaseRecord] error:", error)
+      throw error instanceof Error ? error : new Error("ケース記録の保存に失敗しました")
     }
   }
 
