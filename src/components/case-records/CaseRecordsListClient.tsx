@@ -208,7 +208,8 @@ export function CaseRecordsListClient({
           {records.map((record) => {
             const displayDate = record.recordDate ? new Date(record.recordDate).toLocaleDateString("ja-JP") : "--"
             const displayTime = record.recordTime || "--:--"
-            const mainStaffDisplay = record.mainStaffName ? `[主: ${record.mainStaffName}]` : "[主: 未設定]"
+            // mainStaffName優先、null安全（— で表示）
+            const mainStaffDisplay = record.mainStaffName ? `[主: ${record.mainStaffName}]` : "[主: —]"
             const subStaffDisplay = record.subStaffName ? `[副: ${record.subStaffName}]` : ""
             // Handle record_data that might be string (backward compat)
             let recordPayload: any = record.recordData

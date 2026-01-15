@@ -139,6 +139,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Ensure mainStaffId and subStaffId are UUID or null (never other formats like "staff-1")
+    let normalizedMainStaffId: string | null = null
+    let normalizedSubStaffId: string | null = null
+
+    if (mainStaffId && uuidRegex.test(String(mainStaffId))) {
+      normalizedMainStaffId = String(mainStaffId)
+    }
+
+    if (subStaffId && uuidRegex.test(String(subStaffId))) {
+      normalizedSubStaffId = String(subStaffId)
+    }
+
     let careReceiverId: string | null = null
     if (careReceiverIdInput && uuidRegex.test(String(careReceiverIdInput))) {
       careReceiverId = String(careReceiverIdInput)
@@ -272,6 +284,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Ensure recordData.sections.staff is synchronized with DB UUIDs
+    if (!recordData.sections) {
+      recordData.sections = {}
+    }
+    recordData.sections.staff = {
+      mainStaffId: normalizedMainStaffId,
+      subStaffIds: normalizedSubStaffId ? [normalizedSubStaffId] : [],
+    }
+
     const recordRow = {
       service_id: serviceId,
       care_receiver_id: careReceiver.id,
@@ -279,8 +300,8 @@ export async function POST(req: NextRequest) {
       record_date: recordDate,
       record_time: recordTime ?? null,
       record_data: recordData,
-      main_staff_id: mainStaffId,
-      sub_staff_id: subStaffId ?? null,
+      main_staff_id: normalizedMainStaffId,
+      sub_staff_id: normalizedSubStaffId ?? null,
     }
 
     let data: any = null

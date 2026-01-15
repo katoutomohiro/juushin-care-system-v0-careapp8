@@ -84,17 +84,43 @@ export class DataStorageService {
     }
   }
 
-  static async saveCaseRecord(record: CaseRecord, serviceId: string): Promise<boolean> {
+  static async saveCaseRecord(record: CaseRecord, serviceId: string, careReceiverId?: string): Promise<boolean> {
     try {
       console.log("[DataStorageService.saveCaseRecord] saving", { serviceId, userId: record.userId, date: record.date })
-      const { userId, date, ...recordRest } = record
+      const { userId, date, meta, ...recordRest } = record
       const sanitizedRecord = this.stripNullish(recordRest)
+
+      // Convert sentinel __none__ to null for staff IDs
+      let mainStaffId = meta?.mainStaffId ?? null
+      let subStaffId = meta?.subStaffId ?? null
+
+      if (mainStaffId === "__none__") {
+        mainStaffId = null
+      }
+      if (subStaffId === "__none__") {
+        subStaffId = null
+      }
+
+      // Build payload with UUID-based staff IDs
       const payload = {
         serviceId,
         userId,
+        careReceiverId,
         date,
-        recordData: sanitizedRecord,
+        mainStaffId,
+        subStaffId,
+        recordData: {
+          ...sanitizedRecord,
+          sections: {
+            ...(sanitizedRecord as any).sections,
+            staff: {
+              mainStaffId,
+              subStaffIds: subStaffId ? [subStaffId] : [],
+            },
+          },
+        },
       }
+
       const response = await fetch("/api/case-records/save", {
         method: "POST",
         headers: {
