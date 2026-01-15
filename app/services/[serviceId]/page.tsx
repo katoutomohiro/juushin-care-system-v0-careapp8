@@ -12,9 +12,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
-export const dynamic = 'force-dynamic'
-export const revalidate = false
-
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
   "after-school": { name: "放課後等デイサービス", icon: "🎓", color: "bg-green-50" },
@@ -266,7 +263,6 @@ export default function ServiceUsersPage() {
 
   useEffect(() => {
     fetchUsers()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceId])
 
   // Refresh when window gains focus (user navigates back from detail page)
@@ -276,7 +272,6 @@ export default function ServiceUsersPage() {
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleAddUser = () => {
