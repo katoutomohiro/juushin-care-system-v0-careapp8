@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { CreateCareReceiverModal } from '@/components/create-care-receiver-modal'
+import { useRealtimeCareReceivers } from '@/hooks/useRealtime'
 
 interface CareReceiver {
   id: string
@@ -43,64 +44,78 @@ export default function UsersManagementPage() {
   const router = useRouter()
   const [sections, setSections] = useState<Record<string, {users: CareReceiver[], loading: boolean, error: string | null}>>({})
   const [isInitializing, setIsInitializing] = useState(true)
+  const [lastRefresh, setLastRefresh] = useState<string>('')
+  
+  // Realtime subscription for automatic refresh
+  const { onRealtimeUpdate } = useRealtimeCareReceivers(() => {
+    // When data changes in Supabase, refresh the page
+    router.refresh()
+    setLastRefresh(new Date().toLocaleTimeString('ja-JP'))
+  })
 
   useEffect(() => {
-    const initializeSections = async () => {
-      setIsInitializing(true)
-      const newSections: Record<string, {users: CareReceiver[], loading: boolean, error: string | null}> = {}
+    // Initialize realtime subscription on mount
+    onRealtimeUpdate()
+  }, [onRealtimeUpdate])
 
-      // Fetch both services in parallel
-      const results = await Promise.all(
-        SERVICE_SECTIONS.map(async (section) => {
-          try {
-            const response = await fetch(`/api/care-receivers/list?serviceCode=${encodeURIComponent(section.code)}`, { 
-              cache: 'no-store',
-            })
-            const data = await response.json()
+  const refreshData = async () => {
+    setIsInitializing(true)
+    const newSections: Record<string, {users: CareReceiver[], loading: boolean, error: string | null}> = {}
 
-            if (data.ok) {
-              return {
-                code: section.code,
-                users: data.users || [],
-                loading: false,
-                error: null,
-              }
-            } else {
-              const errorMsg = data.detail || data.error || '取得できませんでした'
-              console.error(`[UsersManagement] API error for ${section.code}:`, data)
-              return {
-                code: section.code,
-                users: [],
-                loading: false,
-                error: `エラー: ${errorMsg}`,
-              }
+    // Fetch both services in parallel
+    const results = await Promise.all(
+      SERVICE_SECTIONS.map(async (section) => {
+        try {
+          const response = await fetch(`/api/care-receivers/list?serviceCode=${encodeURIComponent(section.code)}`, { 
+            cache: 'no-store',
+          })
+          const data = await response.json()
+
+          if (data.ok) {
+            return {
+              code: section.code,
+              users: data.users || [],
+              loading: false,
+              error: null,
             }
-          } catch (err) {
-            const errMsg = err instanceof Error ? err.message : String(err)
-            console.error(`[UsersManagement] Fetch error for ${section.code}:`, err)
+          } else {
+            const errorMsg = data.detail || data.error || '取得できませんでした'
+            console.error(`[UsersManagement] API error for ${section.code}:`, data)
             return {
               code: section.code,
               users: [],
               loading: false,
-              error: `通信エラー: ${errMsg}`,
+              error: `エラー: ${errorMsg}`,
             }
           }
-        })
-      )
-
-      results.forEach((result) => {
-        newSections[result.code] = {
-          users: result.users,
-          loading: result.loading,
-          error: result.error,
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err)
+          console.error(`[UsersManagement] Fetch error for ${section.code}:`, err)
+          return {
+            code: section.code,
+            users: [],
+            loading: false,
+            error: `通信エラー: ${errMsg}`,
+          }
         }
       })
+    )
 
-      setSections(newSections)
-      setIsInitializing(false)
-    }
+    results.forEach((result) => {
+      newSections[result.code] = {
+        users: result.users,
+        loading: result.loading,
+        error: result.error,
+      }
+    })
 
-    initializeSections()
+    setSections(newSections)
+    setIsInitializing(false)
+    setLastRefresh(new Date().toLocaleTimeString('ja-JP'))
+  }
+
+  useEffect(() => {
+    refreshData()
   }, [])
 
   return (
@@ -108,8 +123,25 @@ export default function UsersManagementPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">利用者管理</h1>
-          <p className="text-gray-600">全サービスの利用者一覧</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">利用者管理</h1>
+              <p className="text-gray-600">全サービスの利用者一覧</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={refreshData}
+                disabled={isInitializing}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isInitializing ? 'animate-spin' : ''}`} />
+                更新
+              </button>
+            </div>
+          </div>
+          {lastRefresh && (
+            <p className="text-xs text-gray-500">最終更新: {lastRefresh}</p>
+          )}
         </div>
 
         {/* Loading State */}

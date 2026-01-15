@@ -56,6 +56,8 @@
     "@react-pdf/renderer": "latest",
     "@storybook/react": "latest",
     "@storybook/test": "latest",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/auth-helpers-react": "^0.15.0",
     "@supabase/supabase-js": "latest",
     "@testing-library/dom": "latest",
     "@testing-library/jest-dom": "latest",

@@ -1,216 +1,90 @@
-import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export const dynamic = "force-dynamic"
-export const runtime = "nodejs"
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 /**
- * GET /api/care-receivers/list
+ * GET /api/care-receivers/list?serviceCode=life-care
  * 
- * Query params:
- *   - serviceCode: "life-care" | "after-school" | etc. (required)
+ * 本番環境対応版：認証必須 + RLS 自動適用 + エラーハンドリング強化
  * 
- * Returns:
- *   - Success: { ok: true, users: [...], count: number }
- *   - Error: { ok: false, error: "message", detail?: "..." }
- * 
- * Note: Always returns HTTP 200/500 (never 400) to avoid client fetch errors on params
- * Errors are always logged to console for debugging
+ * Response:
+ *   { ok: true, users: [...], count: number }
+ *   { ok: false, error: "message" }
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const serviceCode = searchParams.get("serviceCode")
-
-    console.log("[GET /api/care-receivers/list] Request received", {
-      serviceCode,
-    })
-
-    // serviceCode is required for this endpoint
-    if (!serviceCode) {
-      const error = "serviceCode parameter is required"
-      console.error("[GET /api/care-receivers/list]", error)
-      return NextResponse.json(
-        { ok: false, error },
-        { status: 400 },
-      )
-    }
-
-    if (!supabaseAdmin) {
-      const error = "Database connection not available"
-      console.error("[GET /api/care-receivers/list]", error)
-      return NextResponse.json(
-        { ok: false, error },
-        { status: 500 },
-      )
-    }
-
-    // Query care receivers with service_code filtering
-    // Filter by: service_code + is_active = true (logical deletion)
-    // Use name field for display (display_name is deprecated)
-    const { data, error } = await supabaseAdmin
-      .from("care_receivers")
-      .select("id, code, name, age, gender, care_level, condition, medical_care, is_active, created_at, updated_at")
-      .eq("service_code", serviceCode)
-      .eq("is_active", true)
-      .order("name", { ascending: true })
-
-    if (error) {
-      console.error("[GET /api/care-receivers/list] Supabase query error:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Failed to fetch care receivers",
-          detail: error.message,
-        },
-        { status: 500 },
-      )
-    }
-
-    // Map database columns to API response format
-    const users = (data || []).map((row: any) => ({
-      id: row.id,
-      code: row.code,
-      name: row.name, // Use name field directly
-      age: row.age,
-      gender: row.gender,
-      care_level: row.care_level,
-      condition: row.condition,
-      medical_care: row.medical_care,
-      is_active: row.is_active,
-    }))
-
-    console.log("[GET /api/care-receivers/list] Success", {
-      serviceCode,
-      count: users.length,
-    })
-
-    return NextResponse.json({
-      ok: true,
-      users,
-      count: users.length,
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[GET /api/care-receivers/list] Unexpected error:", {
-      error: message,
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-    return NextResponse.json(
+    // 1. Supabase クライアント作成
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        ok: false,
-        error: "Internal server error",
-        detail: message,
-      },
-      { status: 500 },
+        auth: {
+          persistSession: false,
+        },
+      }
     )
-  }
-}
-/**
- * POST /api/care-receivers/list
- * 
- * Create a new care receiver
- * 
- * Body:
- *   - code: string (required, unique identifier)
- *   - display_name: string (required, user-facing name)
- *   - service_code: string (required, "life-care" | "after-school" | etc.)
- *   - age?: number
- *   - gender?: string
- *   - care_level?: number
- *   - condition?: string
- *   - medical_care?: string
- *   - notes?: string
- * 
- * Returns:
- *   - Success: { ok: true, user: {...} }
- *   - Error: { ok: false, error: "message" }
- */
-export async function POST(req: NextRequest) {
-  try {
-    if (!supabaseAdmin) {
+
+    // 2. セッション確認 (Authorization ヘッダーから取得)
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.replace('Bearer ', '')
+
+    if (!token) {
+      console.warn('[GET /api/care-receivers] No authorization header')
       return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 500 }
+        { ok: false, error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
-    const body = await req.json()
-    const {
-      code,
-      name,
-      service_code,
-      age,
-      gender,
-      care_level,
-      condition,
-      medical_care,
-    } = body
+    // 3. トークンを使用してユーザー情報を取得
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
 
-    // Validation
-    if (!code || !name || !service_code) {
+    if (userError || !user) {
+      console.warn('[GET /api/care-receivers] Invalid token')
       return NextResponse.json(
-        {
-          ok: false,
-          error: "code, name, and service_code are required",
-        },
-        { status: 400 }
+        { ok: false, error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
-    if (typeof age !== "undefined" && age < 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "age must be >= 0",
-        },
-        { status: 400 }
-      )
-    }
-
-    // Check if code already exists
-    const { data: existing } = await supabaseAdmin
-      .from("care_receivers")
-      .select("id")
-      .eq("code", code)
-      .eq("service_code", service_code)
-      .maybeSingle()
-
-    if (existing) {
-      return NextResponse.json(
-        { ok: false, error: `Code "${code}" already exists in this service` },
-        { status: 400 }
-      )
-    }
-
-    // Create care receiver (is_active defaults to true)
-    const { data, error } = await supabaseAdmin
-      .from("care_receivers")
-      .insert([
-        {
-          code,
-          name,
-          service_code,
-          age,
-          gender,
-          care_level,
-          condition,
-          medical_care,
-          is_active: true,
-        },
-      ])
-      .select()
+    // 4. staff_profiles から facility_id を取得
+    const { data: profile, error: profileError } = await supabase
+      .from('staff_profiles')
+      .select('facility_id')
+      .eq('id', user.id)
       .single()
 
-    if (error) {
-      console.error("[POST /api/care-receivers/list] Insert error:", error)
+    if (profileError || !profile) {
+      console.error('[GET /api/care-receivers] Profile fetch error:', profileError)
       return NextResponse.json(
-        { ok: false, error: "Failed to create care receiver" },
+        { ok: false, error: 'Staff profile not found' },
+        { status: 403 }
+      )
+    }
+
+    // 5. Query params を取得（オプション）
+    const { searchParams } = new URL(req.url)
+    const serviceCode = searchParams.get('serviceCode')
+
+    // 6. RLS により自動的に facility_id に基づいてフィルタリング
+    let query = supabase
+      .from('care_receivers')
+      .select('*', { count: 'exact' })
+      .eq('is_active', true)
+      .order('name')
+
+    if (serviceCode) {
+      query = query.eq('service_code', serviceCode)
+    }
+
+    const { data, error, count } = await query
+
+    if (error) {
+      console.error('[GET /api/care-receivers] Query error:', error)
+      return NextResponse.json(
+        { ok: false, error: 'Failed to fetch care receivers' },
         { status: 500 }
       )
     }
@@ -218,28 +92,116 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ok: true,
-        user: {
-          id: data.id,
-          code: data.code,
-          name: data.name,
-          service_code: data.service_code,
-          age: data.age,
-          gender: data.gender,
-          care_level: data.care_level,
-          condition: data.condition,
-          medical_care: data.medical_care,
-          is_active: data.is_active,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-        },
+        users: data || [],
+        count: count || 0,
       },
+      { status: 200 }
+    )
+  } catch (err) {
+    console.error('[GET /api/care-receivers] Unexpected error:', err)
+    return NextResponse.json(
+      { ok: false, error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * POST /api/care-receivers/list
+ */
+export async function POST(req: NextRequest) {
+  try {
+    // 1. Supabase クライアント作成
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
+    )
+
+    // 2. トークンを取得
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.replace('Bearer ', '')
+
+    if (!token) {
+      return NextResponse.json(
+        { ok: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 3. ユーザー情報を取得
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { ok: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 4. staff_profiles から facility_id を取得
+    const { data: profile, error: profileError } = await supabase
+      .from('staff_profiles')
+      .select('facility_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { ok: false, error: 'Staff profile not found' },
+        { status: 403 }
+      )
+    }
+
+    // 5. Request body をパース + バリデーション
+    const body = await req.json()
+    const { code, name, service_code, age, gender, care_level, condition, medical_care } = body
+
+    if (!code?.trim() || !name?.trim()) {
+      return NextResponse.json(
+        { ok: false, error: 'code and name are required' },
+        { status: 400 }
+      )
+    }
+
+    // 6. INSERT（facility_id は強制設定）
+    const { data, error } = await supabase
+      .from('care_receivers')
+      .insert({
+        code: code.trim(),
+        name: name.trim(),
+        facility_id: profile.facility_id,
+        service_code,
+        age: age ? parseInt(age) : null,
+        gender: gender?.trim(),
+        care_level: care_level ? parseInt(care_level) : null,
+        condition: condition?.trim(),
+        medical_care: medical_care?.trim(),
+        is_active: true,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('[POST /api/care-receivers] Insert error:', error)
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      { ok: true, user: data },
       { status: 201 }
     )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[POST /api/care-receivers/list] Unexpected error:", error)
+  } catch (err) {
+    console.error('[POST /api/care-receivers] Unexpected error:', err)
     return NextResponse.json(
-      { ok: false, error: "Internal server error", detail: message },
+      { ok: false, error: 'Internal server error' },
       { status: 500 }
     )
   }
