@@ -247,12 +247,21 @@ export default function ServiceUsersPage() {
   })
 
   const fetchUsers = async () => {
+    if (!serviceId) {
+      console.warn('[ServiceUsersPage] serviceId not available')
+      return
+    }
+
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/care-receivers`, { cache: 'no-store' })
-      if (response.ok) {
-        const data = await response.json()
-        setUsers(data.careReceivers || [])
+      const response = await fetch(`/api/care-receivers/list?serviceCode=${encodeURIComponent(serviceId)}`, { cache: 'no-store' })
+      const data = await response.json()
+
+      if (data.ok) {
+        setUsers(data.users || [])
+      } else {
+        console.warn('[ServiceUsersPage] API returned ok:false:', data.error)
+        setUsers([])
       }
     } catch (error) {
       console.error('[ServiceUsersPage] Failed to fetch users:', error)

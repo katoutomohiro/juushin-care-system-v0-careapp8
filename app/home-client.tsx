@@ -433,7 +433,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* A. 利用者管理 */}
-            <Link href="/services/life-care" className="group">
+            <Link href="/services/life-care/users" className="group">
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">

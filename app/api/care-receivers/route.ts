@@ -8,36 +8,80 @@ export const runtime = "nodejs"
 /**
  * GET /api/care-receivers
  * Query params:
- *   - id: uuid
- *   - code: care_receivers.code (normalized)
+ *   - id: uuid (single record lookup)
+ *   - code: care_receivers.code (single record lookup)
+ *   - serviceId: uuid (list all receivers for this service)
+ *
+ * Returns:
+ *   - List mode: { ok: true, careReceivers: [...] }
+ *   - Single mode: { ok: true, careReceiver: {...} }
+ *   - Error: { ok: false, error: "message" } (200 status)
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
     const codeInput = searchParams.get("code")
+    const serviceId = searchParams.get("serviceId")
 
-    if (!id && !codeInput) {
+    // No required parameters provided
+    if (!id && !codeInput && !serviceId) {
       return NextResponse.json(
-        { ok: false, error: "id or code is required" },
-        { status: 400 },
+        { ok: false, error: "id or code or serviceId is required" },
+        { status: 200 }, // Use 200 to avoid console 400 spam
       )
     }
 
     if (!supabaseAdmin) {
       return NextResponse.json(
         { ok: false, error: "Database connection not available" },
-        { status: 503 },
+        { status: 200 },
       )
     }
 
+    // LIST MODE: Get all care receivers for a service
+    if (serviceId) {
+      let query = supabaseAdmin
+        .from("care_receivers")
+        .select("id, code, name, age, gender, care_level, condition, medical_care")
+
+      query = query.eq("service_id", serviceId)
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error("[GET /api/care-receivers] List query error:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        })
+        return NextResponse.json(
+          { ok: false, error: "Failed to fetch care receivers", detail: error.message },
+          { status: 200 },
+        )
+      }
+
+      return NextResponse.json({
+        ok: true,
+        careReceivers: (data || []).map((row: any) => ({
+          id: row.id,
+          code: row.code,
+          name: row.name,
+          age: row.age,
+          gender: row.gender,
+          careLevel: row.care_level,
+          condition: row.condition,
+          medicalCare: row.medical_care,
+        })),
+      })
+    }
+
+    // SINGLE MODE: Get care receiver by id or code
     const normalizedCode = codeInput ? normalizeUserId(codeInput) : null
 
-    // Select only actual columns that exist in care_receivers table
-    // Do NOT include service_id - it may not exist or be accessible
     let query = supabaseAdmin
       .from("care_receivers")
-      .select("id, code, name")
+      .select("id, code, name, age, gender, care_level, condition, medical_care")
 
     if (id) {
       query = query.eq("id", id)
@@ -46,30 +90,28 @@ export async function GET(req: NextRequest) {
     } else {
       return NextResponse.json(
         { ok: false, error: "Invalid code" },
-        { status: 400 },
+        { status: 200 },
       )
     }
 
     const { data, error } = await query.maybeSingle()
 
-    // Don't throw on Supabase error - return gracefully
     if (error) {
       console.error("[GET /api/care-receivers] Supabase query error:", {
         message: error.message,
         code: error.code,
         details: error.details,
       })
-      // Return ok:false instead of 500 - let client decide what to do
       return NextResponse.json(
         { ok: false, error: "Failed to fetch care receiver", detail: error.message },
-        { status: 200 }, // Use 200 so client doesn't treat as network error
+        { status: 200 },
       )
     }
 
     if (!data) {
       return NextResponse.json(
         { ok: false, error: "care_receiver not found" },
-        { status: 200 }, // Use 200 to avoid fetch error handling
+        { status: 200 },
       )
     }
 
@@ -79,14 +121,18 @@ export async function GET(req: NextRequest) {
         id: data.id,
         code: data.code,
         name: data.name,
-        // Note: service_id is not returned - it's managed at a different layer
+        age: data.age,
+        gender: data.gender,
+        careLevel: data.care_level,
+        condition: data.condition,
+        medicalCare: data.medical_care,
       },
     })
   } catch (error) {
     console.error("[GET /api/care-receivers] Unexpected error:", error)
     return NextResponse.json(
       { ok: false, error: "Internal server error" },
-      { status: 200 }, // Use 200 to avoid fetch error handling on client
+      { status: 200 },
     )
   }
 }

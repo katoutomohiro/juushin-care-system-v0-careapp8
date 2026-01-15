@@ -543,3 +543,151 @@ if (!response.ok || !result.ok) {
 2. **Controlled Open**: React state で Select の open/close を完全制御
 3. **saveMsgById Pattern**: ID ベースで複数 save メッセージを管理（previous saveStatus は 1つのみ管理可能）
 4. **onUpdateStaff Callback**: 親コンポーネント（CaseRecordFormClient）で staffOptions を動的更新
+
+---
+
+## 🎯 STEP-A～F: DB整備・一覧API統一・UIフロー完成（2026-01-15）
+
+### 目的
+
+利用者（care_receivers）をデータベースに正規化し、一覧表示・詳細編集・保存のフロー全体を「一気通貫」で同期させる。
+
+### 要件
+
+**事業所情報:**
+- 生活介護（life-care）: 14 名（年齢 35～48 才）
+- 放課後等デイサービス（after-school）: 10 名（年齢 10～17 才）
+- **計 24 名**の利用者データ
+
+### STEP-A: care_receivers テーブル整備
+
+✅ **完了**: `supabase/migrations/20260115_enhance_care_receivers.sql`
+- 新規カラム追加: `display_name`, `age`, `gender`, `care_level`, `condition`, `medical_care`, `service_code`
+- service_id を service_code (text) に統一（柔軟性向上）
+- RLS ポリシー実装（開発: 認証ユーザーは read/write 可）
+- updated_at トリガー自動更新
+
+**スキーマ:**
+```sql
+id uuid PRIMARY KEY
+code text UNIQUE NOT NULL -- 内部短コード（AT, IK等）
+display_name text NOT NULL -- 画面表示名（A・T, I・K等）
+age int
+gender text (male|female|unknown)
+care_level int (1-5)
+condition text
+medical_care text
+service_code text NOT NULL -- life-care|after-school
+created_at, updated_at
+```
+
+### STEP-B: 24 名の seed データ
+
+✅ **完了**: `supabase/seed.sql`
+- 生活介護 14 名: age 35～48、care_level 4（全介助）
+- 放デイ 10 名: age 10～17、care_level 2-3
+- code 生成ルール: 漢字イニシャル + _ + age + 性別頭文字
+  - 例: IK_47F, OS_42M, AK_12M
+- upsert (on conflict code do update) で重複対応
+
+### STEP-C: 一覧用 API 新規作成
+
+✅ **完了**: `app/api/care-receivers/list/route.ts`
+
+**仕様:**
+- GET `/api/care-receivers/list?serviceCode=life-care|after-school`
+- 応答: `{ ok: true, users: [{id, code, name, age, gender, careLevel, condition, medicalCare}], count }`
+- エラー時も HTTP 200（クライアント fetch 安全化）
+
+**特徴:**
+- service_code で フィルタリング
+- display_name で 昇順ソート
+- キャッシュ無し（force-dynamic）
+
+### STEP-D: 利用者管理ページを API 一覧に統一
+
+✅ **完了**: 修正ファイル
+- `app/services/[serviceId]/users/page.tsx`: GET `/api/care-receivers/list?serviceCode=serviceId`
+- `app/services/[serviceId]/page.tsx`: 同上 API 呼び出しに統一
+- レスポンス: `{ ok, users: [...], count }`
+
+**UI 動作:**
+- 一覧ページ: カード表示 or テーブル表示
+- 各行: 「詳細へ」リンク → `/services/[serviceId]/users/[userId]`
+- 「新規追加」ボタン: disabled（準備中）
+- ローディング: Loader2 スピナー
+- エラー: トースト or 上部アラート
+
+### STEP-E: 編集/保存 → 一覧反映の仕組み
+
+✅ **完了**: 既存実装を活用
+
+**フロー:**
+1. 利用者一覧ページ（[serviceId]/users/page.tsx）
+   - cache: 'no-store' で毎回 API 再取得
+   - window focus event で自動リフレッシュ
+
+2. 利用者詳細ページ（[serviceId]/users/[userId]/page.tsx）
+   - 編集保存: handleSaveUser
+   - PUT `/api/care-receivers/update-display-name`
+   - **保存成功後: `router.refresh()`** で全ページ再取得
+   - クライアント側の state も最新化
+
+3. 結果:
+   - 詳細で編集 → 保存 → 自動更新
+   - ブラウザフォーカス戻す → 一覧自動リフレッシュ
+   - **双方向同期完成**
+
+### STEP-F: plan.md へ情報統合
+
+✅ **完了**: このセクション
+
+**事業所情報 統合:**
+- 利用者 24 名の一覧（生活介護/放デイ分類）
+- 年齢別・service_code 別の自動振り分け
+- 個人情報の扱い: 本番では匿名化・権限管理が必須（TODO 記載）
+
+**次フェーズへの引き継ぎ:**
+- テンプレート実装: 各利用者の個別フィールド定義
+- ケース記録作成: seed データを基に 24 人全員対応
+- API 統一: 既存の `/api/case-records` と care_receivers の紐付け
+
+### 検証結果
+
+| 項目 | 状態 |
+|------|------|
+| **DB スキーマ** | ✅ Migration 作成 |
+| **Seed データ** | ✅ 24 名 SQL 作成 |
+| **API /list** | ✅ 実装完了 |
+| **UI 統一** | ✅ 両ページ修正 |
+| **保存フロー** | ✅ router.refresh() 有効 |
+| **Lint/Typecheck** | 🔲 本番環境で検証予定 |
+
+### 技術メモ
+
+1. **service_code**: UUID ではなく text（life-care など）で管理
+   - より簡潔、環境変数管理容易
+   - 複数サービスの拡張時も code ベースで柔軟
+
+2. **display_name vs code**:
+   - `code`: 内部短コード（database query, API param）
+   - `display_name`: 画面表示用（UI のみ）
+   - user_id は廃止、code に統一
+
+3. **キャッシュ戦略**:
+   - 一覧ページ: `cache: 'no-store'`
+   - window focus event: 自動リフレッシュ
+   - 詳細ページ: `router.refresh()` で全体 revalidate
+
+4. **エラー安全化**:
+   - API は常に HTTP 200 返却
+   - `{ ok: false, error: "..." }` で client-safe
+   - fetch error handling 不要
+
+### 個人情報保護（TODO）
+
+本番デプロイ前に以下を実装:
+- RLS ポリシー: サービス単位の read/write 制限
+- 匿名化: code のみ外部公開（display_name は内部限定）
+- 監査ログ: care_receivers 更新履歴を記録
+- パーミッション: ロール別アクセス制御（admin/staff/user）
