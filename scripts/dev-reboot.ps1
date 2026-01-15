@@ -45,29 +45,14 @@ Write-Host "⏳ Starting Next.js..." -ForegroundColor Yellow
 $nextCmd = Join-Path $PSScriptRoot "..\node_modules\.bin\next.cmd"
 
 if (Test-Path $nextCmd) {
-    # Start in a new PowerShell window that stays open
-    $script = {
-        param($path)
-        Set-Location $path
-        & .\node_modules\.bin\next.cmd dev -p 3000
-    }
+    Write-Host "📌 Dev server starting (this window will be occupied, do not close)" -ForegroundColor Cyan
+    Write-Host "🌐 Open http://localhost:3000 in another terminal/browser" -ForegroundColor Cyan
     
-    Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", "Set-Location '$PWD'; & .\node_modules\.bin\next.cmd dev -p 3000" -WindowStyle Normal
+    # Execute Next.js dev server
+    Write-Host "Running: next dev (port: 3000)" -ForegroundColor Gray
     
-    # Wait a moment for the server to start
-    Start-Sleep -Seconds 3
-    
-    # Check if it's actually listening
-    $listening = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
-    if ($null -ne $listening) {
-        Write-Host "✅ Dev server started successfully on port 3000" -ForegroundColor Green
-        Write-Host "📌 A new PowerShell window should be running the dev server" -ForegroundColor Cyan
-        Write-Host "🌐 Open http://localhost:3000 in your browser" -ForegroundColor Cyan
-        exit 0
-    } else {
-        Write-Host "⚠️  Dev server may not have started. Check the PowerShell window." -ForegroundColor Yellow
-        exit 1
-    }
+    # Call next.cmd directly - it will use default port 3000
+    & $nextCmd dev
 } else {
     Write-Host "❌ next.cmd not found at $nextCmd" -ForegroundColor Red
     Write-Host "💡 Try running: pnpm install" -ForegroundColor Yellow

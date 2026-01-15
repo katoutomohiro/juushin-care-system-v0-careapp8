@@ -98,6 +98,19 @@ pnpm run check-server
 
 ### 🔧 トラブル対応
 
+#### 問題: PowerShell 終了時に「バッチ ジョブを終了しますか？」が出る
+
+```powershell
+# クリーンアップスクリプトを実行
+.\scripts\cleanup-jobs.ps1
+
+# その後 PowerShell を終了
+exit
+```
+
+**原因**: バックグラウンドジョブが残っている  
+**永久対策**: [PowerShell プロファイル設定](docs/POWERSHELL_PROFILE_SETUP.md)を参照し、終了時の自動クリーンアップを有効化
+
 #### 問題: ERR_CONNECTION_REFUSED が出る
 
 ```powershell
