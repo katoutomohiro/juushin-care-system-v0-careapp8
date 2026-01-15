@@ -45,15 +45,31 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Query care receivers by service_code
-    // Select all necessary columns for display
+    // Query care receivers with service information
+    // First, get the service_id from the services table using the slug (serviceCode)
+    const { data: serviceData, error: serviceError } = await supabaseAdmin
+      .from("services")
+      .select("id")
+      .eq("slug", serviceCode)
+      .single()
+
+    if (serviceError || !serviceData) {
+      const error = `Service not found: ${serviceCode}`
+      console.error("[GET /api/care-receivers/list]", error, serviceError)
+      return NextResponse.json(
+        { ok: false, error },
+        { status: 400 },
+      )
+    }
+
+    const serviceId = serviceData.id
+
+    // Query care receivers by service_id
     const { data, error } = await supabaseAdmin
       .from("care_receivers")
-      .select(
-        "id, code, display_name, age, gender, care_level, condition, medical_care, service_code, created_at, updated_at"
-      )
-      .eq("service_code", serviceCode)
-      .order("display_name", { ascending: true })
+      .select("id, code, name, service_id, created_at, updated_at")
+      .eq("service_id", serviceId)
+      .order("name", { ascending: true })
 
     if (error) {
       console.error("[GET /api/care-receivers/list] Supabase query error:", {
@@ -76,13 +92,7 @@ export async function GET(req: NextRequest) {
     const users = (data || []).map((row: any) => ({
       id: row.id,
       code: row.code,
-      name: row.display_name,
-      age: row.age,
-      gender: row.gender,
-      careLevel: row.care_level,
-      condition: row.condition,
-      medicalCare: row.medical_care,
-      serviceCode: row.service_code,
+      name: row.name,
     }))
 
     console.log("[GET /api/care-receivers/list] Success", {

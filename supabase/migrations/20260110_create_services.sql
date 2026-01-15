@@ -8,5 +8,7 @@ CREATE TABLE IF NOT EXISTS public.services (
 );
 
 INSERT INTO public.services (slug, name)
-VALUES ('life-care', '生活介護')
+VALUES 
+  ('life-care', '生活介護'),
+  ('after-school', '放課後等デイサービス')
 ON CONFLICT (slug) DO NOTHING;
