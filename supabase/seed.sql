@@ -1,17 +1,10 @@
 -- Seed data for care_receivers table
 -- 24 care receivers: 14 for life-care service, 10 for after-school service
--- Data from business operation data
-
--- Service UUIDs and codes will be looked up from services table
--- Services must be created before seeding care_receivers
-
--- Truncate existing data if needed (comment out to preserve)
--- DELETE FROM public.care_receivers;
+-- Each mapped to facility_id for RLS isolation
 
 -- Life Care Service (14 receivers)
--- Based on provided business data: 生活介護14名
-INSERT INTO public.care_receivers (code, name, service_id, service_code, is_active)
-SELECT code, name, (SELECT id FROM services WHERE slug = 'life-care'), 'life-care', true
+INSERT INTO public.care_receivers (code, name, facility_id, service_code, is_active)
+SELECT code, name, (SELECT id FROM public.facilities WHERE slug = 'life-care'), 'life-care', true
 FROM (
   VALUES
     ('AT_36M', 'AT'),
@@ -31,15 +24,14 @@ FROM (
 ) AS t(code, name)
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
-  service_id = (SELECT id FROM services WHERE slug = 'life-care'),
+  facility_id = (SELECT id FROM public.facilities WHERE slug = 'life-care'),
   service_code = 'life-care',
   is_active = true,
   updated_at = now();
 
 -- After-School Service (10 receivers)
--- Based on provided business data: 放課後等デイサービス10名
-INSERT INTO public.care_receivers (code, name, service_id, service_code, is_active)
-SELECT code, name, (SELECT id FROM services WHERE slug = 'after-school'), 'after-school', true
+INSERT INTO public.care_receivers (code, name, facility_id, service_code, is_active)
+SELECT code, name, (SELECT id FROM public.facilities WHERE slug = 'after-school'), 'after-school', true
 FROM (
   VALUES
     ('AK_12M', 'AK'),
@@ -55,7 +47,5 @@ FROM (
 ) AS t(code, name)
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
-  service_id = (SELECT id FROM services WHERE slug = 'after-school'),
-  service_code = 'after-school',
-  is_active = true,
+  facility_id = (SELECT id FROM public.facilities WHERE slug = 'after-school'),
   updated_at = now();
