@@ -457,3 +457,89 @@ const fetchCareReceiverName = useCallback(async (): Promise<string> => {
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
 - 6か月単位の評価・振り返り画面
+---
+
+# STEP 5: StaffSelector の「編集モード（インライン編集）」完全安定化 ✅
+
+**2026-01-15 実装完了**
+
+### 目的
+StaffSelector の inline edit mode で Radix Select のイベント干渉を排除し、日本語入力・Backspace削除・save処理が安定して動作する環境を実現する。
+
+### 実装内容
+
+#### A. Controlled Open State
+- `mainOpen`, `subOpen` useState を追加
+- `useEffect` で editMode 変更時に両 Select を強制 open=true に
+- 選択変更ブロック: editMode 中は handleMainChange/handleSubChange が早期リターン
+
+#### B. Event Capture フェーズ
+Input・Button に以下を追加：
+- `onPointerDownCapture`: e.preventDefault() + e.stopPropagation()
+- `onKeyDownCapture`: e.stopPropagation() only（キー入力は常に許可）
+- `onClick`, `onMouseDown`: 従来通り preventDefault + stopPropagation
+
+#### C. State Management
+- `saveMsgById`: Record<string, { message, timestamp }> で複数行の save 状態を管理
+- `clearMsgTimerRef`: useRef で timeout を記録し、重複クリア防止
+
+#### D. Save Response Processing
+```typescript
+if (!response.ok || !result.ok) {
+  throw new Error(result.error || "保存に失敗しました")
+}
+```
+→ 厳格なエラーチェック（response.ok AND result.ok）
+
+#### E. Post-Save staffOptions Update
+- `onUpdateStaff` callback で親に通知
+- CaseRecordFormClient: `setStaffOptions` で label 更新
+- CaseRecordFormClient: `setAllStaff` で全情報更新
+- 即座に UI に反映（2秒後に save メッセージ消去）
+
+#### F. Div-Based Edit Rendering
+- editMode 中は SelectItem 不使用
+- edit 行を `<div>` で render（onClick/onMouseDown で事前ブロック）
+- これにより Select の click/drag logic 回避
+
+#### G. Value Handling
+- NONE sentinel（`__none__`）で統一
+- editMode 中は onValueChange 呼び出し抑制（if editMode return）
+- Controlled value: mainSelectValue/subSelectValue
+
+### ファイル修正
+
+**修正ファイル:**
+1. `src/components/case-records/StaffSelector.tsx`: 完全改修
+2. `src/components/case-records/CaseRecordForm.tsx`: onUpdateStaff prop 追加
+3. `src/components/case-records/CaseRecordFormClient.tsx`: handleUpdateStaff handler 追加
+
+### 受け入れ条件
+
+✅ **日本語入力が正常に動く**
+- 全角文字列の入力・変更が中断されない
+- IME入力による選択状態の誤認識がない
+
+✅ **Backspace削除が正常に動く**
+- 連続削除が可能
+- 文字列端のカーソル位置でのBackspace も反応
+
+✅ **Save ボタンが確実に反応**
+- Click/Touch 入力を正しく受け取る
+- Save API が呼び出される（fetch 成功）
+
+✅ **Post-Save 表示更新が即座**
+- "保存しました" メッセージが 2秒後に消える
+- staffOptions の label が即座に更新される
+- 複数行編集時に各行が独立して管理される
+
+✅ **Type & Lint 検証**
+- pnpm typecheck: ✅ 通る
+- pnpm lint: ✅ 通る（no new errors）
+
+### 技術的なポイント
+
+1. **Event Interception**: キャプチャフェーズで Select より先に input/button がイベントを処理
+2. **Controlled Open**: React state で Select の open/close を完全制御
+3. **saveMsgById Pattern**: ID ベースで複数 save メッセージを管理（previous saveStatus は 1つのみ管理可能）
+4. **onUpdateStaff Callback**: 親コンポーネント（CaseRecordFormClient）で staffOptions を動的更新

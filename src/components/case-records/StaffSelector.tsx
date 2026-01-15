@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -17,9 +17,10 @@ export type StaffSelectorProps = {
   subStaffId: string | null | undefined
   options: StaffOption[]
   onChange: (patch: { mainStaffId?: string | null; subStaffId?: string | null }) => void
-  validationError?: string | null  // エラーメッセージ
-  serviceId?: string  // 編集モード時に PUT に必要
-  allStaff?: Array<{ id: string; name: string; sort_order: number; is_active: boolean }> // 編集用に全情報が欲しい
+  validationError?: string | null
+  serviceId?: string
+  allStaff?: Array<{ id: string; name: string; sort_order: number; is_active: boolean }>
+  onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void
 }
 
 export function StaffSelector({
@@ -30,44 +31,78 @@ export function StaffSelector({
   validationError,
   serviceId,
   allStaff = [],
+  onUpdateStaff,
 }: StaffSelectorProps) {
   const { toast } = useToast()
   const hasError = !!validationError
-  
+
   // UI 値: NONE or uuid
   const mainSelectValue = mainStaffId ?? NONE
   const subSelectValue = subStaffId ?? NONE
-  
+
+  // Controlled open state for both Select elements
+  const [mainOpen, setMainOpen] = useState(false)
+  const [subOpen, setSubOpen] = useState(false)
+
   // 編集モード状態
   const [editMode, setEditMode] = useState(false)
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<{ staffId: string; message: string } | null>(null)
-  
+  const [saveMsgById, setSaveMsgById] = useState<Record<string, { message: string; timestamp: number }>>({})
+
+  // Clear message timers
+  const clearMsgTimerRef = useRef<Record<string, NodeJS.Timeout>>({})
+
+  // When edit mode changes, force both Selects to stay open
+  useEffect(() => {
+    if (editMode) {
+      setMainOpen(true)
+      setSubOpen(true)
+    } else {
+      setMainOpen(false)
+      setSubOpen(false)
+    }
+  }, [editMode])
+
   const handleMainChange = (v: string) => {
+    // Block selection changes during edit mode
+    if (editMode) {
+      return
+    }
     onChange({ mainStaffId: v === NONE ? null : v })
   }
-  
+
   const handleSubChange = (v: string) => {
+    // Block selection changes during edit mode
+    if (editMode) {
+      return
+    }
     onChange({ subStaffId: v === NONE ? null : v })
   }
 
-  const handleEditStart = (staffId: string, currentName: string, e: React.MouseEvent) => {
+  const handleEditStart = (
+    staffId: string,
+    currentName: string,
+    e: React.MouseEvent | React.PointerEvent
+  ) => {
     e.preventDefault()
     e.stopPropagation()
     setEditingStaffId(staffId)
     setEditingName(currentName)
   }
 
-  const handleCancelEdit = (e: React.MouseEvent) => {
+  const handleCancelEdit = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setEditingStaffId(null)
     setEditingName("")
   }
 
-  const handleSaveStaffName = async (staffId: string, e: React.MouseEvent) => {
+  const handleSaveStaffName = async (
+    staffId: string,
+    e: React.MouseEvent | React.PointerEvent
+  ) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -91,7 +126,6 @@ export function StaffSelector({
 
     setIsSaving(true)
     try {
-      // 現在の sort_order と is_active を取得（allStaff から検索）
       const staffData = allStaff.find((s) => s.id === staffId)
       const sortOrder = staffData?.sort_order ?? 0
       const isActive = staffData?.is_active ?? true
@@ -110,32 +144,53 @@ export function StaffSelector({
 
       const result = await response.json()
 
-      if (response.ok && result.ok) {
-        // 保存成功: UI を更新
-        setSaveStatus({ staffId, message: "保存しました" })
-        setTimeout(() => setSaveStatus(null), 2000)
-        
-        setEditingStaffId(null)
-        setEditingName("")
-
-        toast({
-          title: "保存成功",
-          description: `${editingName} を保存しました`,
-        })
-      } else {
-        const errorMsg = result.error || "保存に失敗しました"
-        toast({
-          variant: "destructive",
-          title: "保存失敗",
-          description: errorMsg,
-        })
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "保存に失敗しました")
       }
+
+      // Success: update UI
+      const updatedStaff = {
+        id: staffId,
+        name: editingName.trim(),
+        sort_order: sortOrder,
+        is_active: isActive,
+      }
+
+      if (onUpdateStaff) {
+        onUpdateStaff(updatedStaff)
+      }
+
+      // Show save message
+      setSaveMsgById((prev) => ({
+        ...prev,
+        [staffId]: { message: "保存しました", timestamp: Date.now() },
+      }))
+
+      // Clear message after 2 seconds
+      if (clearMsgTimerRef.current[staffId]) {
+        clearTimeout(clearMsgTimerRef.current[staffId])
+      }
+      clearMsgTimerRef.current[staffId] = setTimeout(() => {
+        setSaveMsgById((prev) => {
+          const next = { ...prev }
+          delete next[staffId]
+          return next
+        })
+      }, 2000)
+
+      setEditingStaffId(null)
+      setEditingName("")
+
+      toast({
+        title: "成功",
+        description: `${updatedStaff.name} を更新しました`,
+      })
     } catch (error) {
-      console.error("[StaffSelector] Save error:", error)
+      console.error("Error saving staff:", error)
       toast({
         variant: "destructive",
         title: "エラー",
-        description: "ネットワーク接続を確認してください",
+        description: error instanceof Error ? error.message : "保存に失敗しました",
       })
     } finally {
       setIsSaving(false)
@@ -171,7 +226,6 @@ export function StaffSelector({
       )}
 
       {editMode ? (
-        // 編集モード: 各スタッフをテキストフィールド + 保存ボタンで表示
         <div className="space-y-1">
           <SelectItem value={NONE}>（未選択）</SelectItem>
           {options.map((opt) => (
@@ -182,21 +236,37 @@ export function StaffSelector({
               onMouseDown={(e) => e.preventDefault()}
             >
               {editingStaffId === opt.value ? (
-                // 編集中
                 <div className="flex items-center gap-1">
                   <Input
                     autoFocus
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
                     className="h-7 text-xs"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onKeyDownCapture={(e) => {
+                      e.stopPropagation()
+                    }}
                   />
                   <Button
                     size="sm"
                     className="h-7 px-2 text-xs"
                     disabled={isSaving}
                     onClick={(e) => handleSaveStaffName(opt.value, e)}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     {isSaving ? "保存中…" : "保存"}
                   </Button>
@@ -205,22 +275,29 @@ export function StaffSelector({
                     size="sm"
                     className="h-7 px-2 text-xs"
                     onClick={handleCancelEdit}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     キャンセル
                   </Button>
                 </div>
               ) : (
-                // 表示モード
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{opt.label}</span>
-                  {saveStatus?.staffId === opt.value && (
-                    <span className="text-xs text-green-600">{saveStatus.message}</span>
+                  {saveMsgById[opt.value] && (
+                    <span className="text-xs text-green-600">{saveMsgById[opt.value].message}</span>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1 text-xs"
                     onClick={(e) => handleEditStart(opt.value, opt.label, e)}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     編集
                   </Button>
@@ -230,7 +307,6 @@ export function StaffSelector({
           ))}
         </div>
       ) : (
-        // 通常モード: SelectItem で選択できる
         <>
           <SelectItem value={NONE}>（未選択）</SelectItem>
           {options.map((o) => (
@@ -243,7 +319,7 @@ export function StaffSelector({
     </SelectContent>
   )
 
-  // Sub Select Content（同じ構造）
+  // Sub Select Content
   const SubSelectContent = () => (
     <SelectContent>
       {editMode && (
@@ -272,7 +348,6 @@ export function StaffSelector({
       )}
 
       {editMode ? (
-        // 編集モード
         <div className="space-y-1">
           <SelectItem value={NONE}>（未選択）</SelectItem>
           {options.map((opt) => (
@@ -289,14 +364,31 @@ export function StaffSelector({
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
                     className="h-7 text-xs"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onKeyDownCapture={(e) => {
+                      e.stopPropagation()
+                    }}
                   />
                   <Button
                     size="sm"
                     className="h-7 px-2 text-xs"
                     disabled={isSaving}
                     onClick={(e) => handleSaveStaffName(opt.value, e)}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     {isSaving ? "保存中…" : "保存"}
                   </Button>
@@ -305,6 +397,10 @@ export function StaffSelector({
                     size="sm"
                     className="h-7 px-2 text-xs"
                     onClick={handleCancelEdit}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     キャンセル
                   </Button>
@@ -312,14 +408,18 @@ export function StaffSelector({
               ) : (
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{opt.label}</span>
-                  {saveStatus?.staffId === opt.value && (
-                    <span className="text-xs text-green-600">{saveStatus.message}</span>
+                  {saveMsgById[opt.value] && (
+                    <span className="text-xs text-green-600">{saveMsgById[opt.value].message}</span>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1 text-xs"
                     onClick={(e) => handleEditStart(opt.value, opt.label, e)}
+                    onPointerDownCapture={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
                   >
                     編集
                   </Button>
@@ -345,11 +445,14 @@ export function StaffSelector({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">主担当</label>
-        <Select value={mainSelectValue} onValueChange={handleMainChange}>
+        <Select
+          value={mainSelectValue}
+          onValueChange={handleMainChange}
+          open={mainOpen}
+          onOpenChange={setMainOpen}
+        >
           <SelectTrigger
-            className={`${
-              hasError ? "border-red-500 bg-red-50" : ""
-            }`}
+            className={hasError ? "border-red-500 bg-red-50" : ""}
             aria-label="主担当を選択"
           >
             <SelectValue placeholder="（未選択）" />
@@ -359,12 +462,19 @@ export function StaffSelector({
         {hasError ? (
           <p className="text-sm text-red-600 mt-1">{validationError}</p>
         ) : (
-          <p className="text-xs text-gray-500 mt-1">※主担当は自動で設定されます（必要に応じて変更できます）</p>
+          <p className="text-xs text-gray-500 mt-1">
+            ※主担当は自動で設定されます（必要に応じて変更できます）
+          </p>
         )}
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-sm text-muted-foreground">副担当</label>
-        <Select value={subSelectValue} onValueChange={handleSubChange}>
+        <Select
+          value={subSelectValue}
+          onValueChange={handleSubChange}
+          open={subOpen}
+          onOpenChange={setSubOpen}
+        >
           <SelectTrigger aria-label="副担当を選択">
             <SelectValue placeholder="（未選択）" />
           </SelectTrigger>

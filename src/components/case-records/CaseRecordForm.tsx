@@ -26,6 +26,7 @@ export type CaseRecordFormProps = {
   submitLabel?: string
   isSubmitting?: boolean
   validationErrors?: { mainStaffId?: string }  // バリデーションエラー
+  onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void  // 保存後のstaffOptions更新
 }
 
 export function CaseRecordForm({
@@ -37,6 +38,7 @@ export function CaseRecordForm({
   submitLabel = "保存",
   isSubmitting = false,
   validationErrors,
+  onUpdateStaff,
 }: CaseRecordFormProps) {
   const [state, setState] = useState(initial)
   const customData = state.custom ?? {}
@@ -73,6 +75,7 @@ export function CaseRecordForm({
         validationError={validationErrors?.mainStaffId}
         serviceId={state.serviceId}
         allStaff={allStaff}
+        onUpdateStaff={onUpdateStaff}
       />
 
       <NotesSection

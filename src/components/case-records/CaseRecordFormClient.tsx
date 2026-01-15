@@ -95,6 +95,30 @@ export function CaseRecordFormClient({
     void fetchStaff()
   }, [serviceId, serviceUuid, toast])
 
+  // Handle staff option update from StaffSelector
+  const handleUpdateStaff = useCallback(
+    (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => {
+      setStaffOptions((prev) =>
+        prev.map((opt) =>
+          opt.value === staff.id ? { ...opt, label: staff.name } : opt
+        )
+      )
+      setAllStaff((prev) =>
+        prev.map((s) =>
+          s.id === staff.id
+            ? {
+                ...s,
+                name: staff.name,
+                sort_order: staff.sort_order ?? s.sort_order,
+                is_active: staff.is_active ?? s.is_active,
+              }
+            : s
+        )
+      )
+    },
+    []
+  )
+
   const handleSubmit = useCallback(async (values: any) => {
     // Double-submit guard: prevent concurrent submissions
     if (submittingRef.current) {
@@ -363,6 +387,7 @@ export function CaseRecordFormClient({
             allStaff={allStaff}
             templateFields={template.customFields || []}
             onSubmit={handleSubmit}
+            onUpdateStaff={handleUpdateStaff}
             submitLabel={isSubmitting ? "保存中..." : "保存"}
             isSubmitting={isSubmitting}
             validationErrors={validationErrors}
