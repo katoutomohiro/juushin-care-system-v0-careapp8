@@ -61,9 +61,9 @@ export async function GET(req: NextRequest) {
       serviceId: row.service_id,
     }))
 
-    const staffOptions = staffList
-      .filter((staff) => staff.isActive)
-      .map((staff) => ({ value: staff.id, label: staff.name }))
+    // Filter by isActive only if activeOnly is true (but activeOnly is already applied in the query)
+    // So staffOptions will only contain active staff
+    const staffOptions = staffList.map((staff) => ({ value: staff.id, label: staff.name }))
 
     return NextResponse.json({
       ok: true,
@@ -208,6 +208,116 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
     console.error("[PUT /api/staff] Unexpected error:", error)
+    return NextResponse.json(
+      { ok: false, error: message || "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * POST /api/staff
+ * Body:
+ *   - serviceId: uuid (required)
+ *   - name: string (required)
+ *   - sort_order?: number (optional, defaults to max+1)
+ *   - is_active?: boolean (optional, defaults to true)
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => null)
+
+    const serviceId = body?.serviceId || body?.service_id
+    const name = body?.name
+    const sortOrder = body?.sortOrder ?? body?.sort_order
+    const isActive = body?.isActive ?? body?.is_active ?? true
+
+    // Validation
+    if (!serviceId || typeof serviceId !== "string") {
+      return NextResponse.json(
+        { ok: false, error: "serviceId is required" },
+        { status: 400 }
+      )
+    }
+    if (!name || typeof name !== "string") {
+      return NextResponse.json(
+        { ok: false, error: "name is required and must be a string" },
+        { status: 400 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      console.error("[POST /api/staff] Supabase admin not available")
+      return NextResponse.json(
+        { ok: false, error: "Database connection not available" },
+        { status: 503 }
+      )
+    }
+
+    // Get max sort_order for this service
+    const { data: maxOrderData, error: maxOrderError } = await supabaseAdmin
+      .from("staff")
+      .select("sort_order")
+      .eq("service_id", serviceId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+
+    if (maxOrderError) {
+      console.error("[POST /api/staff] Max order lookup error:", maxOrderError)
+      return NextResponse.json(
+        { ok: false, error: "Failed to determine sort order", detail: maxOrderError.message },
+        { status: 500 }
+      )
+    }
+
+    const maxOrder = (maxOrderData && maxOrderData.length > 0) ? (maxOrderData[0]?.sort_order ?? 0) : 0
+    const newSortOrder = sortOrder !== undefined && sortOrder !== null ? Number.parseInt(String(sortOrder), 10) : maxOrder + 1
+
+    // Create new staff record
+    const { data: newStaff, error: createError } = await supabaseAdmin
+      .from("staff")
+      .insert({
+        service_id: serviceId,
+        name: name.trim(),
+        sort_order: newSortOrder,
+        is_active: Boolean(isActive),
+      })
+      .select("id, name, sort_order, is_active, service_id")
+      .single()
+
+    if (createError) {
+      console.error("[POST /api/staff] Create error:", createError)
+      return NextResponse.json(
+        { ok: false, error: "Failed to create staff", detail: createError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!newStaff) {
+      return NextResponse.json(
+        { ok: false, error: "No data returned from database" },
+        { status: 500 }
+      )
+    }
+
+    const staff = {
+      id: newStaff.id,
+      name: newStaff.name,
+      sortOrder: newStaff.sort_order ?? 0,
+      isActive: newStaff.is_active,
+      serviceId: newStaff.service_id,
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        staff,
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.error("[POST /api/staff] Unexpected error:", error)
     return NextResponse.json(
       { ok: false, error: message || "Internal server error" },
       { status: 500 }

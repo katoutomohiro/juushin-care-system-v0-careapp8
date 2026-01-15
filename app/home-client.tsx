@@ -21,6 +21,7 @@ import { Suspense } from "react"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
+import Link from "next/link"
 
 const DataBackupPanel = dynamic(
   () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
@@ -422,6 +423,95 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
             <SettingsPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
           </div>
         )}
+
+        {/* 管理者マスタセクション */}
+        <div className="mt-12 pt-8 border-t border-border/50">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">管理者マスタ</h2>
+            <p className="text-muted-foreground text-sm mt-1">管理・編集・追加・削除を一元管理</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* A. 利用者管理 */}
+            <Link href="/services/life-care/users" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-blue-100 rounded-xl text-2xl group-hover:bg-blue-200 transition-colors">👥</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">利用者管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者の追加・編集・削除</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* B. スタッフ管理 */}
+            <Link href="/services/life-care/staff" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-green-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-green-100 rounded-xl text-2xl group-hover:bg-green-200 transition-colors">👔</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-green-600 transition-colors">スタッフ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">スタッフ情報の編集・追加</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* C. ケース記録（管理用） */}
+            <Link href="/services/life-care/users/AT/case-records" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-purple-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-purple-100 rounded-xl text-2xl group-hover:bg-purple-200 transition-colors">📋</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-purple-600 transition-colors">ケース記録</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者毎のケース記録確認</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* D. テンプレ管理（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">📝</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">テンプレ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* E. データ整合性チェック（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">🔍</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">データ整合性</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
 
         <PdfPreviewModal isOpen={isPdfPreviewOpen} onClose={() => setIsPdfPreviewOpen(false)} dailyLog={dailyLog} careEvents={careEvents} />
 

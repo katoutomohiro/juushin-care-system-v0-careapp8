@@ -56,12 +56,14 @@ export function CaseRecordFormClient({
 
     const fetchStaff = async () => {
       try {
-        const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}`, { cache: "no-store" })
+        // activeOnly is true by default in API, which filters to is_active=true only
+        const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}&activeOnly=true`, { cache: "no-store" })
         const result = await response.json()
 
-        if (response.ok && result.staffOptions) {
+        if (response.ok && result.ok && result.staffOptions) {
+          // staffOptions is already filtered by API (activeOnly=true)
           setStaffOptions(result.staffOptions)
-          // allStaff も設定（編集モード用）
+          // allStaff also contains only active staff
           if (Array.isArray(result.staff)) {
             setAllStaff(
               result.staff.map((s: any) => ({

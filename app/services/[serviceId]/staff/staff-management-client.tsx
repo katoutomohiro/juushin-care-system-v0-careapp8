@@ -105,27 +105,48 @@ export function StaffManagementClient({
   }
 
   const saveEdit = async (id: string) => {
+    // Validate name is not empty
+    if (!editForm.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "職員名を入力してください",
+      })
+      return
+    }
+
     setIsSaving(true)
     try {
+      const isNewRecord = id.startsWith("temp-")
+      const method = isNewRecord ? "POST" : "PUT"
+      const payload = isNewRecord
+        ? {
+            serviceId,
+            name: editForm.name.trim(),
+            sort_order: editForm.sortOrder,
+            is_active: editForm.isActive,
+          }
+        : {
+            serviceId,
+            id,
+            name: editForm.name.trim(),
+            sort_order: editForm.sortOrder,
+            is_active: editForm.isActive,
+          }
+
       const response = await fetch("/api/staff", {
-        method: "PUT",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId,
-          id: id.startsWith("temp-") ? undefined : id,
-          name: editForm.name,
-          sortOrder: editForm.sortOrder,
-          isActive: editForm.isActive,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const result = await response.json()
 
       if (response.ok && result.ok) {
         const staffName = result.staff?.name || editForm.name
+        const action = isNewRecord ? "追加しました" : "更新しました"
         toast({
           title: "✅ 保存しました",
-          description: staffName ? `${staffName} の情報を更新しました` : "職員情報を更新しました",
+          description: staffName ? `${staffName} を${action}` : `職員情報を${action}`,
         })
         setEditingId(null)
         await fetchStaff()
