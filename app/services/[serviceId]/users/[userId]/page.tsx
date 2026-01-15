@@ -311,19 +311,29 @@ export default function UserDetailPage() {
       })
       const result = await response.json()
 
-      if (response.ok && result?.careReceiver) {
-        const latestName = result.careReceiver.name || userId
+      // Check both ok flag and data presence
+      if (!result?.ok) {
+        // API returned ok:false - not a critical error, just log it
+        console.error("[UserDetailPage] Failed to fetch care receiver name", {
+          error: result?.error,
+          detail: result?.detail,
+        })
+        return null
+      }
+
+      if (result?.careReceiver?.name) {
+        const latestName = result.careReceiver.name
         setDisplayName(latestName)
         setEditedUser((prev) => ({ ...prev, name: latestName }))
         return latestName
       }
 
-      console.error("[UserDetailPage] Failed to fetch care receiver name", result?.error)
+      return null
     } catch (error) {
-      console.error("[UserDetailPage] Error fetching care receiver name", error)
+      // Network error or JSON parse error - log but don't crash
+      console.error("[UserDetailPage] Network error fetching care receiver name", error)
+      return null
     }
-
-    return null
   }, [normalizedUserId, userId])
 
   useEffect(() => {

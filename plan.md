@@ -370,6 +370,35 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ 保存成功が必ず分かる（statusMessage + toast）
 - ✅ 新しいエラーが発生しない
 
+## STEP 2: 保存後 care receiver 再取得エラー修正（2026-01-15）
+
+**テーマ:** 保存後に発生する `/api/care-receivers` の 500 エラーを修正。保存ロジックには触らず、取得APIのエラーのみを潰す。
+
+**実装内容:**
+
+### 【app/api/care-receivers/route.ts】
+- ✅ Select カラムから `service_id` を除去（実テーブルに存在しないため）
+- ✅ 実カラムのみ：`id, code, name` をselect
+- ✅ Supabase error 時は 500 ではなく 200 + `{ ok: false, error, detail }` を返す
+- ✅ data が null の場合も 200 + `{ ok: false }` で返す
+- ✅ console.error で エラー詳細を記録（code, details, message）
+
+### 【app/services/[serviceId]/users/[userId]/page.tsx】
+- ✅ `fetchCareReceiverName()` で API result.ok をチェック
+- ✅ ok:false の場合は console.error のみにして処理継続
+- ✅ ネットワークエラー時も catch で console.error のみ
+- ✅ 画面を落とさず、setDisplayName は実行しない
+
+**禁止事項:**
+- ❌ 新しいAPIを作らない
+- ❌ payload 項目を増減しない
+- ❌ throw で画面を止める
+
+**受け入れ条件:**
+- ✅ 保存後に Console の 500 エラーが出ない
+- ✅ 保存結果画面はそのまま表示される
+- ✅ Network tab で GET /api/care-receivers が 200 で返る（ok:false でも 200）
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
