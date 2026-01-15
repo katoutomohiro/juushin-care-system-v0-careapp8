@@ -1,7 +1,12 @@
 {
-  "name": "my-v0-project",
-  "version": "0.11.0",
+  "name": "juushin-care-system",
+  "version": "1.0.0-prod-ready",
+  "description": "Juushin Care System PWA (Next.js 15, Supabase, offline-first)",
   "private": true,
+  "engines": {
+    "node": ">=18.18",
+    "pnpm": ">=8"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
