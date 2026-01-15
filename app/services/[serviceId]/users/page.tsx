@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Loader2, AlertCircle } from 'lucide-react'
+import { CreateCareReceiverModal } from '@/components/create-care-receiver-modal'
 
 interface CareReceiver {
   id: string
@@ -143,6 +144,7 @@ export default function UsersManagementPage() {
                     <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
                       {users?.length || 0} 名
                     </span>
+                    <CreateCareReceiverModal serviceCode={section.code} />
                   </div>
 
                   {/* Loading */}
