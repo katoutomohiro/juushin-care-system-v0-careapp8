@@ -7,11 +7,10 @@
     This is the one-command recovery for dev server issues.
     - Kills any process on port 3000
     - Removes .next cache directory
-    - Starts Next.js dev server on port 3000 (in new PowerShell window)
+    - Starts Next.js dev server on port 3000
     
 .EXAMPLE
     .\scripts\dev-reboot.ps1
-    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-reboot.ps1
 #>
 
 $ErrorActionPreference = "SilentlyContinue"
@@ -37,30 +36,17 @@ if (Test-Path ".next") {
     Write-Host "✅ .next cache already clean" -ForegroundColor Green
 }
 
-# Step 3: Start dev server
+# Step 3: Start dev server (foreground - this window stays occupied)
 Write-Host "📍 Step 3: Starting dev server on port 3000..." -ForegroundColor Cyan
-Write-Host "⏳ Starting Next.js..." -ForegroundColor Yellow
+Write-Host "📌 This window will stay occupied (do not close)" -ForegroundColor Cyan
+Write-Host "🌐 Open http://localhost:3000 in another terminal/browser" -ForegroundColor Cyan
+Write-Host "Running: npx next dev -p 3000" -ForegroundColor Gray
 
-# Use next.cmd directly with full path to avoid PATH issues
-$nextCmd = Join-Path $PSScriptRoot "..\node_modules\.bin\next.cmd"
-
-if (Test-Path $nextCmd) {
-    Write-Host "📌 Dev server starting (this window will be occupied, do not close)" -ForegroundColor Cyan
-    Write-Host "🌐 Open http://localhost:3000 in another terminal/browser" -ForegroundColor Cyan
-    
-    # Execute Next.js dev server
-    Write-Host "Running: next dev (port: 3000)" -ForegroundColor Gray
-    
-    try {
-        # Call next.cmd directly - it will use default port 3000
-        & $nextCmd dev
-        exit 0
-    } catch {
-        Write-Host "❌ Dev server failed to start" -ForegroundColor Red
-        Write-Host "Error: $_" -ForegroundColor Red
-        exit 1
-    }} else {
-    Write-Host "❌ next.cmd not found at $nextCmd" -ForegroundColor Red
-    Write-Host "💡 Try running: pnpm install" -ForegroundColor Yellow
+try {
+    npx next dev -p 3000
+    exit 0
+} catch {
+    Write-Host "❌ Dev server failed to start" -ForegroundColor Red
+    Write-Host "Error: $_" -ForegroundColor Red
     exit 1
 }
