@@ -4,7 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import ClickableCard from "@/components/clickable-card"
 import { formUrl, buildUserDiaryUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -303,41 +303,68 @@ export default function UserDetailPage() {
   })
   const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
   const [currentDate, setCurrentDate] = useState<string>("")
+  const fetchWarnedRef = useRef(false) // Prevent console.warn spam
 
-  const fetchCareReceiverName = useCallback(async () => {
+  /**
+   * Fetch care receiver name from API
+   * Returns fallback name if API fails (ok:false, network error, etc.)
+   * Never throws - always returns a string
+   */
+  const fetchCareReceiverName = useCallback(async (): Promise<string> => {
     try {
       const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
         cache: "no-store",
       })
-      const result = await response.json()
 
-      // Check both ok flag and data presence
-      if (!result?.ok) {
-        // API returned ok:false - not a critical error, just log it
-        console.error("[UserDetailPage] Failed to fetch care receiver name", {
-          error: result?.error,
-          detail: result?.detail,
-        })
-        return null
+      // If HTTP response is not ok, treat as failure
+      if (!response.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] HTTP error fetching care receiver name", {
+            status: response.status,
+            statusText: response.statusText,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
       }
 
-      if (result?.careReceiver?.name) {
-        const latestName = result.careReceiver.name
-        setDisplayName(latestName)
-        setEditedUser((prev) => ({ ...prev, name: latestName }))
+      const result = await response.json().catch(() => null)
+
+      // If API returned ok:false, treat as failure (not an exception)
+      if (!result?.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] Care receiver API returned ok:false", {
+            error: result?.error,
+            detail: result?.detail,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
+      }
+
+      // Success: extract and return the name
+      const latestName = result?.careReceiver?.name
+      if (latestName && typeof latestName === "string") {
         return latestName
       }
 
-      return null
+      return userId // Return fallback if name is missing
     } catch (error) {
-      // Network error or JSON parse error - log but don't crash
-      console.error("[UserDetailPage] Network error fetching care receiver name", error)
-      return null
+      // Only log actual exceptions (network errors, JSON parse errors, etc.)
+      if (!fetchWarnedRef.current) {
+        console.warn("[UserDetailPage] Unexpected error fetching care receiver name", error)
+        fetchWarnedRef.current = true
+      }
+      return userId // Return fallback name
     }
   }, [normalizedUserId, userId])
 
   useEffect(() => {
-    void fetchCareReceiverName()
+    ;(async () => {
+      const latestName = await fetchCareReceiverName()
+      setDisplayName(latestName)
+      setEditedUser((prev) => ({ ...prev, name: latestName }))
+    })()
   }, [fetchCareReceiverName])
 
   useEffect(() => {

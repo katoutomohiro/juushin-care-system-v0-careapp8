@@ -384,10 +384,14 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ console.error で エラー詳細を記録（code, details, message）
 
 ### 【app/services/[serviceId]/users/[userId]/page.tsx】
-- ✅ `fetchCareReceiverName()` で API result.ok をチェック
-- ✅ ok:false の場合は console.error のみにして処理継続
-- ✅ ネットワークエラー時も catch で console.error のみ
-- ✅ 画面を落とさず、setDisplayName は実行しない
+- ✅ `fetchCareReceiverName()` を完全リファクタ
+  - 戻り値を必ず `string` に（null ではなく、fallback 名を返す）
+  - HTTP エラー（response.ok === false）でも throw しない
+  - API 結果 ok:false でも throw しない
+  - 実例外（JSON parse エラー等）のみ catch して warn を出す
+- ✅ console.error → console.warn に変更（重大度低下）
+- ✅ 連発防止フラグ `fetchWarnedRef` を導入（warn は1回だけ）
+- ✅ setDisplayName は常に実行（fallback 名を設定）
 
 **禁止事項:**
 - ❌ 新しいAPIを作らない
@@ -398,6 +402,63 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ 保存後に Console の 500 エラーが出ない
 - ✅ 保存結果画面はそのまま表示される
 - ✅ Network tab で GET /api/care-receivers が 200 で返る（ok:false でも 200）
+- ✅ Console の赤い「Failed to fetch」系が消える（warn は1回だけ）
+- ✅ API が ok:false を返しても画面は正常表示（fallback 名が使われる）
+
+## STEP 3: Care receiver 取得失敗時の挙動安定化（2026-01-15）
+
+**テーマ:** /api/care-receivers が ok:false を返しても、画面が落ちず・console.error を出さず、名前はフォールバック表示する。
+
+**実装内容:**
+
+### 【app/api/care-receivers/route.ts】
+- ✅ route は既に 200 + ok:false を返す設計済み
+
+### 【app/services/[serviceId]/users/[userId]/page.tsx】
+- ✅ `fetchCareReceiverName()` を以下の仕様に統一
+  - 常に `string` を返す（エラー時は userId をfallback）
+  - HTTP 非 ok でも throw しない → console.warn（1回）
+  - API ok:false でも throw しない → console.warn（1回）
+  - 実例外のみ catch → console.warn（1回）
+  - 連発防止: `fetchWarnedRef` で warn は1回だけ
+- ✅ useEffect は async IIFE で await 対応
+- ✅ 常に setDisplayName を実行（null チェック不要）
+
+**設計パターン:**
+```typescript
+const fetchCareReceiverName = useCallback(async (): Promise<string> => {
+  try {
+    const response = await fetch(...)
+    if (!response.ok) { // HTTP error
+      console.warn(...)
+      return userId // fallback
+    }
+    const result = await response.json().catch(() => null)
+    if (!result?.ok) { // API ok:false
+      console.warn(...)
+      return userId // fallback
+    }
+    return result?.careReceiver?.name || userId // success or name missing
+  } catch (error) { // Exception (JSON parse, etc)
+    console.warn(...)
+    return userId // fallback
+  }
+}, [...])
+
+useEffect(() => {
+  ;(async () => {
+    const latestName = await fetchCareReceiverName()
+    setDisplayName(latestName)
+  })()
+}, [fetchCareReceiverName])
+```
+
+**受け入れ条件:**
+- ✅ /api/care-receivers が ok:false を返しても画面は正常表示
+- ✅ Console の赤い「Failed to fetch care receiver」系が消える（console.warn に変更）
+- ✅ Console.warn は最大1回だけ（連発防止フラグ）
+- ✅ 保存処理は変更しない
+- ✅ pnpm typecheck / lint が通る
 
 ## 次のステップ（アイデアメモ）
 
