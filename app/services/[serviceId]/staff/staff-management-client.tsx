@@ -112,24 +112,20 @@ export function StaffManagementClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceId,
-          staff: [
-            {
-              id: id.startsWith("temp-") ? undefined : id,
-              name: editForm.name,
-              sort_order: editForm.sortOrder,
-              is_active: editForm.isActive,
-            },
-          ],
+          id: id.startsWith("temp-") ? undefined : id,
+          name: editForm.name,
+          sortOrder: editForm.sortOrder,
+          isActive: editForm.isActive,
         }),
       })
 
       const result = await response.json()
 
       if (response.ok && result.ok) {
-        const firstName = Array.isArray(result.staff) ? result.staff[0]?.name : result.staff?.name
+        const staffName = result.staff?.name || editForm.name
         toast({
           title: "✅ 保存しました",
-          description: firstName ? `${firstName} の情報を更新しました` : "職員情報を更新しました",
+          description: staffName ? `${staffName} の情報を更新しました` : "職員情報を更新しました",
         })
         setEditingId(null)
         await fetchStaff()

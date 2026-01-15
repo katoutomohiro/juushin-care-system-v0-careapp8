@@ -10,6 +10,9 @@ import { buildSummary } from "@/src/types/caseRecord"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+// 未選択を表現するダミー値
+const NONE = "__none__"
+
 interface CaseRecord {
   id: string
   serviceId: string
@@ -180,12 +183,12 @@ export function CaseRecordsListClient({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">主担当</span>
-              <Select value={filterMainStaffId} onValueChange={setFilterMainStaffId}>
+              <Select value={filterMainStaffId || NONE} onValueChange={(v) => setFilterMainStaffId(v === NONE ? "" : v)}>
                 <SelectTrigger className="h-9 w-52">
                   <SelectValue placeholder="すべて" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">すべて</SelectItem>
+                  <SelectItem value={NONE}>すべて</SelectItem>
                   {staffOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
