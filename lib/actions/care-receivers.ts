@@ -2,15 +2,8 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache'
 
-/**
- * Server action to refresh care receivers list
- * Called after CRUD operations to ensure data is re-fetched
- * 
- * This revalidates:
- * - /services/*/users (list pages)
- * - /api/care-receivers/list (API cache)
- * - All dashboard pages that show care receiver info
- */
+// Revalidate care receivers cache after CRUD operations
+// Refreshes: service user lists, API cache, dashboard pages
 export async function revalidateCareReceiversData() {
   try {
     // Revalidate the user management list page
@@ -31,19 +24,8 @@ export async function revalidateCareReceiversData() {
   }
 }
 
-/**
- * Create a new care receiver with automatic data refresh
- * 
- * Params:
- *   - code: string (unique ID)
- *   - name: string (display name)
- *   - service_code: string ('life-care' | 'after-school')
- *   - age?: number (>= 0)
- *   - gender?: string
- *   - care_level?: number
- *   - condition?: string (disease/condition info)
- *   - medical_care?: string (medical care requirements)
- */
+// Create new care receiver with automatic data refresh
+// Fields: code, name, service_code, age, gender, care_level, condition, medical_care
 export async function createCareReceiverAction(data: {
   code: string
   name: string
@@ -61,34 +43,25 @@ export async function createCareReceiverAction(data: {
       body: JSON.stringify(data),
     })
 
-    const result = await response.json()
-
-    if (result.ok) {
-      // Refresh all related pages
-      await revalidateCareReceiversData()
-      return result
-    } else {
-      return result
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`API error ${response.status}: ${errorText}`)
     }
+
+    const result = await response.json()
+    if (result.ok) {
+      await revalidateCareReceiversData()
+    }
+    return result
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error('[createCareReceiverAction] Error:', error)
+    console.error('[createCareReceiverAction]', message)
     return { ok: false, error: message }
   }
 }
 
-/**
- * Update an existing care receiver with automatic data refresh
- * 
- * Params (partial, only changed fields):
- *   - name?: string
- *   - age?: number
- *   - gender?: string
- *   - care_level?: number
- *   - condition?: string
- *   - medical_care?: string
- *   - is_active?: boolean (logical deletion)
- */
+// Update care receiver with automatic data refresh
+// Partial fields: name, age, gender, care_level, condition, medical_care, is_active
 export async function updateCareReceiverAction(
   id: string,
   data: Partial<{
@@ -108,25 +81,24 @@ export async function updateCareReceiverAction(
       body: JSON.stringify(data),
     })
 
-    const result = await response.json()
-
-    if (result.ok) {
-      // Refresh all related pages
-      await revalidateCareReceiversData()
-      return result
-    } else {
-      return result
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`API error ${response.status}: ${errorText}`)
     }
+
+    const result = await response.json()
+    if (result.ok) {
+      await revalidateCareReceiversData()
+    }
+    return result
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error('[updateCareReceiverAction] Error:', error)
+    console.error('[updateCareReceiverAction]', message)
     return { ok: false, error: message }
   }
 }
 
-/**
- * Delete a care receiver with automatic data refresh
- */
+// Delete care receiver with automatic data refresh
 export async function deleteCareReceiverAction(id: string) {
   try {
     const response = await fetch(`/api/care-receivers/${id}`, {
@@ -134,18 +106,19 @@ export async function deleteCareReceiverAction(id: string) {
       headers: { 'Content-Type': 'application/json' },
     })
 
-    const result = await response.json()
-
-    if (result.ok) {
-      // Refresh all related pages
-      await revalidateCareReceiversData()
-      return result
-    } else {
-      return result
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`API error ${response.status}: ${errorText}`)
     }
+
+    const result = await response.json()
+    if (result.ok) {
+      await revalidateCareReceiversData()
+    }
+    return result
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error('[deleteCareReceiverAction] Error:', error)
+    console.error('[deleteCareReceiverAction]', message)
     return { ok: false, error: message }
   }
 }

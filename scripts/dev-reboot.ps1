@@ -51,9 +51,15 @@ if (Test-Path $nextCmd) {
     # Execute Next.js dev server
     Write-Host "Running: next dev (port: 3000)" -ForegroundColor Gray
     
-    # Call next.cmd directly - it will use default port 3000
-    & $nextCmd dev
-} else {
+    try {
+        # Call next.cmd directly - it will use default port 3000
+        & $nextCmd dev
+        exit 0
+    } catch {
+        Write-Host "❌ Dev server failed to start" -ForegroundColor Red
+        Write-Host "Error: $_" -ForegroundColor Red
+        exit 1
+    }} else {
     Write-Host "❌ next.cmd not found at $nextCmd" -ForegroundColor Red
     Write-Host "💡 Try running: pnpm install" -ForegroundColor Yellow
     exit 1
