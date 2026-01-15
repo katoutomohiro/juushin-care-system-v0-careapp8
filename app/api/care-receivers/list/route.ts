@@ -8,36 +8,49 @@ export const runtime = "nodejs"
  * GET /api/care-receivers/list
  * 
  * Query params:
- *   - serviceCode: "life-care" | "after-school" | etc. (required for list mode)
+ *   - serviceCode: "life-care" | "after-school" | etc. (required)
  * 
- * Returns: { ok: true, users: [...] } or { ok: false, error: "message" }
- * Always returns HTTP 200 (never 400/500) to avoid client-side fetch errors
+ * Returns:
+ *   - Success: { ok: true, users: [...], count: number }
+ *   - Error: { ok: false, error: "message", detail?: "..." }
+ * 
+ * Note: Always returns HTTP 200/500 (never 400) to avoid client fetch errors on params
+ * Errors are always logged to console for debugging
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const serviceCode = searchParams.get("serviceCode")
 
-    // No service code provided
+    console.log("[GET /api/care-receivers/list] Request received", {
+      serviceCode,
+    })
+
+    // serviceCode is required for this endpoint
     if (!serviceCode) {
+      const error = "serviceCode parameter is required"
+      console.error("[GET /api/care-receivers/list]", error)
       return NextResponse.json(
-        { ok: false, error: "serviceCode parameter is required" },
-        { status: 200 },
+        { ok: false, error },
+        { status: 400 },
       )
     }
 
     if (!supabaseAdmin) {
+      const error = "Database connection not available"
+      console.error("[GET /api/care-receivers/list]", error)
       return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 200 },
+        { ok: false, error },
+        { status: 500 },
       )
     }
 
     // Query care receivers by service_code
+    // Select all necessary columns for display
     const { data, error } = await supabaseAdmin
       .from("care_receivers")
       .select(
-        "id, code, display_name, age, gender, care_level, condition, medical_care"
+        "id, code, display_name, age, gender, care_level, condition, medical_care, service_code, created_at, updated_at"
       )
       .eq("service_code", serviceCode)
       .order("display_name", { ascending: true })
@@ -47,10 +60,15 @@ export async function GET(req: NextRequest) {
         message: error.message,
         code: error.code,
         details: error.details,
+        hint: error.hint,
       })
       return NextResponse.json(
-        { ok: false, error: "Failed to fetch care receivers", detail: error.message },
-        { status: 200 },
+        {
+          ok: false,
+          error: "Failed to fetch care receivers",
+          detail: error.message,
+        },
+        { status: 500 },
       )
     }
 
@@ -64,7 +82,13 @@ export async function GET(req: NextRequest) {
       careLevel: row.care_level,
       condition: row.condition,
       medicalCare: row.medical_care,
+      serviceCode: row.service_code,
     }))
+
+    console.log("[GET /api/care-receivers/list] Success", {
+      serviceCode,
+      count: users.length,
+    })
 
     return NextResponse.json({
       ok: true,
@@ -72,10 +96,18 @@ export async function GET(req: NextRequest) {
       count: users.length,
     })
   } catch (error) {
-    console.error("[GET /api/care-receivers/list] Unexpected error:", error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[GET /api/care-receivers/list] Unexpected error:", {
+      error: message,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
-      { ok: false, error: "Internal server error" },
-      { status: 200 },
+      {
+        ok: false,
+        error: "Internal server error",
+        detail: message,
+      },
+      { status: 500 },
     )
   }
 }

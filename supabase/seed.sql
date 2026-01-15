@@ -1,15 +1,15 @@
 -- Seed data for care_receivers table
 -- 24 care receivers: 14 for life-care (age >= 18), 10 for after-school (age < 18)
+-- Data from 事業所情報（business operation data）
 
--- Helper function to generate code from display_name, age, and gender
--- Format: INITIALS_AGE_GENDERCODE (e.g., "IK_47F" for "I・K", age 47, Female)
-
--- Clear existing data (optional - comment out if you want to preserve existing records)
+-- Truncate existing data (comment out if you want to preserve existing records)
 -- DELETE FROM public.care_receivers;
 
 -- Life Care Service (14 receivers, age >= 18)
+-- Based on provided business data: 生活介護14名
 INSERT INTO public.care_receivers (code, display_name, age, gender, service_code, care_level, condition, medical_care)
 VALUES
+  ('AT_36M', 'A・T', 36, 'male', 'life-care', 4, '脳性麻痺、てんかん、遠視性弱視、側湾症、両上下肢機能障害', 'なし'),
   ('IK_47F', 'I・K', 47, 'female', 'life-care', 4, '脳性麻痺、側湾症、体幹四肢機能障害', 'なし'),
   ('OS_42M', 'O・S', 42, 'male', 'life-care', 4, '脳性麻痺、知的障害、てんかん、両上下肢機能障害', 'なし'),
   ('SM_38F', 'S・M', 38, 'female', 'life-care', 4, '脳性麻痺、知的障害、てんかん、両上下肢機能障害', 'なし'),
@@ -22,8 +22,7 @@ VALUES
   ('TS_41M', 'T・S', 41, 'male', 'life-care', 4, '脳性麻痺、てんかん、自動運動困難', 'てんかん薬'),
   ('US_48M', 'U・S', 48, 'male', 'life-care', 4, '脳性麻痺、知的障害、てんかん、両上下肢機能障害', 'なし'),
   ('IT_37M', 'I・T', 37, 'male', 'life-care', 4, '脳性麻痺、知的障害、てんかん、両上下肢機能障害', 'なし'),
-  ('KT_45F', 'K・T', 45, 'female', 'life-care', 4, '脳性麻痺、側湾症、移動支援必要', 'なし'),
-  ('BN_46M', 'B・N', 46, 'male', 'life-care', 4, '脳性麻痺、知的障害、行動支援必要', 'なし')
+  ('KT_45F', 'K・T', 45, 'female', 'life-care', 4, '脳性麻痺、側湾症、移動支援必要', 'なし')
 ON CONFLICT (code) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   age = EXCLUDED.age,
@@ -35,6 +34,7 @@ ON CONFLICT (code) DO UPDATE SET
   updated_at = now();
 
 -- After-School Service (10 receivers, age < 18)
+-- Based on provided business data: 放課後等デイサービス10名
 INSERT INTO public.care_receivers (code, display_name, age, gender, service_code, care_level, condition, medical_care)
 VALUES
   ('AK_12M', 'A・K', 12, 'male', 'after-school', 3, '脳性麻痺、学習支援必要、運動機能障害', 'なし'),

@@ -43,12 +43,21 @@ export default function UsersListPage() {
       if (data.ok) {
         setUsers(data.users || [])
       } else {
-        console.error('[UsersListPage] API returned error:', data.error)
+        // API returned error (ok: false)
+        const errorMsg = data.detail || data.error || '利用者一覧を取得できませんでした'
+        console.error('[UsersListPage] API error:', {
+          ok: data.ok,
+          error: data.error,
+          detail: data.detail,
+        })
+        setError(`エラー: ${errorMsg}`)
         setUsers([])
       }
     } catch (err) {
-      console.error('[UsersListPage] Failed to fetch users:', err)
-      setError(String(err))
+      // Network or JSON parse error
+      const errMsg = err instanceof Error ? err.message : String(err)
+      console.error('[UsersListPage] Fetch error:', err)
+      setError(`通信エラー: ${errMsg}`)
       setUsers([])
     } finally {
       setIsLoading(false)
@@ -92,8 +101,17 @@ export default function UsersListPage() {
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-700">エラーが発生しました: {error}</p>
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="text-red-600 text-2xl">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-1">エラーが発生しました</h3>
+                <p className="text-red-700 text-sm">{error}</p>
+                <p className="text-red-600 text-xs mt-2">
+                  DevTools コンソール、または サーバーログを確認してください。
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

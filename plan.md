@@ -13,6 +13,39 @@
 4. **プランファイルは常に最新状態**を保つ。変更・修正・追加のたびに必ず更新し、AI/人が読んで状況が理解できるようにする。
 5. 変更仕様が途中で発生したら、その都度このプランに反映してから実装を進める。
 
+### ⚡ 変更後の確認「儀式」（毎回必須）
+
+変更を入れたら必ずこの順で実行する。古い画面を踏む時間ロスを排除：
+
+```powershell
+# 1. 型・Lint 検証
+pnpm typecheck
+pnpm lint
+
+# 2. キャッシュ破棄
+taskkill /F /IM node.exe  # dev 停止（if running）
+Remove-Item -Recurse -Force .next
+
+# 3. サーバー起動
+pnpm dev --port 3000
+# ログで " ✓ Ready in Xs" を確認
+
+# 4. ブラウザ確認（DevTools 開いた状態）
+# - Hard Reload: リロード長押し → "Hard Reload" 選択
+# - Network タブで Disable cache を ON
+# - 該当 API が Status 200、Time が最新か確認
+# - 怪しければ URL 末尾に ?ts=（現在時刻） を付与
+```
+
+**チェックリスト:**
+- [ ] typecheck 0 errors
+- [ ] lint 0 errors  
+- [ ] dev Ready ログ確認
+- [ ] Hard Reload 実行
+- [ ] Network cache disabled
+- [ ] 該当 API が 200 かつ時刻最新
+- [ ] UI 表示更新確認
+
 ## 📋 開発方針
 
 **リマインダー（変更不可）**
