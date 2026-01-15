@@ -46,12 +46,14 @@ export async function GET(req: NextRequest) {
     }
 
     // Query care receivers with service_code filtering
-    // care_receivers.service_code stores the service slug directly (e.g., "life-care", "after-school")
+    // Filter by: service_code + is_active = true (logical deletion)
+    // Use name field for display (display_name is deprecated)
     const { data, error } = await supabaseAdmin
       .from("care_receivers")
-      .select("id, code, display_name, age, gender, care_level, condition, medical_care, created_at, updated_at")
+      .select("id, code, name, age, gender, care_level, condition, medical_care, is_active, created_at, updated_at")
       .eq("service_code", serviceCode)
-      .order("display_name", { ascending: true })
+      .eq("is_active", true)
+      .order("name", { ascending: true })
 
     if (error) {
       console.error("[GET /api/care-receivers/list] Supabase query error:", {
@@ -74,12 +76,13 @@ export async function GET(req: NextRequest) {
     const users = (data || []).map((row: any) => ({
       id: row.id,
       code: row.code,
-      name: row.display_name || row.code, // fallback to code if display_name is empty
+      name: row.name, // Use name field directly
       age: row.age,
       gender: row.gender,
       care_level: row.care_level,
       condition: row.condition,
       medical_care: row.medical_care,
+      is_active: row.is_active,
     }))
 
     console.log("[GET /api/care-receivers/list] Success", {
@@ -140,22 +143,31 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const {
       code,
-      display_name,
+      name,
       service_code,
       age,
       gender,
       care_level,
       condition,
       medical_care,
-      notes,
     } = body
 
     // Validation
-    if (!code || !display_name || !service_code) {
+    if (!code || !name || !service_code) {
       return NextResponse.json(
         {
           ok: false,
-          error: "code, display_name, and service_code are required",
+          error: "code, name, and service_code are required",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (typeof age !== "undefined" && age < 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "age must be >= 0",
         },
         { status: 400 }
       )
@@ -167,7 +179,7 @@ export async function POST(req: NextRequest) {
       .select("id")
       .eq("code", code)
       .eq("service_code", service_code)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       return NextResponse.json(
@@ -176,20 +188,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create care receiver
+    // Create care receiver (is_active defaults to true)
     const { data, error } = await supabaseAdmin
       .from("care_receivers")
       .insert([
         {
           code,
-          display_name,
+          name,
           service_code,
           age,
           gender,
           care_level,
           condition,
           medical_care,
-          notes,
+          is_active: true,
         },
       ])
       .select()
@@ -209,14 +221,14 @@ export async function POST(req: NextRequest) {
         user: {
           id: data.id,
           code: data.code,
-          name: data.display_name,
+          name: data.name,
           service_code: data.service_code,
           age: data.age,
           gender: data.gender,
           care_level: data.care_level,
           condition: data.condition,
           medical_care: data.medical_care,
-          notes: data.notes,
+          is_active: data.is_active,
           created_at: data.created_at,
           updated_at: data.updated_at,
         },

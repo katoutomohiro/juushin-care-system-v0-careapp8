@@ -13,6 +13,7 @@ interface CareReceiver {
   care_level?: number
   condition?: string
   medical_care?: string
+  is_active?: boolean
 }
 
 interface ServiceSection {

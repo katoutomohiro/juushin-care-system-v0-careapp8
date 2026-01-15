@@ -1,17 +1,17 @@
 -- Seed data for care_receivers table
 -- 24 care receivers: 14 for life-care service, 10 for after-school service
--- Data from ���Ə����ibusiness operation data�j
+-- Data from business operation data
 
--- Service UUIDs will be looked up from services table
+-- Service UUIDs and codes will be looked up from services table
 -- Services must be created before seeding care_receivers
 
 -- Truncate existing data if needed (comment out to preserve)
 -- DELETE FROM public.care_receivers;
 
 -- Life Care Service (14 receivers)
--- Based on provided business data: �������14��
-INSERT INTO public.care_receivers (code, name, service_id)
-SELECT code, name, (SELECT id FROM services WHERE slug = 'life-care')
+-- Based on provided business data: 生活介護14名
+INSERT INTO public.care_receivers (code, name, service_id, service_code, is_active)
+SELECT code, name, (SELECT id FROM services WHERE slug = 'life-care'), 'life-care', true
 FROM (
   VALUES
     ('AT_36M', 'AT'),
@@ -32,12 +32,14 @@ FROM (
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   service_id = (SELECT id FROM services WHERE slug = 'life-care'),
+  service_code = 'life-care',
+  is_active = true,
   updated_at = now();
 
 -- After-School Service (10 receivers)
--- Based on provided business data: ���ی㓙�f�C�T�[�r�X10��
-INSERT INTO public.care_receivers (code, name, service_id)
-SELECT code, name, (SELECT id FROM services WHERE slug = 'after-school')
+-- Based on provided business data: 放課後等デイサービス10名
+INSERT INTO public.care_receivers (code, name, service_id, service_code, is_active)
+SELECT code, name, (SELECT id FROM services WHERE slug = 'after-school'), 'after-school', true
 FROM (
   VALUES
     ('AK_12M', 'AK'),
@@ -54,4 +56,6 @@ FROM (
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   service_id = (SELECT id FROM services WHERE slug = 'after-school'),
+  service_code = 'after-school',
+  is_active = true,
   updated_at = now();

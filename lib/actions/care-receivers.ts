@@ -33,17 +33,26 @@ export async function revalidateCareReceiversData() {
 
 /**
  * Create a new care receiver with automatic data refresh
+ * 
+ * Params:
+ *   - code: string (unique ID)
+ *   - name: string (display name)
+ *   - service_code: string ('life-care' | 'after-school')
+ *   - age?: number (>= 0)
+ *   - gender?: string
+ *   - care_level?: number
+ *   - condition?: string (disease/condition info)
+ *   - medical_care?: string (medical care requirements)
  */
 export async function createCareReceiverAction(data: {
   code: string
-  display_name: string
+  name: string
   service_code: string
   age?: number
   gender?: string
   care_level?: number
   condition?: string
   medical_care?: string
-  notes?: string
 }) {
   try {
     const response = await fetch('/api/care-receivers/list', {
@@ -70,18 +79,26 @@ export async function createCareReceiverAction(data: {
 
 /**
  * Update an existing care receiver with automatic data refresh
+ * 
+ * Params (partial, only changed fields):
+ *   - name?: string
+ *   - age?: number
+ *   - gender?: string
+ *   - care_level?: number
+ *   - condition?: string
+ *   - medical_care?: string
+ *   - is_active?: boolean (logical deletion)
  */
 export async function updateCareReceiverAction(
   id: string,
   data: Partial<{
-    code?: string
-    display_name?: string
+    name?: string
     age?: number
     gender?: string
     care_level?: number
     condition?: string
     medical_care?: string
-    notes?: string
+    is_active?: boolean
   }>
 ) {
   try {

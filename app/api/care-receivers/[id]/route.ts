@@ -53,14 +53,14 @@ export async function GET(
       user: {
         id: data.id,
         code: data.code,
-        name: data.display_name || data.name || data.code,
+        name: data.name,
         service_code: data.service_code,
         age: data.age,
         gender: data.gender,
         care_level: data.care_level,
         condition: data.condition,
         medical_care: data.medical_care,
-        notes: data.notes,
+        is_active: data.is_active,
         created_at: data.created_at,
         updated_at: data.updated_at,
       },
@@ -109,16 +109,20 @@ export async function PUT(
 
     const body = await req.json()
 
-    // Map display_name from "name" field if provided
-    const updateData: any = { ...body }
-    if (updateData.name && !updateData.display_name) {
-      updateData.display_name = updateData.name
-      delete updateData.name
+    // Validate age if provided
+    if (typeof body.age !== "undefined" && body.age < 0) {
+      return NextResponse.json(
+        { ok: false, error: "age must be >= 0" },
+        { status: 400 }
+      )
     }
 
     // Remove system fields that shouldn't be updated
+    const updateData: any = { ...body }
     delete updateData.id
     delete updateData.created_at
+    delete updateData.service_id  // Don't allow changing service_id
+    delete updateData.code  // Don't allow changing code (unique identifier)
 
     const { data, error } = await supabaseAdmin
       .from("care_receivers")
@@ -140,14 +144,14 @@ export async function PUT(
       user: {
         id: data.id,
         code: data.code,
-        name: data.display_name || data.code,
+        name: data.name,
         service_code: data.service_code,
         age: data.age,
         gender: data.gender,
         care_level: data.care_level,
         condition: data.condition,
         medical_care: data.medical_care,
-        notes: data.notes,
+        is_active: data.is_active,
         created_at: data.created_at,
         updated_at: data.updated_at,
       },

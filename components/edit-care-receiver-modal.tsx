@@ -22,7 +22,7 @@ interface CareReceiver {
   care_level?: number
   condition?: string
   medical_care?: string
-  notes?: string
+  is_active?: boolean
 }
 
 interface EditCareReceiverModalProps {
@@ -50,14 +50,12 @@ export function EditCareReceiverModal({
 
     try {
       const result = await updateCareReceiverAction(user.id, {
-        code: formData.code,
-        display_name: formData.name,
+        name: formData.name,
         age: formData.age,
         gender: formData.gender,
         care_level: formData.care_level,
         condition: formData.condition,
         medical_care: formData.medical_care,
-        notes: formData.notes,
       })
 
       if (result.ok) {
@@ -212,16 +210,19 @@ export function EditCareReceiverModal({
             />
           </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">備考</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes || ''}
-              onChange={(e) => handleFieldChange('notes', e.target.value)}
+          {/* Is Active (Logical Deletion) */}
+          <div className="flex items-center gap-2">
+            <input
+              id="is_active"
+              type="checkbox"
+              checked={formData.is_active !== false}
+              onChange={(e) => handleFieldChange('is_active', e.target.checked)}
               disabled={isSaving}
-              rows={2}
+              className="w-4 h-4 rounded"
             />
+            <Label htmlFor="is_active" className="cursor-pointer">
+              アクティブ（無効にするとリストから非表示）
+            </Label>
           </div>
         </div>
 
