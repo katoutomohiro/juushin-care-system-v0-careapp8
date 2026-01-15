@@ -264,6 +264,70 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ケース記録新規入力ページが 500/404 にならず表示される
 - 「今すぐ」クリックで現在時刻が `HH:mm` で反映され、Network payload に `time` が含まれる
 
+### 2026-01-15: ケース記録フォーム - SelectItem value="" エラー完全削除
+
+**実装内容:**
+- SelectItem の value="" を完全に削除
+- 未選択を NONE 定数（`"__none__"`）で統一
+- StaffSelector を native select から shadcn/ui Select に変更
+- SelectValue の placeholder で「(未選択)」を表示
+
+**対象ファイル:**
+- `src/components/case-records/StaffSelector.tsx` (完全刷新)
+- `src/components/case-records/CaseRecordsListClient.tsx` (value="" → value={NONE} 変更)
+
+**変換ルール:**
+- UI値: NONE → payload変換時: null
+- UI値: uuid → payload: uuid
+
+**受け入れ条件:**
+- ✅ Runtime Error「Select.Item value empty string」が完全に消える
+- ✅ ケース記録画面が正常に表示される
+- ✅ 主担当・副担当が同じドロップダウンUIで選択できる
+- ✅ 未選択を選んでもクラッシュしない（NONE→nullで保存）
+- ✅ pnpm typecheck / pnpm lint が通る
+
+### 2026-01-15: ケース記録フォーム - 主担当/副担当 Select 内「編集モード」実装
+
+**実装内容:**
+- StaffSelector に「編集モード」ON/OFF トグル（Switch）を追加
+- 編集モード OFF: 通常の SelectItem リスト表示
+- 編集モード ON: 各スタッフ行に「名前入力フィールド」＋「保存」ボタンを表示
+- 編集は staff.name のみ
+- 保存は PUT /api/staff で { id, name, sortOrder, isActive } を送信
+- 保存成功後、Select 内の表示が即時更新される
+- 選択中の staff.id は変わらない（選択状態の保持）
+
+**対象ファイル:**
+- `src/components/case-records/StaffSelector.tsx` (完全拡張)
+- `src/components/case-records/CaseRecordForm.tsx` (allStaff prop 追加)
+- `src/components/case-records/CaseRecordFormClient.tsx` (allStaff state 追加、fetch ロジック拡張)
+
+**新規 state / hooks:**
+- `editMode`: 編集モード ON/OFF
+- `editingStaffId`: 編集中のスタッフID
+- `editingName`: 編集中の名前入力値
+- `isSaving`: 保存中フラグ
+- `saveStatus`: 保存成功メッセージ表示（2秒後に消える）
+
+**UI仕様:**
+- SelectContent 先頭: 編集モード トグル（Switch）
+- 編集モード OFF: [✏️ スタッフ名を編集] ボタンを表示
+- 編集モード ON: 各スタッフの行に [入力フィールド] [保存] [キャンセル] ボタンを配置
+- 保存中: ボタン disabled + "保存中…" 表示
+- 成功: 1～2秒で "保存しました" 表示を消す
+
+**イベント処理:**
+- 編集入力・保存ボタンのクリックで e.preventDefault() / e.stopPropagation() を使用
+- Select が誤って選択確定しないよう防止
+
+**受け入れ条件:**
+- ✅ 主担当・副担当どちらの Select でも編集モードが使える
+- ✅ 任意のスタッフ名を編集して保存すると、即座に Select の表示が更新される
+- ✅ pnpm typecheck が通る
+- ✅ pnpm lint が通る（警告なし）
+- ✅ Select empty value エラーが再発しない
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）

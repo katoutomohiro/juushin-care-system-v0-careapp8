@@ -42,6 +42,7 @@ export function CaseRecordFormClient({
   const [validationErrors, setValidationErrors] = useState<{ mainStaffId?: string }>({})
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
+  const [allStaff, setAllStaff] = useState<Array<{ id: string; name: string; sort_order: number; is_active: boolean }>>([])
   const [isLoadingStaff, setIsLoadingStaff] = useState(true)
   const submittingRef = useRef(false)
   const didFetchStaffRef = useRef(false)
@@ -60,6 +61,17 @@ export function CaseRecordFormClient({
 
         if (response.ok && result.staffOptions) {
           setStaffOptions(result.staffOptions)
+          // allStaff も設定（編集モード用）
+          if (Array.isArray(result.staff)) {
+            setAllStaff(
+              result.staff.map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                sort_order: s.sortOrder ?? s.sort_order ?? 0,
+                is_active: s.isActive ?? s.is_active ?? true,
+              }))
+            )
+          }
         } else {
           console.error("[CaseRecordFormClient] Failed to fetch staff:", result.error)
           toast({
@@ -329,6 +341,7 @@ export function CaseRecordFormClient({
               custom: {},
             }}
             staffOptions={staffOptions}
+            allStaff={allStaff}
             templateFields={template.customFields || []}
             onSubmit={handleSubmit}
             submitLabel={isSubmitting ? "保存中..." : "保存"}

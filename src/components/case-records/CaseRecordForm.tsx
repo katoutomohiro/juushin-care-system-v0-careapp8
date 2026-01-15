@@ -20,6 +20,7 @@ export type CaseRecordFormProps = {
     custom?: TemplateFormValues
   }
   staffOptions: StaffOption[]
+  allStaff?: Array<{ id: string; name: string; sort_order: number; is_active: boolean }>
   templateFields?: TemplateField[]
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
@@ -30,6 +31,7 @@ export type CaseRecordFormProps = {
 export function CaseRecordForm({
   initial,
   staffOptions,
+  allStaff = [],
   templateFields = [],
   onSubmit,
   submitLabel = "保存",
@@ -69,6 +71,8 @@ export function CaseRecordForm({
         options={staffOptions}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
         validationError={validationErrors?.mainStaffId}
+        serviceId={state.serviceId}
+        allStaff={allStaff}
       />
 
       <NotesSection
