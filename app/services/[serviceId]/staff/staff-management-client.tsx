@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import { updateStaff } from "@/lib/actions/staffActions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -117,36 +118,28 @@ export function StaffManagementClient({
     setIsSaving(true)
     try {
       const isNewRecord = id.startsWith("temp-")
-      const method = isNewRecord ? "POST" : "PUT"
-      const payload = isNewRecord
-        ? {
-            serviceId,
-            name: editForm.name.trim(),
-            sort_order: editForm.sortOrder,
-            is_active: editForm.isActive,
-          }
-        : {
-            serviceId,
-            id,
-            name: editForm.name.trim(),
-            sort_order: editForm.sortOrder,
-            is_active: editForm.isActive,
-          }
+      
+      // Server Action 呼び出し（POST は未実装のため、PUT のみ対応）
+      if (isNewRecord) {
+        toast({
+          variant: "destructive",
+          title: "新規追加は未対応",
+          description: "既存職員の編集のみ可能です",
+        })
+        return
+      }
 
-      const response = await fetch("/api/staff", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const result = await updateStaff(serviceId, id, {
+        name: editForm.name.trim(),
+        sortOrder: editForm.sortOrder,
+        isActive: editForm.isActive,
       })
 
-      const result = await response.json()
-
-      if (response.ok && result.ok) {
-        const staffName = result.staff?.name || editForm.name
-        const action = isNewRecord ? "追加しました" : "更新しました"
+      if (result.ok) {
+        const staffName = result.data?.name || editForm.name
         toast({
           title: "✅ 保存しました",
-          description: staffName ? `${staffName} を${action}` : `職員情報を${action}`,
+          description: staffName ? `${staffName} を更新しました` : `職員情報を更新しました`,
         })
         setEditingId(null)
         await fetchStaff()

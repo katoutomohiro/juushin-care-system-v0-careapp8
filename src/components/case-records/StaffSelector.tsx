@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
+import { updateStaff } from "@/lib/actions/staffActions"
 
 // 未選択を表現するダミー値
 const NONE = "__none__"
@@ -130,21 +131,13 @@ export function StaffSelector({
       const sortOrder = staffData?.sort_order ?? 0
       const isActive = staffData?.is_active ?? true
 
-      const response = await fetch("/api/staff", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId,
-          id: staffId,
-          name: editingName.trim(),
-          sortOrder,
-          isActive,
-        }),
+      const result = await updateStaff(serviceId, staffId, {
+        name: editingName.trim(),
+        sortOrder,
+        isActive,
       })
 
-      const result = await response.json()
-
-      if (!response.ok || !result.ok) {
+      if (!result.ok) {
         throw new Error(result.error || "保存に失敗しました")
       }
 

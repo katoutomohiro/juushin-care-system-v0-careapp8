@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -397,19 +398,11 @@ export default function UserDetailPage() {
     try {
       // Update Supabase first
       if (newName !== oldName) {
-        const response = await fetch("/api/care-receivers/update-display-name", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: normalizedUserId,
-            name: newName,
-          }),
-        })
+        const result = await updateCareReceiverName(normalizedUserId, newName)
 
-        if (!response.ok) {
-          const error = await response.json()
-          console.error("Failed to update care receiver in Supabase:", error)
-          alert("Supabase への保存に失敗しました。入力内容を確認してください。")
+        if (!result.ok) {
+          console.error("Failed to update care receiver in Supabase:", result.error)
+          alert("保存に失敗しました。入力内容を確認してください。")
           return
         }
 
