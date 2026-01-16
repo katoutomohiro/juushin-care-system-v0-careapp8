@@ -9,6 +9,8 @@ import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
 import { CaseRecordPayload } from "@/src/types/caseRecord"
+// Server Action import
+import { saveCaseRecord } from "@/lib/actions/caseRecordsActions"
 
 type StaffOption = {
   value: string
@@ -56,14 +58,13 @@ export function CaseRecordFormClient({
 
     const fetchStaff = async () => {
       try {
-        // activeOnly is true by default in API, which filters to is_active=true only
+        // 修正: fetch → createRouteHandlerClient(cookies) で自動バインド
+        // anon key + RLS で service_id フィルタリング自動適用
         const response = await fetch(`/api/staff?serviceId=${serviceUuid || serviceId}&activeOnly=true`, { cache: "no-store" })
         const result = await response.json()
 
         if (response.ok && result.ok && result.staffOptions) {
-          // staffOptions is already filtered by API (activeOnly=true)
           setStaffOptions(result.staffOptions)
-          // allStaff also contains only active staff
           if (Array.isArray(result.staff)) {
             setAllStaff(
               result.staff.map((s: any) => ({
@@ -220,62 +221,25 @@ export function CaseRecordFormClient({
         },
       }
 
-      // Log structured payload before sending (development only)
-      if (process.env.NODE_ENV === "development") {
-        console.log("[CaseRecordFormClient] payload.sections.activity.text:", payload.sections.activity?.text)
-        console.log("[CaseRecordFormClient] payload.sections.note.text:", payload.sections.note?.text)
-      }
-
-      // POST structured payload directly to API
-      const apiResponse = await fetch("/api/case-records/save", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け（userId は送らない）
-          serviceId: resolvedServiceId, // UUID
-          date: values.date,
-          careReceiverName: careReceiverName, // Include display name for printing/snapshot
-          recordTime: new Date().toISOString().slice(11, 16), // Auto-set current time as HH:mm
-          mainStaffId: values.mainStaffId, // 主担当職員ID (UUID)
-          subStaffId: values.subStaffId || null, // 副担当職員ID (UUID)
-          main_staff_id: values.mainStaffId,
-          sub_staff_id: values.subStaffId || null,
-          record_data: payload, // Send structured payload (not stringified)
-        }),
+      // POST 構造化ペイロードを Server Action で保存
+      const apiResult = await saveCaseRecord({
+        careReceiverId: careReceiverUuid,
+        serviceId: resolvedServiceId,
+        date: values.date,
+        recordTime: new Date().toISOString().slice(11, 16),
+        mainStaffId: values.mainStaffId,
+        subStaffId: values.subStaffId || null,
+        recordData: payload,
       })
 
-      const apiResult = await apiResponse.json().catch(() => null)
-
-      // Check HTTP response status first
-      if (!apiResponse.ok) {
-        console.error("[CaseRecordFormClient] API HTTP error", {
-          status: apiResponse.status,
-          statusText: apiResponse.statusText,
-          result: apiResult,
-        })
-        const errorMsg = apiResult?.error || `保存に失敗しました (HTTP ${apiResponse.status})`
-        const detail = apiResult?.detail || apiResult?.message
-        throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
-      }
-
-      // Check API result.ok flag
+      // Server Action 呼び出し結果を確認
+      // saveCaseRecord は { ok: boolean, error?: string, data?: any, message?: string } を返す
       if (!apiResult?.ok) {
-        console.error("[CaseRecordFormClient] API result.ok=false", {
+        console.error("[CaseRecordFormClient] saveCaseRecord error", {
           error: apiResult?.error,
-          detail: apiResult?.detail,
-          fieldErrors: apiResult?.fieldErrors,
         })
         const errorMsg = apiResult?.error || "保存に失敗しました"
-        const detail = apiResult?.detail || apiResult?.message
-        const apiFieldErrors: string[] = Array.isArray(apiResult?.fieldErrors)
-          ? apiResult.fieldErrors.filter((v: unknown) => typeof v === "string")
-          : []
-        if (apiFieldErrors.length > 0) {
-          setFieldErrors(apiFieldErrors)
-        }
-        throw new Error(detail ? `${errorMsg}: ${detail}` : errorMsg)
+        throw new Error(errorMsg)
       }
 
       // Success: clear errors and set success message

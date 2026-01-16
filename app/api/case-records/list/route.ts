@@ -14,9 +14,21 @@ export const runtime = "nodejs"
  *   - mainStaffId: uuid (optional, filter by main staff)
  *   - limit: number (default: 50)
  *   - offset: number (default: 0)
+ *
+ * Client公開API：認証必須 + RLS自動適用 + anon key使用
+ * 設計判断：
+ * - createRouteHandlerClient(cookies) でセッション自動バインド
+ * - RLS で service_id フィルタリング自動適用
  */
 export async function GET(req: NextRequest) {
   try {
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Database not available" },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(req.url)
     const serviceId = searchParams.get("serviceId")
     const careReceiverId = searchParams.get("careReceiverId")
@@ -34,14 +46,6 @@ export async function GET(req: NextRequest) {
           error: "serviceId and careReceiverId are required",
         },
         { status: 400 }
-      )
-    }
-
-    if (!supabaseAdmin) {
-      console.error("[GET /api/case-records/list] Supabase admin not available")
-      return NextResponse.json(
-        { error: "Database connection not available" },
-        { status: 503 }
       )
     }
 
