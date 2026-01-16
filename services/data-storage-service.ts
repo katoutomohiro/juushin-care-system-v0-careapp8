@@ -1,4 +1,5 @@
 import { generateSecureUUID } from "@/lib/crypto-utils"
+import { saveCaseRecord } from "@/lib/actions/caseRecordsActions"
 
 export interface CareEvent {
   id: string
@@ -86,8 +87,13 @@ export class DataStorageService {
 
   static async saveCaseRecord(record: CaseRecord, serviceId: string, careReceiverId?: string): Promise<boolean> {
     try {
-      console.log("[DataStorageService.saveCaseRecord] saving", { serviceId, userId: record.userId, date: record.date })
-      const { userId, date, meta, ...recordRest } = record
+      console.log("[DataStorageService.saveCaseRecord] saving", { serviceId, date: record.date })
+      
+      if (!careReceiverId) {
+        throw new Error("careReceiverId is required")
+      }
+      
+      const { date, meta, ...recordRest } = record
       const sanitizedRecord = this.stripNullish(recordRest)
 
       // Convert sentinel __none__ to null for staff IDs
@@ -100,13 +106,17 @@ export class DataStorageService {
       if (subStaffId === "__none__") {
         subStaffId = null
       }
+      
+      if (!mainStaffId) {
+        throw new Error("mainStaffId is required")
+      }
 
       // Build payload with UUID-based staff IDs
       const payload = {
         serviceId,
-        userId,
         careReceiverId,
         date,
+        recordTime: undefined,
         mainStaffId,
         subStaffId,
         recordData: {
@@ -121,38 +131,17 @@ export class DataStorageService {
         },
       }
 
-      const response = await fetch("/api/case-records/save", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const result = await response.json().catch(() => null)
+      const result = await saveCaseRecord(payload)
       
-      // Strict check: both response.ok AND result.ok must be true
-      if (!response.ok) {
-        console.error("[DataStorageService.saveCaseRecord] HTTP error", {
-          status: response.status,
-          statusText: response.statusText,
-        })
-        const message = result?.error || `HTTP ${response.status}`
-        const detail = result?.detail || result?.message
-        throw new Error(detail ? `${message}: ${detail}` : message)
-      }
-
       if (!result?.ok) {
-        console.error("[DataStorageService.saveCaseRecord] API error", {
+        console.error("[DataStorageService.saveCaseRecord] Server Action error", {
           error: result?.error,
-          detail: result?.detail,
         })
         const message = result?.error || "保存に失敗しました"
-        const detail = result?.detail || result?.message
-        throw new Error(detail ? `${message}: ${detail}` : message)
+        throw new Error(message)
       }
 
-      console.log("[DataStorageService.saveCaseRecord] saved successfully", { recordId: result?.record?.id })
+      console.log("[DataStorageService.saveCaseRecord] saved successfully", { recordId: result?.data?.id })
       return true
     } catch (error) {
       console.error("[DataStorageService.saveCaseRecord] error:", error)
