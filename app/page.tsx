@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic"
 import HomeClient from "./home-client"
 
-export default async function Page({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
-  const params = searchParams ? await searchParams : undefined
-  const idParam = params?.careReceiverId
-  const initialCareReceiverId = typeof idParam === "string" ? idParam : undefined
-  return <HomeClient initialCareReceiverId={initialCareReceiverId} />
+export default function Page() {
+  // searchParams を読まない（キャッシュを防ぐため）
+  // / ページでは initialCareReceiverId を渡さない
+  // 利用者選択は UI 上でドロップダウンから行う
+  return <HomeClient initialCareReceiverId={undefined} />
 }

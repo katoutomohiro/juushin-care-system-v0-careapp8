@@ -98,10 +98,11 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
       return
     }
 
-    if (defaultId) {
+    // URL パラメータがないなら state のみセット（URL 書き換えしない）
+    // これにより、/ へのアクセスで勝手に ?careReceiverId=AT が付かなくなる
+    if (defaultId && !initialCareReceiverId) {
       setSelectedCareReceiverId(defaultId)
       setSelectedUser(lifeCareReceivers[0].label)
-      _router.replace(`${window.location.pathname}?careReceiverId=${encodeURIComponent(defaultId)}`, { scroll: false })
     }
   }, [])
 
