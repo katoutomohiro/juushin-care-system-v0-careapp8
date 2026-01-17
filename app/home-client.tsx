@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n-client"
@@ -13,23 +13,14 @@ import { A4RecordSheet } from "@/components/a4-record-sheet"
 import { DailyLogExportService } from "@/services/daily-log-export-service"
 import { DataStorageService } from "@/services/data-storage-service"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter, useSearchParams } from "next/navigation"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { useRouter } from "next/navigation"
-import { Suspense } from "react"
+import Link from "next/link"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
-import Link from "next/link"
-
-const DataBackupPanel = dynamic(
-  () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
-  {
-    ssr: false,
-    loading: () => <div className="min-h-[240px] w-full rounded-lg border border-border bg-card/50" />,
-  },
-)
 
 const DataBackupPanel = dynamic(
   () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
@@ -62,7 +53,7 @@ const SERVICE_ROUTE_MAP = {
 } as const
 
 export default function HomeClient({ initialCareReceiverId }: Props) {
-  const [customUserNames, setCustomUserNames] = useState<string[]>([])
+  const [_customUserNames, setCustomUserNames] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string>("利用者A")
   const [dailyLog, setDailyLog] = useState<Record<string, unknown> | null>(null)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
@@ -97,13 +88,21 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
 
   // 初期ロード時は URL から値があれば state のみ反映（URL は変更しない）
   useEffect(() => {
-    if (typeof window === "undefined") return
-    const params = new URLSearchParams(window.location.search)
-    const id = params.get('careReceiverId')
-    if (id && lifeCareReceivers.some(r => r.id === id)) {
-      setSelectedCareReceiverId(id)
-      const found = lifeCareReceivers.find(r => r.id === id)
-      if (found) setSelectedUser(found.label)
+    const defaultId = lifeCareReceivers[0]?.id
+    const isValid = typeof initialCareReceiverId === "string" && lifeCareReceivers.some(r => r.id === initialCareReceiverId)
+
+    if (isValid) {
+      setSelectedCareReceiverId(initialCareReceiverId!)
+      const found = lifeCareReceivers.find(r => r.id === initialCareReceiverId)!
+      setSelectedUser(found.label)
+      return
+    }
+
+    // URL パラメータがないなら state のみセット（URL 書き換えしない）
+    // これにより、/ へのアクセスで勝手に ?careReceiverId=AT が付かなくなる
+    if (defaultId && !initialCareReceiverId) {
+      setSelectedCareReceiverId(defaultId)
+      setSelectedUser(lifeCareReceivers[0].label)
     }
   }, [])
 
@@ -285,12 +284,9 @@ HEAD
                   setSelectedUser={setSelectedUser}
                 />
               </Suspense>
-<HEAD
+
               {/* // TODO: debug only */}
               <p className="text-xs text-muted-foreground">現在の利用者ID: {selectedCareReceiverId ?? "—"}</p>
-0299e19 (1/8)
-
-7b1231e (1/8)
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
@@ -575,8 +571,6 @@ HEAD
     </div>
   )
 }
- HEAD
-
 
 function CareReceiverSelect({
   selectedCareReceiverId,
@@ -634,4 +628,3 @@ function CareReceiverSelect({
     </select>
   )
 }
- f27ea7c (1/8)
