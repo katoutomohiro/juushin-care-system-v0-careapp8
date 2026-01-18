@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Suspense } from "react"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
@@ -107,10 +107,8 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
   }, [])
 
   const pushWithCareReceiverId = (path: string) => {
-    const url = selectedCareReceiverId
-      ? `${path}${path.includes("?") ? "&" : "?"}careReceiverId=${encodeURIComponent(selectedCareReceiverId)}`
-      : path
-    _router.push(url)
+    // URL に careReceiverId を付与しない
+    _router.push(path)
   }
 
   useEffect(() => {
@@ -361,11 +359,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                     <Button key={r.id} variant={selectedCareReceiverId === r.id ? "default" : "outline"} size="sm" className="justify-center" onClick={() => {
                       setSelectedCareReceiverId(r.id)
                       setSelectedUser(r.label)
-                      // Replace only the careReceiverId in the current URL
-                      const params = new URLSearchParams(window.location.search)
-                      params.set('careReceiverId', r.id)
-                      const base = window.location.pathname + '?' + params.toString()
-                      _router.replace(base, { scroll: false })
                     }}>{r.label}</Button>
                   ))}
                 </div>
@@ -568,35 +561,13 @@ function CareReceiverSelect({
   selectedUser: string
   setSelectedUser: (v: string) => void
 }) {
-  const router = useRouter()
-  const params = useSearchParams()
-
   const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
-
-  // Guard: if URL has an invalid careReceiverId, replace with default and sync state
-  useEffect(() => {
-    const id = params.get('careReceiverId')
-    if (!id) return
-    const isValid = lifeCareReceivers.some(r => r.id === id)
-    if (!isValid) {
-      const defaultId = lifeCareReceivers[0]?.id
-      if (!defaultId) return
-      const next = new URLSearchParams(params.toString())
-      next.set('careReceiverId', defaultId)
-      router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
-      setSelectedCareReceiverId(defaultId)
-      setSelectedUser(lifeCareReceivers[0].label)
-    }
-  }, [params, router, setSelectedCareReceiverId, setSelectedUser])
 
   const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value
     const found = lifeCareReceivers.find(r => r.id === id)
     setSelectedCareReceiverId(id)
     if (found) setSelectedUser(found.label)
-    const next = new URLSearchParams(params.toString())
-    next.set('careReceiverId', id)
-    router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
   }
 
   return (
