@@ -1,57 +1,67 @@
-# careapp3
+# Juushin Care System
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
-
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/pinokiotomo-7421s-projects/v0-careapp3-e0)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/PfVKEiHybWJ)
+Next.js 15 + Supabase PWA for daily care records with offline-first local storage and A4 record exports.
 
 ## Overview
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+- Offline-first case records (localStorage/IndexedDB) with future Supabase sync
+- App Router with authenticated routes enforced by middleware
+- A4 record composition and PDF export via @react-pdf/renderer
+- UI built with Tailwind CSS v4 and shadcn/ui (Radix primitives)
 
-## Collaboration handbook
+## Quick Start (Local)
 
-All contributors (オーナー、ChatGPT、GitHub Copilot、v0) must review and follow the consolidated workflow described in [`docs/ai-collaboration-handbook.md`](docs/ai-collaboration-handbook.md) before starting any task. Confirm "ハンドブック確認済み" in your activity logs at the beginning of each cycle, and revisit the handbook whenever the update log indicates new guidance.
-
-## Auto-Merge System 🚀
-
-**Status**: 🟢 Production (100% success rate, 7/7 PRs validated)
-
-This repository uses an automated PR merge system with dual quality gates:
-- ✅ **Vercel Preview Comments** - Deployment validation
-- ✅ **SonarCloud Code Analysis** - Code quality & security
-
-**Quick Start**:
 ```powershell
-# Enable auto-merge on PR
-gh pr edit <PR_NUMBER> --add-label "ux-ready"
+pnpm install
+pnpm run reboot   # port free + clean + dev server
 ```
 
-**Documentation**:
-- 📖 [Quick Reference](docs/QUICK_REFERENCE.md) - Essential commands
-- 📚 [Operations Manual](docs/operations-manual.md) - Complete guide
-- 🔧 [CI Auto-Merge Guide](docs/ci-automerge-guide.md) - Technical details
+Then open http://localhost:3000 and log in with the seeded Supabase users.
 
-## Deployment
+## Environment Variables
 
-Your project is live at:
+Create `.env.local` (or set in Vercel) with:
 
-**[https://vercel.com/pinokiotomo-7421s-projects/v0-careapp3-e0](https://vercel.com/pinokiotomo-7421s-projects/v0-careapp3-e0)**
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # required for server-side admin ops
+```
 
-## Build your app
+The app reads `NEXT_PUBLIC_*` on both client and server. `SUPABASE_SERVICE_ROLE_KEY` is only for server code that needs admin queries.
 
-Continue building your app on:
+## Scripts
 
-**[https://v0.app/chat/projects/PfVKEiHybWJ](https://v0.app/chat/projects/PfVKEiHybWJ)**
+- `pnpm run reboot` – free port 3000, clear .next, start dev server
+- `pnpm dev` – start dev server
+- `pnpm lint` – ESLint
+- `pnpm typecheck` – tsc --noEmit
+- `pnpm build` – production build
+- `pnpm test` – Vitest unit tests
+- `pnpm test:e2e` – Playwright (Chromium)
 
-## How It Works
+## Deployment (Vercel)
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+1) Set env vars in Vercel Project Settings → Environment Variables (Production and Preview):
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
 
-<!-- Trigger SonarCloud reanalysis (2025-12-19) -->
+2) Deploy
 
-<!-- SonarCloud reanalysis trigger -->
+```powershell
+pnpm install -g vercel
+vercel --prod
+```
+
+3) Post-deploy checks
+- /login redirects unauthenticated visitors
+- Login with seeded staff account → /services/[serviceId]/users renders facility-scoped users (24 total across facilities)
+- API routes return data without CORS/auth errors
+
+## Docs
+
+- Collaboration workflow: [docs/ai-collaboration-handbook.md](docs/ai-collaboration-handbook.md)
+- Production readiness summary: [PRODUCTION_READY.md](PRODUCTION_READY.md)
+- Production checklist: [docs/PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md)
+- RLS details: [docs/SUPABASE_RLS_GUIDE.md](docs/SUPABASE_RLS_GUIDE.md)

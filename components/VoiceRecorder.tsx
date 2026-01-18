@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { saveVoiceNote } from '@/lib/actions/voiceActions'
 
 // 簡易型定義（ブラウザ実装差や型未提供環境への配慮）
 type SpeechRecognitionConstructor = new () => any
@@ -357,21 +358,16 @@ export default function VoiceRecorder() {
     setMessage(null)
     try {
       const avgLevel = levelCountRef.current > 0 ? levelSumRef.current / levelCountRef.current : 0
-      const res = await fetch('/api/voice/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: transcript,
-          durationMs: elapsed,
-          avgLevel,
-          device: navigator.userAgent,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setMessage(`保存失敗: ${data.error || 'unknown'}`)
+      const result = await saveVoiceNote(
+        transcript,
+        elapsed,
+        avgLevel,
+        navigator.userAgent
+      )
+      if (!result.ok) {
+        setMessage(`保存失敗: ${result.error || 'unknown'}`)
       } else {
-        setMessage(`保存しました (id: ${data.id})`)
+        setMessage(`保存しました (id: ${result.id})`)
       }
     } catch (e: any) {
       setMessage(`保存に失敗しました: ${e?.message || 'unknown'}`)

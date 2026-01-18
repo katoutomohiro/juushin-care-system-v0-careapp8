@@ -1,0 +1,14 @@
+HTTP/1.1 200 OK
+Age: 0
+Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
+Content-Type: text/html; charset=utf-8
+Date: Sun, 18 Jan 2026 02:03:49 GMT
+Server: Vercel
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+X-Matched-Path: /
+X-Powered-By: Next.js
+X-Vercel-Cache: MISS
+X-Vercel-Id: kix1::iad1::klcjh-1768701829173-2906a7ba6d24
+Transfer-Encoding: chunked
+

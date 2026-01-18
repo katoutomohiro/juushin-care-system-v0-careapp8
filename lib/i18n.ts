@@ -43,8 +43,14 @@ async function loadTranslations(locale: string): Promise<Translations> {
   }
 
   try {
+    // Validate locale to prevent SSRF
+    if (!locale || !/^[a-z]{2}(-[A-Z]{2})?$/.test(locale)) {
+      throw new Error('Invalid locale')
+    }
+    const safeLocale = encodeURIComponent(locale)
+    
     // locales/{locale}/common.json を動的にロード
-    const response = await fetch(`/locales/${locale}/common.json`)
+    const response = await fetch(`/locales/${safeLocale}/common.json`)
     if (!response.ok) {
       throw new Error(`Failed to load translations for ${locale}`)
     }

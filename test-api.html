@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API テスト</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; }
+        .result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px; }
+        .success { border-left: 4px solid green; color: green; }
+        .error { border-left: 4px solid red; color: red; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API エンドポイント テスト</h1>
+        
+        <h2>1. /api/care-receivers/list?serviceCode=life-care</h2>
+        <button onclick="testLifeCareAPI()">テスト実行</button>
+        <div id="result-life-care" class="result"></div>
+
+        <h2>2. /services/life-care/users ページ表示</h2>
+        <button onclick="testPageLoad()">テスト実行</button>
+        <div id="result-page" class="result"></div>
+
+        <h2>3. /api/care-receivers/list?serviceCode=after-school</h2>
+        <button onclick="testAfterSchoolAPI()">テスト実行</button>
+        <div id="result-after-school" class="result"></div>
+    </div>
+
+    <script>
+        async function testLifeCareAPI() {
+            const resultDiv = document.getElementById('result-life-care');
+            try {
+                const response = await fetch('/api/care-receivers/list?serviceCode=life-care');
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 成功 (200)</strong>
+                            <p>取得ユーザー数: ${data.users?.length || 0}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ エラー</strong>
+                            <p>Status: ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error"><strong>❌ 通信エラー</strong><p>${err.message}</p></div>`;
+            }
+        }
+
+        async function testAfterSchoolAPI() {
+            const resultDiv = document.getElementById('result-after-school');
+            try {
+                const response = await fetch('/api/care-receivers/list?serviceCode=after-school');
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 成功 (200)</strong>
+                            <p>取得ユーザー数: ${data.users?.length || 0}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ エラー</strong>
+                            <p>Status: ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error"><strong>❌ 通信エラー</strong><p>${err.message}</p></div>`;
+            }
+        }
+
+        function testPageLoad() {
+            const resultDiv = document.getElementById('result-page');
+            resultDiv.innerHTML = `<p>ページを読み込んでいます...</p>`;
+            setTimeout(() => {
+                window.open('/services/life-care/users', '_blank');
+                resultDiv.innerHTML = `<div class="success"><strong>✅</strong><p>新しいウィンドウで /services/life-care/users を開きました</p></div>`;
+            }, 100);
+        }
+
+        // ページ読み込み時に自動テスト実行
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testLifeCareAPI();
+                testAfterSchoolAPI();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n-client"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
-import { DataBackupPanel } from "@/components/data-backup-panel"
+import dynamic from "next/dynamic"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
 import { SettingsPanel } from "@/components/settings-panel"
 import { A4RecordSheet } from "@/components/a4-record-sheet"
@@ -16,13 +16,22 @@ import { useToast } from "@/components/ui/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Suspense } from "react"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
+import Link from "next/link"
 
-type Props = { initialCareReceiverId?: string }
+const DataBackupPanel = dynamic(
+  () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-[240px] w-full rounded-lg border border-border bg-card/50" />,
+  },
+)
+
+type Props = { initialCareReceiverId?: string | undefined }
 
 const users = [
   "利用者A","利用者B","利用者C","利用者D","利用者E","利用者F","利用者G","利用者H","利用者I","利用者J","利用者K","利用者L","利用者M","利用者N","利用者O","利用者P","利用者Q","利用者R","利用者S","利用者T","利用者U","利用者V","利用者W","利用者X",
@@ -89,18 +98,17 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
       return
     }
 
-    if (defaultId) {
+    // URL パラメータがないなら state のみセット（URL 書き換えしない）
+    // これにより、/ へのアクセスで勝手に ?careReceiverId=AT が付かなくなる
+    if (defaultId && !initialCareReceiverId) {
       setSelectedCareReceiverId(defaultId)
       setSelectedUser(lifeCareReceivers[0].label)
-      _router.replace(`${window.location.pathname}?careReceiverId=${encodeURIComponent(defaultId)}`, { scroll: false })
     }
-  }, [])
+  }, [initialCareReceiverId])
 
   const pushWithCareReceiverId = (path: string) => {
-    const url = selectedCareReceiverId
-      ? `${path}${path.includes("?") ? "&" : "?"}careReceiverId=${encodeURIComponent(selectedCareReceiverId)}`
-      : path
-    _router.push(url)
+    // URL に careReceiverId を付与しない
+    _router.push(path)
   }
 
   useEffect(() => {
@@ -351,11 +359,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                     <Button key={r.id} variant={selectedCareReceiverId === r.id ? "default" : "outline"} size="sm" className="justify-center" onClick={() => {
                       setSelectedCareReceiverId(r.id)
                       setSelectedUser(r.label)
-                      // Replace only the careReceiverId in the current URL
-                      const params = new URLSearchParams(window.location.search)
-                      params.set('careReceiverId', r.id)
-                      const base = window.location.pathname + '?' + params.toString()
-                      _router.replace(base, { scroll: false })
                     }}>{r.label}</Button>
                   ))}
                 </div>
@@ -415,6 +418,95 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
           </div>
         )}
 
+        {/* 管理者マスタセクション */}
+        <div className="mt-12 pt-8 border-t border-border/50">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">管理者マスタ</h2>
+            <p className="text-muted-foreground text-sm mt-1">管理・編集・追加・削除を一元管理</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* A. 利用者管理 */}
+            <Link href="/services/life-care/users" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-blue-100 rounded-xl text-2xl group-hover:bg-blue-200 transition-colors">👥</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">利用者管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者の追加・編集・削除</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* B. スタッフ管理 */}
+            <Link href="/services/life-care/staff" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-green-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-green-100 rounded-xl text-2xl group-hover:bg-green-200 transition-colors">👔</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-green-600 transition-colors">スタッフ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">スタッフ情報の編集・追加</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* C. ケース記録（管理用） */}
+            <Link href="/services/life-care/users/AT/case-records" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-purple-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-purple-100 rounded-xl text-2xl group-hover:bg-purple-200 transition-colors">📋</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-purple-600 transition-colors">ケース記録</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者毎のケース記録確認</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* D. テンプレ管理（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">📝</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">テンプレ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* E. データ整合性チェック（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">🔍</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">データ整合性</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
         <PdfPreviewModal isOpen={isPdfPreviewOpen} onClose={() => setIsPdfPreviewOpen(false)} dailyLog={dailyLog} careEvents={careEvents} />
 
         {isA4RecordSheetOpen && (
@@ -469,35 +561,13 @@ function CareReceiverSelect({
   selectedUser: string
   setSelectedUser: (v: string) => void
 }) {
-  const router = useRouter()
-  const params = useSearchParams()
-
   const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
-
-  // Guard: if URL has an invalid careReceiverId, replace with default and sync state
-  useEffect(() => {
-    const id = params.get('careReceiverId')
-    if (!id) return
-    const isValid = lifeCareReceivers.some(r => r.id === id)
-    if (!isValid) {
-      const defaultId = lifeCareReceivers[0]?.id
-      if (!defaultId) return
-      const next = new URLSearchParams(params.toString())
-      next.set('careReceiverId', defaultId)
-      router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
-      setSelectedCareReceiverId(defaultId)
-      setSelectedUser(lifeCareReceivers[0].label)
-    }
-  }, [params, router, setSelectedCareReceiverId, setSelectedUser])
 
   const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value
     const found = lifeCareReceivers.find(r => r.id === id)
     setSelectedCareReceiverId(id)
     if (found) setSelectedUser(found.label)
-    const next = new URLSearchParams(params.toString())
-    next.set('careReceiverId', id)
-    router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
   }
 
   return (

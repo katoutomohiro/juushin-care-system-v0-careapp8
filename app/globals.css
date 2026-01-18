@@ -104,3 +104,8 @@
     @apply text-xl md:text-2xl;
   }
 }
+
+  /* Hide time picker icon */
+  input[type="time"]::-webkit-calendar-picker-indicator { display: none; }
+  input[type="time"]::-webkit-clear-button { display: none; }
+  input[type="time"]::-webkit-inner-spin-button { display: none; }

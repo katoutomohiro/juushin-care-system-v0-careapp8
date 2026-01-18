@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,21 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
   const [isImporting, setIsImporting] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [mounted, setMounted] = useState(false)
+  const [storageInfo, setStorageInfo] = useState({
+    used: 0,
+    available: 0,
+    percentage: 0,
+  })
+
+  const refreshStorageInfo = () => {
+    setStorageInfo(DataStorageService.getStorageInfo())
+  }
+
+  useEffect(() => {
+    setMounted(true)
+    refreshStorageInfo()
+  }, [])
 
   const handleExportData = async () => {
     try {
@@ -37,6 +52,7 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
 
       URL.revokeObjectURL(url)
       setMessage({ type: "success", text: "データのバックアップが完了しました" })
+      refreshStorageInfo()
     } catch (error) {
       console.error("Export failed:", error)
       setMessage({ type: "error", text: "バックアップの作成に失敗しました" })
@@ -59,6 +75,7 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
       if (success) {
         setMessage({ type: "success", text: "データの復元が完了しました" })
         onDataChange?.()
+        refreshStorageInfo()
       } else {
         setMessage({ type: "error", text: "データの復元に失敗しました" })
       }
@@ -79,6 +96,7 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
         DataStorageService.clearAllData()
         setMessage({ type: "success", text: "全てのデータを削除しました" })
         onDataChange?.()
+        refreshStorageInfo()
       } catch (error) {
         console.error("Clear data failed:", error)
         setMessage({ type: "error", text: "データの削除に失敗しました" })
@@ -86,7 +104,9 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
     }
   }
 
-  const storageInfo = DataStorageService.getStorageInfo()
+  const usedKb = mounted ? Math.round(storageInfo.used / 1024) : 0
+  const percentage = mounted ? Math.round(storageInfo.percentage) : 0
+  const barWidth = mounted ? Math.min(storageInfo.percentage, 100) : 0
 
   return (
     <Card className="w-full">
@@ -138,13 +158,13 @@ export function DataBackupPanel({ onDataChange }: DataBackupPanelProps) {
           <Label className="text-sm font-medium">ストレージ使用状況</Label>
           <div className="mt-2">
             <div className="flex justify-between text-xs text-gray-600">
-              <span>使用量: {Math.round(storageInfo.used / 1024)} KB</span>
-              <span>{Math.round(storageInfo.percentage)}%</span>
+              <span>使用量: {usedKb} KB</span>
+              <span>{percentage}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
               <div
                 className="bg-blue-500 h-2 rounded-full"
-                style={{ width: `${Math.min(storageInfo.percentage, 100)}%` }}
+                style={{ width: `${barWidth}%` }}
               />
             </div>
           </div>
