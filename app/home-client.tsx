@@ -30,7 +30,7 @@ const DataBackupPanel = dynamic(
   },
 )
 
-type Props = { initialCareReceiverId?: string }
+type Props = { initialCareReceiverId?: string | undefined }
 
 const users = [
   "利用者A","利用者B","利用者C","利用者D","利用者E","利用者F","利用者G","利用者H","利用者I","利用者J","利用者K","利用者L","利用者M","利用者N","利用者O","利用者P","利用者Q","利用者R","利用者S","利用者T","利用者U","利用者V","利用者W","利用者X",
@@ -104,7 +104,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
       setSelectedCareReceiverId(defaultId)
       setSelectedUser(lifeCareReceivers[0].label)
     }
-  }, [])
+  }, [initialCareReceiverId])
 
   const pushWithCareReceiverId = (path: string) => {
     // URL に careReceiverId を付与しない
