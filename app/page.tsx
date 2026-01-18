@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
-import HomeClient from "./home-client"
+import LoginPage from "./login/page"
 
 export default function Page() {
-  return <HomeClient />
+  // ルートは常にログイン画面を表示し、careReceiverId を扱わない
+  return <LoginPage />
 }
