@@ -75,7 +75,13 @@ export async function updateCareReceiverAction(
   }>
 ) {
   try {
-    const response = await fetch(`/api/care-receivers/${id}`, {
+    // Validate ID to prevent SSRF
+    if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+      throw new Error('Invalid care receiver ID')
+    }
+    const safeId = encodeURIComponent(id)
+    
+    const response = await fetch(`/api/care-receivers/${safeId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -101,7 +107,13 @@ export async function updateCareReceiverAction(
 // Delete care receiver with automatic data refresh
 export async function deleteCareReceiverAction(id: string) {
   try {
-    const response = await fetch(`/api/care-receivers/${id}`, {
+    // Validate ID to prevent SSRF
+    if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+      throw new Error('Invalid care receiver ID')
+    }
+    const safeId = encodeURIComponent(id)
+    
+    const response = await fetch(`/api/care-receivers/${safeId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     })
