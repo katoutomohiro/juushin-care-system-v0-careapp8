@@ -4,7 +4,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import ClickableCard from "@/components/clickable-card"
 import { formUrl, buildUserDiaryUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DataStorageService } from "@/services/data-storage-service"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -304,13 +304,69 @@ export default function UserDetailPage() {
   })
   const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
   const [currentDate, setCurrentDate] = useState<string>("")
+  const fetchWarnedRef = useRef(false) // Prevent console.warn spam
+
+  /**
+   * Fetch care receiver name from API
+   * Returns fallback name if API fails (ok:false, network error, etc.)
+   * Never throws - always returns a string
+   */
+  const fetchCareReceiverName = useCallback(async (): Promise<string> => {
+    try {
+      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
+        cache: "no-store",
+      })
+
+      // If HTTP response is not ok, treat as failure
+      if (!response.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] HTTP error fetching care receiver name", {
+            status: response.status,
+            statusText: response.statusText,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
+      }
+
+      const result = await response.json().catch(() => null)
+
+      // If API returned ok:false, treat as failure (not an exception)
+      if (!result?.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] Care receiver API returned ok:false", {
+            error: result?.error,
+            detail: result?.detail,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
+      }
+
+      // Success: extract and return the name
+      const latestName = result?.careReceiver?.name
+      if (latestName && typeof latestName === "string") {
+        return latestName
+      }
+
+      return userId // Return fallback if name is missing
+    } catch (error) {
+      // Only log actual exceptions (network errors, JSON parse errors, etc.)
+      if (!fetchWarnedRef.current) {
+        console.warn("[UserDetailPage] Unexpected error fetching care receiver name", error)
+        fetchWarnedRef.current = true
+      }
+      return userId // Return fallback name
+    }
+  }, [normalizedUserId, userId])
 
   useEffect(() => {
-    const profile = DataStorageService.getUserProfile(userId)
-    if (profile?.name) {
-      setDisplayName(profile.name)
-    }
-  }, [userId])
+    ;(async () => {
+      const latestName = await fetchCareReceiverName()
+      setDisplayName(latestName)
+      setEditedUser((prev) => ({ ...prev, name: latestName }))
+    })()
+  }, [fetchCareReceiverName])
 
   useEffect(() => {
     setCurrentDate(
@@ -335,34 +391,34 @@ export default function UserDetailPage() {
         name: displayName,
       }
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     const oldName = displayName
     const newName = editedUser.name.trim() || userId
 
-    if (newName !== oldName) {
-      try {
-        DataStorageService.updateUserNameInProfiles(oldName, newName)
-        DataStorageService.updateUserNameInEvents(oldName, newName)
+    try {
+      // Update Supabase first
+      if (newName !== oldName) {
+        const result = await updateCareReceiverName(normalizedUserId, newName)
 
-        const customNames = DataStorageService.getCustomUserNames()
-        const updatedNames = new Set(customNames)
-        if (updatedNames.has(oldName)) {
-          updatedNames.delete(oldName)
+        if (!result.ok) {
+          console.error("Failed to update care receiver in Supabase:", result.error)
+          alert("保存に失敗しました。入力内容を確認してください。")
+          return
         }
-        updatedNames.add(newName)
-        DataStorageService.saveCustomUserNames(Array.from(updatedNames))
 
-        alert(`氏名を「${oldName}」から「${newName}」に変更しました。`)
-      } catch (error) {
-        console.error("Failed to update user name:", error)
-        alert("氏名の変更に失敗しました。もう一度お試しください。")
-        return
+        console.log("[handleSaveUser] Successfully updated Supabase care_receivers.name")
       }
-    }
 
-    userDetails[userId] = { ...editedUser, name: newName }
-    setDisplayName(newName)
-    setIsEditDialogOpen(false)
+      userDetails[userId] = { ...editedUser, name: newName }
+      setDisplayName(newName)
+      setIsEditDialogOpen(false)
+      // ケース記録ページなど他の関連ページをリロード
+      router.refresh()
+      await fetchCareReceiverName()
+    } catch (error) {
+      console.error("Failed to save user information:", error)
+      alert("保存に失敗しました。もう一度お試しください。")
+    }
   }
 
   return (

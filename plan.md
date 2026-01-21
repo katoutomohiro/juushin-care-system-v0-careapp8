@@ -1,0 +1,244 @@
+# ケアシステム新モデル導入計画
+
+## 🎯 最重要ルール（必ず守る）
+
+1. **Phase 1: A・Tさんのケース記録フォームを「完璧な状態」まで完成させることが最優先**。その後、**Phase 2: 他 23 人の利用者のケース記録を順に実装**していく。
+2. **ケース記録は共通項目と個別項目が混在する**。各利用者ごとに「共通項目＋個別項目」の構成が異なるため、利用者単位で慎重に作成する。
+   - テンプレ増殖ではなく「利用者単位の差分管理」を維持
+   - 共通化できる部分と個別化が必要な部分を明確に分離
+3. **利用者の表示名は利用者詳細の編集を唯一の正とする**。ケース記録側は常に最新の氏名を取得して表示する。
+   - DBは userId（内部ID）で紐付けしたまま、見た目は「利用者名」一本に統一
+   - ページで force-dynamic を指定し、キャッシュを無効化
+   - Client Component では props の変更を useEffect で state に同期
+4. **プランファイルは常に最新状態**を保つ。変更・修正・追加のたびに必ず更新し、AI/人が読んで状況が理解できるようにする。
+5. 変更仕様が途中で発生したら、その都度このプランに反映してから実装を進める。
+
+---
+
+## 📌 最新更新（2026-01-21）
+
+### 更新日
+2026-01-21
+
+### 変更概要
+- **fix/login-redirect-cleanup** ブランチを origin/main 相当まで復旧
+- rebase / merge 完了、強制 push 済み（コミット: 78929b4）
+- build / typecheck / lint すべて成功 ✅
+
+### 技術的変更
+**diary/page.tsx:**
+- Page Props の searchParams 型を Next.js 15 App Router 準拠に修正
+- `params` を `Promise<{...}>` に変更
+- `searchParams` を `Promise<{...}>` に変更（以前の単純型は非対応）
+- `await params` と `await searchParams` を追加
+
+**CaseRecordFormClient.tsx:**
+- `CaseRecordFormSchema` をインポート追加（以前未インポート）
+- 重複宣言していた `resolvedServiceId` を削除
+- `flattened` オブジェクトの型を明示化（`Record<string, string[] | undefined>`）
+
+**その他:**
+- 不要ファイル・swap ファイルの削除完了
+
+### 現在の状態
+- `pnpm run build`: ✅ 成功（全28ページ正常生成）
+- `pnpm run typecheck`: ✅ 成功（エラーなし）
+- `pnpm run lint`: ✅ 成功（エラーなし）
+- `pnpm run test`: ✅ 成功（74 passed, 1 skipped）
+- **CI 再実行可能な安定状態**
+- **working tree clean**
+
+### 未解決事項
+- なし
+
+### 次のアクション
+- PR #220 の最終確認
+- CodeRabbit / SonarCloud 指摘があれば対応
+- main へのマージ
+
+---
+
+## 📋 開発方針
+
+**リマインダー（変更不可）**
+- **Phase 1**: A・T さんのケース記録フォームを「完璧な状態」まで完成させる（最優先）
+- **Phase 2**: Phase 1 で完成した仕組みを「テンプレート」として、他 23 名の利用者を個別に順番対応
+- 各利用者によって「共通項目＋個別項目」の構成が異なる前提で、1 人ずつ慎重に作成する
+- 仕様変更が入るたびに必ずこの plan.md を更新し、履歴を残す
+- **見た目は利用者名・内部はuserIdで統一**（DBリレーション用の紐付けは userId を使うが、UIには出さない）
+
+### A・Tさんを基準とした段階的開発
+
+- **フェーズ1**: A・Tさんのケース記録フォームを「完璧な状態」まで仕上げる
+  - UI/UX の整備（日付ピッカー、時刻自動入力など）
+  - フォーム検証とエラーハンドリング
+  - 保存・編集・削除の一連の動作確認
+  - 印刷・PDF出力の検証
+  
+- **フェーズ2**: 仕上がったA・Tさんの仕組みを「テンプレート」として、他23人を順に作成
+
+### 共通項目 vs 個別項目の管理
+
+**共通項目（全利用者対象）:**
+- 日付（YYYY/MM/DD(曜)形式表示、内部は ISO形式）
+- 利用者ID、サービスID、スタッフ（主・副）
+- ※時刻は廃止（ヘッダーから削除、記録作成時に自動タイムスタンプ）
+
+- バイタル（測定項目は人による）
+- 食事・栄養摂取
+- 排泄
+- 理学療法 / 作業療法（障害種別により異なる）
+- 特記事項
+- ※将来：各項目に `recordedTime: "HH:mm"` フィールド追加予定
+
+### 🔄 時刻記録の設計変更（2026-01-14）
+
+**廃止・変更:**
+- ヘッダーの「時刻」入力欄を完全削除（UI崩れ・ボタン配置問題の根本解決）
+
+**新方針:**
+- 記録の作成時刻は**自動タイムスタンプ**（サーバー側で `recordTime` を `new Date().toHHmm()` で設定）
+- **将来：個別項目を操作した時点でその項目に時刻を自動記録**
+  - 例：排泄記録を入力した時刻を自動付与 → 「いつ測定/記録したか」の追跡可能
+  
+**実装進捗:**
+- ✅ **Phase 1（2026-01-14 完了）**: ヘッダー時刻削除 + クライアント側で `recordTime` を現在時刻で自動生成
+- 🔲 **Phase 2（今後）**: 個別項目テンプレートに `recordedTime` フィールド追加、入力時に自動セット
+- 🔲 **Phase 3（今後）**: 必要に応じて「時刻更新ボタン」を各項目に追加
+
+### 変更・修正・追加が都度入る前提での運用
+
+- このプランは「最初から完全な仕様」ではない
+- 実装中に「この項目が必要」「この表示形式に変更」が発生する
+- その都度、要件をこのファイルに追記 → 実装 → 検証 の流れを繰り返す
+- 仕様変更の追跡性を確保するため、実装ログも「いつ何を変えたか」を記録する
+
+## 背景
+
+A.T様のケース記録を基準に、全利用者に共通したケース記録システムを構築し、保存用APIを一本化し、現在の冗長な保存処理や通知機能を削減する。このプランは実装手順の指針として、今後の開発で必ず参照するファイルである。
+
+## 作業ステップ
+
+1. **ケース記録データモデルの更新**
+    - A.T様の記録内容をベースに、新しい `CaseRecord` 型を定義する。JSON型を採用し、各カテゴリー（バイタル・排泄・水分・食事・その他）のデータを柔軟に保持できるようにする。
+    - 1日1利用者1レコードを基本とし、`userId`、`date`、`entries` (カテゴリー毎の配列) 等で構成する。
+    - カテゴリーは必要に応じて追加可能とし、使用しないカテゴリーは空配列で構わない。
+    - 既存データの移行は後で検討。まずは新規入力でこの形式を採用する。
+
+2. **保存APIの統合**
+    - 新しいケース記録保存エンドポイント `/api/case-records/save` を実装する。
+    - 他の保存エンドポイントや通知処理は一時的に停止し、このエンドポイントを唯一の保存手段とする。
+    - `POST` で受け取った新 `CaseRecord` JSONを保存し、保存完了時には成功ステータスと保存されたデータを返す。
+    - フロントエンドの各フォーム・ページの保存処理を、既存の `DataStorageService.saveCaseRecord` 呼び出しから、上記API呼び出しに変更する。
+
+3. **最小構成での稼働**
+    - 現在実装されている通知機能や管理機能は一旦無効にする。
+    - A.T様のケース記録フォームを新モデルに対応させ、印刷、署名取得、データ保存が正しく行えるか検証する。
+    - 他利用者のケース記録は未対応でも構わないため、必要最低限の画面のみ保持する。
+
+## 実装順序
+
+1. `services/data-storage-service.ts` 等で `CaseRecord` 型定義を更新し、保存ロジックを新形式に対応させる。
+2. `app/api/case-records/save/route.ts` を新規作成し、保存処理を実装する。
+3. A.T様のケース記録ページと関連コンポーネントを新形式に合わせて修正する。
+4. 他ページに残っている旧API呼び出し・不要な機能をコメントアウトまたは削除する。
+
+## 注意事項
+
+- この計画書（plan.md）は将来的に編集・追加される可能性がある。実装前に必ず最新版を読み込んでから作業を開始すること。
+- 開発中は `pnpm tsc --noEmit` を用いて型エラーの確認を行い、エラーが発生しないことを確認しながら進める。
+
+## 進捗メモ（更新は段階的に反映してOK）
+
+- 旧 `/api/case-records` は停止し、保存は `/api/case-records/save` に一本化済み。
+- 旧API参照の残存チェックを実施し、ドキュメントも `/api/case-records/save` に統一済み。
+- `services/data-storage-service.ts` に `CaseRecord`（JSONベース）を追加し、保存ロジックを新APIへ切替済み。
+- 管理機能は一時的に無効化済み（最小構成で運用）。
+- ✅ **2026-01-14**: ヘッダーから時刻UIを完全削除、`TimeWithNowField` コンポーネント削除、`recordTime` は自動生成へ変更
+
+### 2026-01-14: A・Tさんケース記録フォーム - 利用者表示をID→名前に変更
+
+**実装内容:**
+- ケース記録フォームのヘッダーで「利用者ID」入力欄を削除
+- 代わりに「利用者名」を readOnly で表示
+- ページコンポーネントで care_receivers テーブルから display_name（または name）を取得
+- 利用者詳細で氏名を編集したら、ケース記録ページ再読み込みで自動反映
+
+**対象ファイル:**
+- `src/components/case-records/HeaderFields.tsx` (更新: userId → careReceiverName, readOnly 表示)
+- `src/components/case-records/CaseRecordForm.tsx` (更新: initial.userId → initial.careReceiverName)
+- `src/components/case-records/CaseRecordFormClient.tsx` (更新: careReceiverName prop 追加、payload に careReceiverName 含める)
+- `app/services/[serviceId]/users/[userId]/case-records/page.tsx` (更新: 利用者名取得ロジック追加、prop 渡し)
+
+**保存 payload:**
+```json
+{
+  "serviceId": "...",
+  "userId": "...",      // 内部ID（DB紐付け用）
+  "careReceiverName": "A・T",  // 表示用（スナップショット）
+  "date": "2026-01-14",
+  "recordTime": "14:30",
+  "record_data": { ... }
+}
+```
+
+**受け入れ条件:**
+- ✅ ケース記録フォームで「利用者名」が readOnly で表示される
+- ✅ 利用者詳細で氏名を変更 → ケース記録ページ再読み込みで最新名が表示される
+- ✅ 保存時に userId（内部ID）と careReceiverName（表示用）の両方が payload に含まれる
+- ✅ 「利用者ID」という入力欄は完全に消えている
+
+### 2026-01-14: A・Tさんケース記録フォーム - 時刻入力廃止・自動タイムスタンプ化（Phase 1）
+
+**削除内容:**
+- `src/components/fields/TimeWithNowField.tsx` を完全削除
+- `src/components/case-records/HeaderFields.tsx` から時刻入力欄を削除
+- `CaseRecordForm`、`CaseRecordFormClient`、ページコンポーネントから`time`フィールドを削除
+
+**変更内容:**
+- `CaseRecordFormClient.handleSubmit` で `recordTime` を自動生成
+  - `new Date().toISOString().slice(11, 16)` で HH:mm 形式で現在時刻を設定
+  - サーバー側で記録の作成時刻として保存される
+  
+- ヘッダーは date / userId / serviceId のみ（4列グリッドから3列へ縮小）
+
+**対象ファイル:**
+- `src/components/fields/DateWithWeekdayField.tsx` (維持)
+- `src/components/fields/TimeWithNowField.tsx` (削除)
+- `src/components/case-records/HeaderFields.tsx` (更新)
+- `src/components/case-records/CaseRecordForm.tsx` (更新)
+- `src/components/case-records/CaseRecordFormClient.tsx` (更新)
+- `app/services/[serviceId]/users/[userId]/case-records/page.tsx` (更新)
+
+**受け入れ条件:**
+- ✅ ヘッダーに時刻欄が表示されない
+- ✅ Module not found / build error が無い
+- ✅ 保存時に `recordTime: "HH:mm"` がペイロードに含まれる（現在時刻で自動セット）
+- ✅ UI崩れがなく、3列グリッドが正常に表示される
+
+**実装内容:**
+- `src/components/fields/DateWithWeekdayField.tsx` を新規作成（共通コンポーネント）
+  - 表示用の読み取り専用テキスト入力（クリックで picker を開く）
+  - 裏の実 `input type="date"` で日付値を管理
+  - 選択日付を「YYYY/MM/DD(曜)」形式で表示
+  - Safari対策で「YYYY-MM-DD」を自動パース（new Date直渡し避ける）
+  
+- `src/components/case-records/HeaderFields.tsx` を更新
+  - 既存の日付フィールド実装を削除
+  - 新しい `DateWithWeekdayField` コンポーネントに置き換え
+  - 内部保存は ISO形式（YYYY-MM-DD）を維持
+
+**対象ファイル:**
+- `src/components/fields/DateWithWeekdayField.tsx` (NEW)
+- `src/components/case-records/HeaderFields.tsx` (UPDATED)
+
+**受け入れ条件:**
+- ✅ A・Tさんのケース記録画面で日付欄をクリックするとカレンダーが出る
+- ✅ 日付選択後、「YYYY/MM/DD(曜)」が欄内に即座に表示される
+- ✅ 保存時に date が ISO形式（YYYY-MM-DD）で送信される
+- ✅ クロスブラウザ対応（Safari対策済み）
+
+## 次のステップ（アイデアメモ）
+
+- 記録一覧表示（利用者 × 日付での検索・フィルタ）
+- 6か月単位の評価・振り返り画面

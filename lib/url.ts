@@ -1,6 +1,6 @@
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 export const formUrl = (form: string, serviceId: string, userId: string) =>
-  `/forms/${form}?user=${encodeURIComponent(normalizeUserId(userId))}&service=${serviceId}`;
+  `/forms/${form}?user=${encodeURIComponent(normalizeUserId(userId))}&service=${serviceId}`
 
 export const buildUserDiaryUrl = (
   serviceId: string,
@@ -19,10 +19,10 @@ export const buildSeizureUrl = (
 ) => {
   const base = `/daily-log/seizure`
   const params = new URLSearchParams()
-  params.set('serviceId', serviceId)
-  params.set('userId', normalizeUserId(userId))
+  params.set("serviceId", serviceId)
+  params.set("userId", normalizeUserId(userId))
   if (careReceiverId) {
-    params.set('careReceiverId', careReceiverId)
+    params.set("careReceiverId", careReceiverId)
   }
   return `${base}?${params.toString()}`
 }
@@ -34,10 +34,10 @@ export const buildVitalsUrl = (
 ) => {
   const base = `/forms/vitals`
   const params = new URLSearchParams()
-  params.set('user', normalizeUserId(userId))
-  params.set('service', serviceId)
+  params.set("user", normalizeUserId(userId))
+  params.set("service", serviceId)
   if (careReceiverId) {
-    params.set('careReceiverId', careReceiverId)
+    params.set("careReceiverId", careReceiverId)
   }
   return `${base}?${params.toString()}`
 }

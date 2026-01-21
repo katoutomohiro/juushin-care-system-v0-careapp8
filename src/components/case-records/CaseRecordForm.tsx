@@ -1,6 +1,6 @@
-"use client"
+﻿"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { HeaderFields } from "@/src/components/case-records/HeaderFields"
 import { StaffSelector, type StaffOption } from "@/src/components/case-records/StaffSelector"
 import { NotesSection } from "@/src/components/case-records/NotesSection"
@@ -10,32 +10,46 @@ import { TemplateField, TemplateFormValues } from "@/lib/templates/schema"
 export type CaseRecordFormProps = {
   initial: {
     date: string
-    time: string
-    userId: string
+    careReceiverName: string  // 利用者名（読み取り専用）
     serviceId: string
     mainStaffId?: string | null
-    subStaffIds?: string[] | null
+    subStaffId?: string | null
     specialNotes?: string
     familyNotes?: string
     custom?: TemplateFormValues
   }
   staffOptions: StaffOption[]
+  allStaff?: Array<{ id: string; name: string; sort_order: number; is_active: boolean }>
   templateFields?: TemplateField[]
   onSubmit: (values: CaseRecordFormProps["initial"]) => Promise<void> | void
   submitLabel?: string
   isSubmitting?: boolean
+  validationErrors?: { mainStaffId?: string }  // バリデーションエラー
+  onUpdateStaff?: (staff: { id: string; name: string; sort_order?: number; is_active?: boolean }) => void
 }
 
 export function CaseRecordForm({
   initial,
   staffOptions,
+  allStaff = [],
   templateFields = [],
   onSubmit,
   submitLabel = "保存",
   isSubmitting = false,
+  validationErrors,
+  onUpdateStaff,
 }: CaseRecordFormProps) {
   const [state, setState] = useState(initial)
   const customData = state.custom ?? {}
+
+  // Sync props.initial changes to state (especially careReceiverName)
+  useEffect(() => {
+    setState((prevState) => ({
+      ...prevState,
+      ...initial,
+      custom: initial.custom ?? prevState.custom,
+    }))
+  }, [initial.careReceiverName, initial.date, initial.serviceId])
 
   return (
     <form
@@ -48,17 +62,19 @@ export function CaseRecordForm({
     >
       <HeaderFields
         date={state.date}
-        time={state.time}
-        userId={state.userId}
-        serviceId={state.serviceId}
+        careReceiverName={state.careReceiverName}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
       />
 
       <StaffSelector
         mainStaffId={state.mainStaffId ?? null}
-        subStaffIds={state.subStaffIds ?? []}
+        subStaffId={state.subStaffId ?? null}
         options={staffOptions}
         onChange={(patch) => setState((s) => ({ ...s, ...patch }))}
+        validationError={validationErrors?.mainStaffId}
+        serviceId={state.serviceId}
+        allStaff={allStaff}
+        onUpdateStaff={onUpdateStaff}
       />
 
       <NotesSection
