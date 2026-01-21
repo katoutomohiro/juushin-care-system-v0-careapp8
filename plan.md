@@ -13,6 +13,51 @@
 4. **プランファイルは常に最新状態**を保つ。変更・修正・追加のたびに必ず更新し、AI/人が読んで状況が理解できるようにする。
 5. 変更仕様が途中で発生したら、その都度このプランに反映してから実装を進める。
 
+---
+
+## 📌 最新更新（2026-01-21）
+
+### 更新日
+2026-01-21
+
+### 変更概要
+- **fix/login-redirect-cleanup** ブランチを origin/main 相当まで復旧
+- rebase / merge 完了、強制 push 済み（コミット: 78929b4）
+- build / typecheck / lint すべて成功 ✅
+
+### 技術的変更
+**diary/page.tsx:**
+- Page Props の searchParams 型を Next.js 15 App Router 準拠に修正
+- `params` を `Promise<{...}>` に変更
+- `searchParams` を `Promise<{...}>` に変更（以前の単純型は非対応）
+- `await params` と `await searchParams` を追加
+
+**CaseRecordFormClient.tsx:**
+- `CaseRecordFormSchema` をインポート追加（以前未インポート）
+- 重複宣言していた `resolvedServiceId` を削除
+- `flattened` オブジェクトの型を明示化（`Record<string, string[] | undefined>`）
+
+**その他:**
+- 不要ファイル・swap ファイルの削除完了
+
+### 現在の状態
+- `pnpm run build`: ✅ 成功（全28ページ正常生成）
+- `pnpm run typecheck`: ✅ 成功（エラーなし）
+- `pnpm run lint`: ✅ 成功（エラーなし）
+- `pnpm run test`: ✅ 成功（74 passed, 1 skipped）
+- **CI 再実行可能な安定状態**
+- **working tree clean**
+
+### 未解決事項
+- なし
+
+### 次のアクション
+- PR #220 の最終確認
+- CodeRabbit / SonarCloud 指摘があれば対応
+- main へのマージ
+
+---
+
 ## 📋 開発方針
 
 **リマインダー（変更不可）**
