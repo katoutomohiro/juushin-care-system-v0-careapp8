@@ -7,6 +7,7 @@ import { CaseRecordForm } from "@/src/components/case-records/CaseRecordForm"
 import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecordsListClient"
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
 
 type StaffOption = { value: string; label: string }
 
@@ -155,9 +156,9 @@ export function CaseRecordFormClient({
       if (!validation.success) {
         const issue = validation.error.issues[0]
         const message = issue?.message ?? "必須項目を入力してください"
-        const flattened = validation.error.flatten().fieldErrors
+        const flattened = validation.error.flatten().fieldErrors as Record<string, string[] | undefined>
         const collected = Object.entries(flattened)
-          .flatMap(([key, msgs]) => (msgs ?? []).map((m) => `${key}: ${m}`))
+          .flatMap(([key, msgs]) => (msgs ?? []).map((m: string) => `${key}: ${m}`))
           .filter(Boolean)
         setFieldErrors(collected.length > 0 ? collected : [message])
         
@@ -182,9 +183,6 @@ export function CaseRecordFormClient({
 
       // Auto-generate recordTime (HH:mm) per plan
       const recordTime: string = values.time ?? new Date().toISOString().slice(11, 16)
-
-      // Prefer UUIDs when available
-      const resolvedServiceId = serviceUuid || serviceId
 
       // subStaffId (single) fallback from array if provided
       const resolvedSubStaffId = values.subStaffId ?? (Array.isArray(values.subStaffIds) ? values.subStaffIds[0] ?? null : null)

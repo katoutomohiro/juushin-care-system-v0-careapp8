@@ -1,5 +1,4 @@
 import { generateSecureUUID } from "@/lib/crypto-utils"
-import { saveCaseRecord } from "@/lib/actions/caseRecordsActions"
 
 export interface CareEvent {
   id: string
