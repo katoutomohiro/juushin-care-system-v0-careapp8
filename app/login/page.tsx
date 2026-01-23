@@ -18,30 +18,41 @@ function LoginFormContent() {
   const [isSignUp, setIsSignUp] = useState(false)
   
   const handleLogin = async () => {
+    console.log('🔵 handleLogin called', { email, hasPassword: !!password })
     setError(null)
     setIsLoading(true)
     
     try {
+      console.log('[LOGIN] supabase client:', supabase ? 'OK' : 'UNDEFINED')
+      console.log('[LOGIN] calling signInWithPassword with email:', email)
+      
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       
+      console.log('[LOGIN] signInWithPassword result:', { hasData: !!data, hasError: !!authError, errorMsg: authError?.message })
+      
       if (authError) {
-        setError(authError.message)
+        const errMsg = authError.message
+        console.error('[LOGIN] Auth error:', errMsg)
+        setError(errMsg)
         return
       }
       
       if (!data.user) {
+        console.error('[LOGIN] No user in response data')
         setError('ログインに失敗しました')
         return
       }
       
+      console.log('[LOGIN] Success! User:', data.user.email, 'Redirecting to:', redirectPath)
       // ログイン成功 → redirect path へ
-      // Note: staff_profiles チェックは将来的に必要に応じて追加
       router.push(redirectPath)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました')
+      const errMsg = err instanceof Error ? err.message : 'エラーが発生しました'
+      console.error('[LOGIN] Exception:', errMsg, err)
+      setError(errMsg)
     } finally {
       setIsLoading(false)
     }
