@@ -15,74 +15,46 @@ function LoginFormContent() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isSignUp, setIsSignUp] = useState(false)
   
   const handleLogin = async () => {
     setError(null)
     setIsLoading(true)
-    
+
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      setError('メールアドレスを入力してください')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: trimmedEmail,
         password,
       })
-      
+
       if (authError) {
         setError(authError.message)
         return
       }
-      
+
       if (!data.user) {
         setError('ログインに失敗しました')
         return
       }
-      
+
       // ログイン成功 → redirect path へ
-      // Note: staff_profiles チェックは将来的に必要に応じて追加
-      router.push(redirectPath)
+      router.replace(redirectPath)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
     } finally {
       setIsLoading(false)
     }
   }
-  
-  const handleSignUp = async () => {
-    setError(null)
-    setIsLoading(true)
-    
-    try {
-      // 本番環境では admin が招待リンクで signup を管理
-      // ここはデモ用のみ
-      const { error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-      
-      if (authError) {
-        setError(authError.message)
-        return
-      }
-      
-      setError(null)
-      setEmail('')
-      setPassword('')
-      setIsSignUp(false)
-      // signup 後、メール確認が必要
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (isSignUp) {
-      handleSignUp()
-    } else {
-      handleLogin()
-    }
+    handleLogin()
   }
   
   return (
@@ -146,23 +118,8 @@ function LoginFormContent() {
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSignUp ? 'サインアップ' : 'ログイン'}
+            ログイン
           </button>
-          
-          {/* トグルリンク */}
-          <p className="text-center text-sm text-gray-600 mt-4">
-            {isSignUp ? 'ログイン画面へ' : 'アカウントを作成'}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError(null)
-              }}
-              className="text-blue-600 hover:underline ml-1"
-            >
-              {isSignUp ? 'ここをクリック' : 'ここをクリック'}
-            </button>
-          </p>
         </form>
         
         {/* 情報パネル */}
