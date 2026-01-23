@@ -29,29 +29,38 @@ export function useRealtimeCareReceivers(
   }, [onUpdate])
 
   const onRealtimeUpdate = useCallback(() => {
-    const channel: RealtimeChannel = supabase.channel('care_receivers_changes')
+    try {
+      const channel: RealtimeChannel = supabase.channel('care_receivers_changes')
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'care_receivers',
-        },
-        (_payload: any) => {
-          // すべての変更をキャッチ
-          handleUpdate()
-        }
-      )
-      .subscribe((status: string, err?: any) => {
-        if (err) {
-          console.error('[useRealtimeCareReceivers] Subscription error:', err)
-        }
-      })
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'care_receivers',
+          },
+          (_payload: any) => {
+            // すべての変更をキャッチ
+            handleUpdate()
+          }
+        )
+        .subscribe((status: string, err?: any) => {
+          if (err) {
+            console.error('[useRealtimeCareReceivers] Subscription error:', err)
+          }
+        })
 
-    return () => {
-      supabase.removeChannel(channel)
+      return () => {
+        try {
+          supabase.removeChannel(channel)
+        } catch (e) {
+          console.error('[useRealtimeCareReceivers] removeChannel failed:', e)
+        }
+      }
+    } catch (err) {
+      console.error('[useRealtimeCareReceivers] Failed to subscribe:', err)
+      return () => {}
     }
   }, [handleUpdate])
 
@@ -73,28 +82,37 @@ export function useRealtimeCaseRecords(
   }, [onUpdate])
 
   const onRealtimeUpdate = useCallback(() => {
-    const channel: RealtimeChannel = supabase.channel('case_records_changes')
+    try {
+      const channel: RealtimeChannel = supabase.channel('case_records_changes')
 
-    const filter = careReceiverId
-      ? { event: '*', schema: 'public', table: 'case_records', filter: `care_receiver_id=eq.${careReceiverId}` }
-      : { event: '*', schema: 'public', table: 'case_records' }
+      const filter = careReceiverId
+        ? { event: '*', schema: 'public', table: 'case_records', filter: `care_receiver_id=eq.${careReceiverId}` }
+        : { event: '*', schema: 'public', table: 'case_records' }
 
-    channel
-      .on(
-        'postgres_changes',
-        filter as any,
-        (_payload: any) => {
-          handleUpdate()
+      channel
+        .on(
+          'postgres_changes',
+          filter as any,
+          (_payload: any) => {
+            handleUpdate()
+          }
+        )
+        .subscribe((status: string, err?: any) => {
+          if (err) {
+            console.error('[useRealtimeCaseRecords] Subscription error:', err)
+          }
+        })
+
+      return () => {
+        try {
+          supabase.removeChannel(channel)
+        } catch (e) {
+          console.error('[useRealtimeCaseRecords] removeChannel failed:', e)
         }
-      )
-      .subscribe((status: string, err?: any) => {
-        if (err) {
-          console.error('[useRealtimeCaseRecords] Subscription error:', err)
-        }
-      })
-
-    return () => {
-      supabase.removeChannel(channel)
+      }
+    } catch (err) {
+      console.error('[useRealtimeCaseRecords] Failed to subscribe:', err)
+      return () => {}
     }
   }, [careReceiverId, handleUpdate])
 
@@ -115,29 +133,38 @@ export function useRealtimeStaffProfiles(
   }, [onUpdate])
 
   const onRealtimeUpdate = useCallback(() => {
-    const channel: RealtimeChannel = supabase.channel('staff_profiles_changes')
+    try {
+      const channel: RealtimeChannel = supabase.channel('staff_profiles_changes')
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'staff_profiles',
-        },
-        (_payload: any) => {
-          // すべての変更をキャッチ
-          handleUpdate()
-        }
-      )
-      .subscribe((status: string, err?: any) => {
-        if (err) {
-          console.error('[useRealtimeStaffProfiles] Subscription error:', err)
-        }
-      })
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'staff_profiles',
+          },
+          (_payload: any) => {
+            // すべての変更をキャッチ
+            handleUpdate()
+          }
+        )
+        .subscribe((status: string, err?: any) => {
+          if (err) {
+            console.error('[useRealtimeStaffProfiles] Subscription error:', err)
+          }
+        })
 
-    return () => {
-      supabase.removeChannel(channel)
+      return () => {
+        try {
+          supabase.removeChannel(channel)
+        } catch (e) {
+          console.error('[useRealtimeStaffProfiles] removeChannel failed:', e)
+        }
+      }
+    } catch (err) {
+      console.error('[useRealtimeStaffProfiles] Failed to subscribe:', err)
+      return () => {}
     }
   }, [handleUpdate])
 

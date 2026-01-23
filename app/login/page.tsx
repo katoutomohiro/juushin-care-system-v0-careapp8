@@ -8,9 +8,8 @@ import { login } from './actions'
 function LoginFormContent() {
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get('redirect') || '/services/life-care/users'
-  
+
   const error = searchParams.get('error')
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
