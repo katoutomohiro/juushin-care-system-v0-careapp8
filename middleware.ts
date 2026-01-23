@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { createSupabaseMiddlewareClient } from "./lib/supabase/middleware"
 
 // Routes that never require authentication
-const publicRoutes = ["/login", "/auth", "/api/auth", "/_next"]
+const publicRoutes = ["/login", "/auth", "/api/auth", "/_next", "/favicon.ico"]
 
 function isPublic(pathname: string) {
   return publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}`))
@@ -17,22 +17,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const response = NextResponse.next({ request: { headers: req.headers } })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name: string) => req.cookies.get(name)?.value,
-        set: (name: string, value: string, options: CookieOptions) => {
-          response.cookies.set({ name, value, ...options })
-        },
-        remove: (name: string, options: CookieOptions) => {
-          response.cookies.set({ name, value: "", ...options, maxAge: 0 })
-        },
-      },
-    },
-  )
+  const supabase = createSupabaseMiddlewareClient(req, response)
 
   const {
     data: { session },

@@ -1,61 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/browsers'
+import { useSearchParams } from 'next/navigation'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Suspense } from 'react'
+import { login } from './actions'
 
 function LoginFormContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get('redirect') || '/services/life-care/users'
   
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  
-  const handleLogin = async () => {
-    setError(null)
-    setIsLoading(true)
-
-    const trimmedEmail = email.trim()
-    if (!trimmedEmail) {
-      setError('メールアドレスを入力してください')
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password,
-      })
-
-      if (authError) {
-        setError(authError.message)
-        return
-      }
-
-      if (!data.user) {
-        setError('ログインに失敗しました')
-        return
-      }
-
-      // ログイン成功 → redirect path へ
-      router.replace(redirectPath)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleLogin()
-  }
+  const error = searchParams.get('error')
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -67,7 +21,7 @@ function LoginFormContent() {
         </div>
         
         {/* ログインフォーム */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+        <form action={login} method="post" className="bg-white rounded-lg shadow-lg p-8">
           {/* エラー表示 */}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
@@ -85,12 +39,10 @@ function LoginFormContent() {
               メールアドレス
             </label>
             <input
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="your-email@example.com"
               required
-              disabled={isLoading}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
             />
           </div>
@@ -101,23 +53,21 @@ function LoginFormContent() {
               パスワード
             </label>
             <input
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              disabled={isLoading}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
             />
           </div>
           
           {/* ボタン */}
+          <input type="hidden" name="redirect" value={redirectPath} />
           <button
             type="submit"
-            disabled={isLoading || !email || !password}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            <Loader2 className="w-4 h-4" />
             ログイン
           </button>
         </form>
