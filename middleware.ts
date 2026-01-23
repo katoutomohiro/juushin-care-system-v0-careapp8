@@ -26,7 +26,13 @@ export async function middleware(req: NextRequest) {
 
   // If no token in header, try cookies (for browser requests)
   if (!token) {
-    const cookieValue = req.cookies.get('sb-access-token')?.value
+    // Supabase SDK v2.91 uses sb-<project-id>-auth-token format
+    // Try both old and new cookie formats
+    const projectId = 'rlopopbtdydqchiifxla'
+    let cookieValue = req.cookies.get(`sb-${projectId}-auth-token`)?.value
+    if (!cookieValue) {
+      cookieValue = req.cookies.get('sb-access-token')?.value
+    }
     token = cookieValue
   }
 
