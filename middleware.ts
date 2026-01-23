@@ -1,63 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from "next/server"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
 
-// Public routes that don't require authentication
-const publicRoutes = ['/login', '/auth/callback']
+// Routes that never require authentication
+const publicRoutes = ["/login", "/auth", "/api/auth", "/_next"]
+
+function isPublic(pathname: string) {
+  return publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}`))
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Check if route is public
-  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
-
-  // Allow public routes
-  if (isPublicRoute) {
+  // Early allow for public routes
+  if (isPublic(pathname)) {
     return NextResponse.next()
   }
 
-  // Get token from Authorization header or cookies
-  let token = null
-  
-  // Try to get token from Authorization header
-  const authHeader = req.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.slice(7)
-  }
+  const response = NextResponse.next({ request: { headers: req.headers } })
 
-  // If no token in header, try cookies (for browser requests)
-  if (!token) {
-    const cookieValue = req.cookies.get('sb-access-token')?.value
-    token = cookieValue
-  }
-
-  if (!token) {
-    // Redirect to login with return URL
-    const loginUrl = new URL('/login', req.url)
-    loginUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Create Supabase client to verify token
-  const supabase = createClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name: string) => req.cookies.get(name)?.value,
+        set: (name: string, value: string, options: CookieOptions) => {
+          response.cookies.set({ name, value, ...options })
+        },
+        remove: (name: string, options: CookieOptions) => {
+          response.cookies.set({ name, value: "", ...options, maxAge: 0 })
+        },
+      },
+    },
   )
 
-  // Verify token validity
-  const { data: { user }, error } = await supabase.auth.getUser(token)
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession()
 
-  if (error || !user) {
-    // Invalid token - redirect to login
-    const loginUrl = new URL('/login', req.url)
-    loginUrl.searchParams.set('redirect', pathname)
+  if (process.env.DEBUG_AUTH === "true") {
+    console.log("[middleware] session", Boolean(session), error?.message)
+  }
+
+  // No session -> redirect to login with redirect target
+  if (!session) {
+    const loginUrl = new URL("/login", req.url)
+    loginUrl.searchParams.set("redirect", pathname || "/")
     return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next()
+  // Already logged-in and trying to access login page -> forward to redirect target/home (defensive)
+  if (pathname.startsWith("/login")) {
+    const redirectTarget = req.nextUrl.searchParams.get("redirect") || "/"
+    return NextResponse.redirect(new URL(redirectTarget, req.url))
+  }
+
+  return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.svg).*)"],
 }
