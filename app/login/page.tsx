@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/browsers'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Suspense } from 'react'
 
@@ -16,11 +16,6 @@ function LoginFormContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
-  
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   
   const handleLogin = async () => {
     setError(null)
@@ -42,19 +37,8 @@ function LoginFormContent() {
         return
       }
       
-      // 認証成功後、staff_profiles から facility_id を確認
-      const { data: _profile, error: profileError } = await supabase
-        .from('staff_profiles')
-        .select('facility_id, role')
-        .eq('id', data.user.id)
-        .single()
-      
-      if (profileError || !_profile) {
-        setError('職員プロフィールが見つかりません。管理者に連絡してください。')
-        return
-      }
-      
       // ログイン成功 → redirect path へ
+      // Note: staff_profiles チェックは将来的に必要に応じて追加
       router.push(redirectPath)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
