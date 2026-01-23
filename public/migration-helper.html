@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Migration Helper</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    
+    .step {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      border-radius: 4px;
+    }
+    
+    .step-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .step-content {
+      color: #555;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .step-content a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .step-content a:hover {
+      text-decoration: underline;
+    }
+    
+    .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-family: "Monaco", "Menlo", "Consolas", monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+    
+    .copy-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    
+    .copy-button:hover {
+      background: #5568d3;
+    }
+    
+    .success {
+      color: #22c55e;
+    }
+    
+    .warning {
+      color: #f59e0b;
+    }
+    
+    .error {
+      color: #ef4444;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+    
+    .status {
+      margin-top: 30px;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .status.checking {
+      background: #dbeafe;
+      color: #0c4a6e;
+      border: 1px solid #0284c7;
+    }
+    
+    .status.success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #22c55e;
+    }
+    
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Supabase Migration Helper</h1>
+    <p class="subtitle">care_receivers テーブルに is_active 列を追加</p>
+    
+    <div class="step">
+      <div class="step-title">ステップ 1: Supabase Dashboard を開く</div>
+      <div class="step-content">
+        <a href="https://app.supabase.com/projects" target="_blank">
+          Supabase Dashboard にアクセス →
+        </a>
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-title">ステップ 2: プロジェクト選択</div>
+      <div class="step-content">
+        <strong>プロジェクト ID:</strong> rlopopbtdydqchiifxla<br>
+        <strong>リージョン:</strong> ap-southeast-1 (シンガポール)
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-title">ステップ 3: SQL Editor を開く</div>
+      <div class="step-content">
+        左メニュー → SQL Editor → <strong>New Query</strong> をクリック
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-title">ステップ 4: 以下の SQL をコピーして実行</div>
+      <div class="step-content">
+        <div class="code-block">-- Consolidate care_receivers schema
+-- Add is_active for logical deletion
+
+-- 1. Add is_active for logical deletion (default true)
+ALTER TABLE IF EXISTS public.care_receivers
+ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+
+-- 2. Create index on is_active for filtering
+CREATE INDEX IF NOT EXISTS idx_care_receivers_is_active 
+  ON public.care_receivers(is_active);
+
+-- 3. Create composite index on service_code + is_active for common queries
+CREATE INDEX IF NOT EXISTS idx_care_receivers_service_code_active 
+  ON public.care_receivers(service_code, is_active);</div>
+        <button class="copy-button" onclick="copySql()">📋 SQL をコピー</button>
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-title">ステップ 5: 実行確認</div>
+      <div class="step-content">
+        <strong>Run</strong> ボタンをクリックして SQL を実行<br>
+        <span class="success">✓ 成功表示が出ることを確認</span>
+      </div>
+    </div>
+    
+    <div id="status" class="status checking" style="display: none;">
+      <div id="statusText"></div>
+    </div>
+    
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="checkMigration()">
+        ✓ マイグレーション確認
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    const sql = `-- Consolidate care_receivers schema
+-- Add is_active for logical deletion
+
+-- 1. Add is_active for logical deletion (default true)
+ALTER TABLE IF EXISTS public.care_receivers
+ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+
+-- 2. Create index on is_active for filtering
+CREATE INDEX IF NOT EXISTS idx_care_receivers_is_active 
+  ON public.care_receivers(is_active);
+
+-- 3. Create composite index on service_code + is_active for common queries
+CREATE INDEX IF NOT EXISTS idx_care_receivers_service_code_active 
+  ON public.care_receivers(service_code, is_active);`;
+    
+    function copySql() {
+      navigator.clipboard.writeText(sql).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ コピーしました!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+    
+    async function checkMigration() {
+      const statusEl = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+      
+      statusEl.className = 'status checking';
+      statusEl.style.display = 'block';
+      statusText.textContent = '⏳ マイグレーション状態を確認中...';
+      
+      try {
+        const response = await fetch('/api/admin/apply-migration', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          const hasIsActive = data.careReceivers?.hasIsActiveColumn;
+          
+          if (hasIsActive) {
+            statusEl.className = 'status success';
+            statusText.innerHTML = '✅ マイグレーション完了!<br>is_active 列が存在します';
+          } else {
+            statusEl.className = 'status error';
+            statusText.innerHTML = '❌ マイグレーションが未適用です<br>上記のステップに従ってください';
+          }
+        } else {
+          statusEl.className = 'status error';
+          statusText.textContent = '❌ エラー: ' + (data.error || 'Unknown error');
+        }
+      } catch (err) {
+        statusEl.className = 'status error';
+        statusText.textContent = '❌ 接続エラー: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

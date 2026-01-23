@@ -15,9 +15,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // DEV環境では認証チェックをスキップ（デバッグ用）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[MIDDLEWARE] DEV mode: skipping auth check for:', pathname)
+  // AUTH_BYPASS=true のみでスキップ（本番では必ず false または未設定）
+  if (process.env.AUTH_BYPASS === 'true') {
+    if (process.env.DEBUG_MIDDLEWARE === 'true') {
+      console.log('[MIDDLEWARE] AUTH_BYPASS enabled: skipping auth check for:', pathname)
+    }
     return NextResponse.next()
   }
 
