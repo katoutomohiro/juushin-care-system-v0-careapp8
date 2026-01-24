@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,11 @@ export function CaseRecordsListClient({
   refreshKey?: number
 }) {
   const { toast } = useToast()
+  const toastRef = useRef(toast)
+  // keep latest toast in ref so we don't need to include it in effect deps
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
   const [records, setRecords] = useState<CaseRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +82,7 @@ export function CaseRecordsListClient({
         if (filterDate) params.set("date", filterDate)
         if (filterMainStaffId) params.set("mainStaffId", filterMainStaffId)
 
-        const response = await fetch(`/api/case-records/list?${params}`)
+        const response = await fetch(`/api/case-records/list?${params}`, { signal })
         const data = await response.json()
 
         if (process.env.NODE_ENV === "development") {
@@ -87,7 +92,7 @@ export function CaseRecordsListClient({
         if (!data.ok) {
           const errorMsg = data.detail || data.error || "不明なエラーが発生しました"
           setError(errorMsg)
-          toast({
+          toastRef.current?.({
             variant: "destructive",
             title: "保存済み記録の取得に失敗しました",
             description: errorMsg,
@@ -100,7 +105,9 @@ export function CaseRecordsListClient({
         const errorMsg = err instanceof Error ? err.message : "ネットワークエラーが発生しました"
         console.error("[CaseRecordsListClient] Error:", errorMsg)
         setError(errorMsg)
-        toast({
+        // skip reporting for abort errors
+        if ((err as any)?.name === 'AbortError') return
+        toastRef.current?.({
           variant: "destructive",
           title: "保存済み記録の取得に失敗しました",
           description: errorMsg,
@@ -110,8 +117,15 @@ export function CaseRecordsListClient({
       }
     }
 
-    fetchRecords()
-  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId, toast])
+    const controller = new AbortController()
+    const signal = controller.signal
+    // call fetch (pass signal via closure variable)
+    void fetchRecords()
+
+    return () => {
+      controller.abort()
+    }
+  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId])
 
   if (isLoading) {
     return (
