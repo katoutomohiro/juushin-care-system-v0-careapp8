@@ -68,6 +68,9 @@ export function CaseRecordsListClient({
   }, [serviceId])
 
   useEffect(() => {
+    const controller = new AbortController()
+    const signal = controller.signal
+    
     const fetchRecords = async () => {
       setIsLoading(true)
       setError(null)
@@ -117,9 +120,7 @@ export function CaseRecordsListClient({
       }
     }
 
-    const controller = new AbortController()
-    const signal = controller.signal
-    // call fetch (pass signal via closure variable)
+    // call fetch
     void fetchRecords()
 
     return () => {
