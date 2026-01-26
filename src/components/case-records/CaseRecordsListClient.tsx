@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,12 +38,6 @@ export function CaseRecordsListClient({
   refreshKey?: number
 }) {
   const { toast } = useToast()
-  const toastRef = useRef(toast)
-  const didFetchRef = useRef(false)
-  // keep latest toast in ref so we don't need to include it in effect deps
-  useEffect(() => {
-    toastRef.current = toast
-  }, [toast])
   const [records, setRecords] = useState<CaseRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -52,89 +46,109 @@ export function CaseRecordsListClient({
   const [filterDate, setFilterDate] = useState<string>("")
   const [filterMainStaffId, setFilterMainStaffId] = useState<string>("")
   const [staffOptions, setStaffOptions] = useState<{ value: string; label: string }[]>([])
+  
+  // Stable abort controller ref
+  const abortControllerRef = useRef<AbortController | null>(null)
 
+  // Fetch staff options - runs once on mount
   useEffect(() => {
+    let isMounted = true
     const fetchStaff = async () => {
       try {
         const response = await fetch(`/api/staff?serviceId=${serviceId}`, { cache: "no-store" })
         const result = await response.json()
-        if (response.ok && Array.isArray(result.staffOptions)) {
+        if (isMounted && response.ok && Array.isArray(result.staffOptions)) {
           setStaffOptions(result.staffOptions)
         }
       } catch (error) {
-        console.error("[CaseRecordsListClient] staff fetch error", error)
+        if (isMounted) {
+          console.error("[CaseRecordsListClient] staff fetch error", error)
+        }
       }
     }
     void fetchStaff()
+    return () => {
+      isMounted = false
+    }
   }, [serviceId])
 
-  useEffect(() => {
-    // Reset fetch flag when dependencies change
-    didFetchRef.current = false
-    
+  // Stable fetch function with useCallback
+  const fetchRecords = useCallback(async () => {
+    // Abort previous request if exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
     const controller = new AbortController()
+    abortControllerRef.current = controller
     const signal = controller.signal
-    
-    const fetchRecords = async () => {
-      // Prevent duplicate fetch in strict mode
-      if (didFetchRef.current) return
-      didFetchRef.current = true
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams({
+        serviceId,
+        careReceiverId,
+        limit: "50",
+        offset: "0",
+      })
+
+      if (filterDate) params.set("date", filterDate)
+      if (filterMainStaffId) params.set("mainStaffId", filterMainStaffId)
+
+      const response = await fetch(`/api/case-records/list?${params}`, { signal })
       
-      setIsLoading(true)
-      setError(null)
-      try {
-        const params = new URLSearchParams({
-          serviceId,
-          careReceiverId,
-          limit: "50",
-          offset: "0",
-        })
+      if (signal.aborted) return
 
-        if (filterDate) params.set("date", filterDate)
-        if (filterMainStaffId) params.set("mainStaffId", filterMainStaffId)
+      const data = await response.json()
 
-        const response = await fetch(`/api/case-records/list?${params}`, { signal })
-        const data = await response.json()
+      if (process.env.NODE_ENV === "development") {
+        console.log("[CaseRecordsListClient] Fetched:", data.records?.length || 0, "records")
+      }
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("[CaseRecordsListClient] Fetched:", data)
-        }
-
-        if (!data.ok) {
-          const errorMsg = data.detail || data.error || "不明なエラーが発生しました"
-          setError(errorMsg)
-          toastRef.current?.({
-            variant: "destructive",
-            title: "保存済み記録の取得に失敗しました",
-            description: errorMsg,
-          })
-          return
-        }
-
-        setRecords(data.records || [])
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "ネットワークエラーが発生しました"
-        console.error("[CaseRecordsListClient] Error:", errorMsg)
+      if (!data.ok) {
+        const errorMsg = data.detail || data.error || "不明なエラーが発生しました"
         setError(errorMsg)
-        // skip reporting for abort errors
-        if ((err as any)?.name === 'AbortError') return
-        toastRef.current?.({
+        toast?.({
           variant: "destructive",
           title: "保存済み記録の取得に失敗しました",
           description: errorMsg,
         })
-      } finally {
+        return
+      }
+
+      setRecords(data.records || [])
+    } catch (err) {
+      if ((err as any)?.name === 'AbortError') {
+        // Silently ignore abort errors
+        return
+      }
+      const errorMsg = err instanceof Error ? err.message : "ネットワークエラーが発生しました"
+      console.error("[CaseRecordsListClient] Error:", errorMsg)
+      setError(errorMsg)
+      toast?.({
+        variant: "destructive",
+        title: "保存済み記録の取得に失敗しました",
+        description: errorMsg,
+      })
+    } finally {
+      if (!signal.aborted) {
         setIsLoading(false)
       }
     }
+  }, [serviceId, careReceiverId, filterDate, filterMainStaffId, toast])
 
-    // call fetch
+  // Fetch records when dependencies change
+  useEffect(() => {
     void fetchRecords()
-
+    
     return () => {
-      controller.abort()
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
-  }, [serviceId, careReceiverId, refreshKey, filterDate, filterMainStaffId])
+  }, [fetchRecords, refreshKey])
 
   if (isLoading) {
     return (
