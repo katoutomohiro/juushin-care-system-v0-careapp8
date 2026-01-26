@@ -39,6 +39,7 @@ export function CaseRecordsListClient({
 }) {
   const { toast } = useToast()
   const toastRef = useRef(toast)
+  const didFetchRef = useRef(false)
   // keep latest toast in ref so we don't need to include it in effect deps
   useEffect(() => {
     toastRef.current = toast
@@ -68,10 +69,17 @@ export function CaseRecordsListClient({
   }, [serviceId])
 
   useEffect(() => {
+    // Reset fetch flag when dependencies change
+    didFetchRef.current = false
+    
     const controller = new AbortController()
     const signal = controller.signal
     
     const fetchRecords = async () => {
+      // Prevent duplicate fetch in strict mode
+      if (didFetchRef.current) return
+      didFetchRef.current = true
+      
       setIsLoading(true)
       setError(null)
       try {
