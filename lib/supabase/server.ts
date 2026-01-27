@@ -10,8 +10,8 @@ if (!url || !key) {
   console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_URL / ANON_KEY is missing.")
 }
 
-export function createSupabaseServerClient() {
-  const cookieStore = cookies()
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(url ?? "", key ?? "", {
     cookies: {

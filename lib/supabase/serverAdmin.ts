@@ -47,3 +47,4 @@ export const supabaseAdmin =
   supabaseAdminEnv.url && supabaseAdminEnv.key
     ? createClient(supabaseAdminEnv.url, supabaseAdminEnv.key)
     : null
+
