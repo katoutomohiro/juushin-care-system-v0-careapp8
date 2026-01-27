@@ -7,64 +7,87 @@ export const runtime = 'nodejs'
 /**
  * GET /api/care-receivers/list?serviceCode=life-care
  * 
- * Client公開API：認証必須 + RLS自動適用 + anon key使用
- * 
- * 設計判断：
- * - createRouteHandlerClient(cookies) でセッション自動バインド
- * - → anon key でも cookies を通じてセッション情報が送信される
- * - → RLS ポリシー自動適用（facility_id でフィルタリング）
- * - → Failed to fetch 根絶（不正な環境設定でも例外でキャッチ）
- * 
  * Response:
- *   { ok: true, users: [...], count: number }
- *   { ok: false, error: "message" }
+ *   { ok: true, users: [...], count: number, serviceCode: string }
+ *   { ok: false, users: [], count: 0, error: string, serviceCode: string }
  */
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const serviceCode = searchParams.get('serviceCode') ?? ''
+
+  console.log('[API] GET /care-receivers/list - serviceCode:', serviceCode)
+
   try {
     if (!supabaseAdmin) {
+      console.error('[API] supabaseAdmin is null')
       return NextResponse.json(
-        { ok: false, error: "Database not available" },
+        {
+          ok: false,
+          serviceCode,
+          users: [],
+          count: 0,
+          error: 'Database not available'
+        },
         { status: 503 }
       )
     }
 
-    // Query params を取得（オプション）
-    const { searchParams } = new URL(req.url)
-    const serviceCode = searchParams.get('serviceCode')
+    // 診断用：絞り込みなしで全件取得してservice_codeを確認
+    const { data: allData, error: allError } = await supabaseAdmin
+      .from('care_receivers')
+      .select('service_code', { count: 'exact' })
+      .eq('is_active', true)
+      .limit(100)
 
-    // RLS により自動的に facility_id に基づいてフィルタリング
-    let query = supabaseAdmin
+    if (allData && allData.length > 0) {
+      const uniqueCodes = [...new Set(allData.map((item: any) => item.service_code))]
+      console.log('[API] Available service_code values in DB:', uniqueCodes)
+    }
+
+    // 実際のクエリ
+    const { data, error, count } = await supabaseAdmin
       .from('care_receivers')
       .select('*', { count: 'exact' })
       .eq('is_active', true)
+      .eq('service_code', serviceCode)
       .order('name')
 
-    if (serviceCode) {
-      query = query.eq('service_code', serviceCode)
-    }
-
-    const { data, error, count } = await query
-
     if (error) {
-      console.error('[GET /api/care-receivers/list] Query error:', error)
+      console.error('[API] Supabase query error:', error)
       return NextResponse.json(
-        { ok: false, error: 'Failed to fetch care receivers' },
+        {
+          ok: false,
+          serviceCode,
+          users: [],
+          count: 0,
+          error: error.message
+        },
         { status: 500 }
       )
     }
 
+    console.log('[API] Query success - count:', count, 'dataLength:', data?.length)
+
     return NextResponse.json(
       {
         ok: true,
-        users: data || [],
-        count: count || 0,
+        serviceCode,
+        users: data ?? [],
+        count: count ?? (data?.length ?? 0),
       },
       { status: 200 }
     )
   } catch (err) {
-    console.error('[GET /api/care-receivers/list] Unexpected error:', err)
+    const errMsg = err instanceof Error ? err.message : String(err)
+    console.error('[API] Unexpected error:', errMsg, err)
     return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
+      {
+        ok: false,
+        serviceCode,
+        users: [],
+        count: 0,
+        error: errMsg
+      },
       { status: 500 }
     )
   }
