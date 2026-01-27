@@ -195,6 +195,63 @@ Response:
 
 ---
 
+## 🔍 機能棚卸し結果（2026-01-28）
+
+### 📄 棚卸し結果ドキュメント
+**場所**: `docs/FEATURES.md`
+
+**主要な発見**:
+- ✅ **ルート完全性**: App Router 30ルート全て実装済（未実装 0件）
+- ✅ **リンク照合**: メニュー・ナビゲーション全 6 リンクが有効なルートを指している
+- ✅ **API一覧**: 11エンドポイント全て実装済（404 0件）
+- ⚠️ **ハードコード AT**: ホーム画面で `AT` にハードコードされたリンク存在
+  - 詳細: `app/home-client.tsx` L482
+  - `Link href="/services/life-care/users/AT/case-records"`
+
+### 🔴 「404を直す」より先にやるべきこと（最優先）
+
+**結論**: 現在のところ、ルート側は 404 がないため、即座に直すべき 404 はありません。
+
+**代わりに、以下の 3 点を確認してください**:
+
+1. **AT ユーザーの存在確認**
+   - Supabase `care_receivers` テーブルに `id='AT'` が存在するか
+   - 存在しない → ホーム画面の AT リンクは 404 を引き出す（隠れた404）
+   - 修正: 動的に最初の利用者を選択する修正が必要
+
+2. **(pochi) グループの役割確認**
+   - `app/(pochi)/users/page.tsx`
+   - `app/(pochi)/manage/achievements/daily/page.tsx`
+   - 何の機能か? → ドキュメント記載
+
+3. **削除済みリンクの追跡確認**
+   - 旧 URL パターン（例: `/case-records?userId=...`）への参照が無いか grep で確認
+
+### 📋 次に直すべき 404 一覧（優先度順）
+
+| No. | 404 | 現状 | 修正方法 | 優先度 |
+|-----|-----|------|---------|--------|
+| 1 | **AT ユーザー未登録時** | ホーム → ケース記録クリック → 404 | Supabase にAT登録、または動的化 | 🔴 A |
+| 2 | (pochi) ルート用途不明 | 非表示グループだがルート存在 | 要確認・ドキュメント化 | 🟡 C |
+
+### 🔗 照合用 grep コマンド出力
+
+```bash
+# ケース記録・日誌のリンク全出現箇所
+rg -n "case-records|ケース記録" app --type ts --type tsx
+```
+
+**結果（重要な行）**:
+- `app/home-client.tsx:482` → `<Link href="/services/life-care/users/AT/case-records">`
+- `app/services/[serviceId]/users/[userId]/case-records/page.tsx:1` → ルート実装済 ✅
+- `app/services/[serviceId]/users/[userId]/page.tsx:650` → `router.push(...case-records)` 動的
+
+**判定**: 
+- ホーム画面のリンク先 `/services/life-care/users/AT/case-records` は**ルートが存在**
+- ただし、Supabase に AT ユーザーが無いと **ページロード時に API エラー** → 実質 404
+
+---
+
 ## 7️⃣ 次にやること（Next Actions）
 
 ### Action 1: ブラウザ検証（今すぐ）
@@ -790,11 +847,55 @@ http://localhost:3000/services/after-school/users
 
 **運用方針（継続）:**
 - 最小差分のみ（リファクタ禁止）
+- ✅ **棚卸し完了** (2026-01-28): docs/FEATURES.md 参照、PLAN に結果記載済
 - PLAN.md 更新必須
 - main直push禁止、ブランチ→PR
 
 ## 次のステップ（アイデアメモ）
 
+- **優先度 A**: AT ユーザー登録確認 / ホーム画面リンク動的化
+- **優先度 B**: (pochi) グループ用途確認・ドキュメント化
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
 - 6か月単位の評価・振り返り画面
+
+---
+
+## 棚卸し用 rg コマンド出力（2026-01-28）
+
+### 「ケース記録」リンク出現箇所（全出力）
+
+```
+✅ app/home-client.tsx:482
+   <Link href="/services/life-care/users/AT/case-records" className="group">
+   └─ ページテキスト: "ケース記録" (L488)
+   └─ 説明: "利用者毎のケース記録確認" (L489)
+   └─ **判定**: リンク先ルート存在 ✅ 
+      但し、AT ユーザーが Supabase に無いと 404 になる（隠れた404）
+
+✅ app/services/[serviceId]/users/[userId]/page.tsx:650
+   router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
+   └─ ページテキスト: "ケース記録を見る" (L656)
+   └─ 説明: "利用者の総合的なケース記録、支援計画、過去の履歴を確認できます。" (L661)
+   └─ **判定**: 動的リンク、適切 ✅
+
+✅ app/services/[serviceId]/users/[userId]/case-records/page.tsx:1-142
+   └─ **ルート実装**: CaseRecordFormClient コンポーネント読み込み ✅
+   └─ **API連携**: /api/case-records/save へ POST ✅
+   └─ **API一覧**: /api/case-records/list へ GET ✅
+   └─ **h1 テキスト**: "ケース記録" (L142)
+   └─ **判定**: 完全実装済 ✅
+
+✅ app/print/a4/case-record/page.tsx:49
+   A4ケース記録印刷用ページ
+   └─ **判定**: 補助機能 ✅
+```
+
+### 照合結論
+
+| 項目 | 状態 | 判定 |
+|------|------|------|
+| **ルート実装** | app/services/[serviceId]/users/[userId]/case-records/page.tsx 存在 | ✅ |
+| **リンク出現数** | 2箇所（ホーム + ユーザー詳細ページ） | ✅ |
+| **404判定** | ルート側は 404 なし。ただし AT ユーザー未登録時に API 404 | ⚠️ |
+| **修正必要** | 次 PR: AT ユーザー登録確認 / ホーム画面を動的化 | 🔴 A |
 
