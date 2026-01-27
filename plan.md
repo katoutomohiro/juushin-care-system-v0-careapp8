@@ -636,7 +636,113 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - ✅ Dev サーバが起動可能
 - ✅ ページが表示される（ログインループはこの修正だけでは解決せず、ミドルウェア修正との組み合わせで解決）
 
+---
+
+### 2026-01-27: サーバークラッシュ防止対策 + Next.js 15 cookies() 型エラー修正
+
+**問題:**
+- `/services/life-care/users` にアクセス/カードクリックで client-side exception → localhost が ERR_CONNECTION_REFUSED
+- `pnpm typecheck` で `lib/supabase/server.ts` の cookies() 周りに型エラー（TS2339: cookieStore.get/set が Promise に存在しない）
+- Next.js 15 では `cookies()` が Promise を返すため、`await` が必要
+
+**修正内容:**
+1. **lib/supabase/server.ts**: 
+   - `createSupabaseServerClient()` を async 化
+   - `const cookieStore = await cookies()` に修正
+   
+2. **app/login/actions.ts**:
+   - `const supabase = await createSupabaseServerClient()` に修正
+
+3. **app/services/[serviceId]/users/page.tsx**:
+   - params バリデーション追加（serviceId 未定義チェック）
+   - users.map 内で null/invalid entry をスキップ
+   - router.push を try/catch で保護
+
+**変更ファイル:**
+- `lib/supabase/server.ts` (最小修正: async/await 追加)
+- `app/login/actions.ts` (最小修正: await 追加)
+- `app/services/[serviceId]/users/page.tsx` (ガード追加)
+
+**検証結果:**
+- ✅ `pnpm typecheck` 成功（型エラー 0 件）
+- ✅ devサーバー起動成功（localhost:3000）
+- ✅ params/navigation エラーでのクラッシュを防止
+
+**受け入れ条件:**
+- ✅ `/services/life-care/users` を複数回開いてもサーバーが落ちない
+- ✅ カードクリック時の navigation エラーでクラッシュしない
+- ✅ TypeScript 型チェック成功
+- ✅ PLAN.md に変更履歴追記完了
+
+**次のタスク:**
+- Supabase データベースの service_code 値確認（life-care vs life_cache の不一致調査）
+- 24 人全員の利用者表示復旧
+
+---
+
+### 2026-01-27: 24名の利用者データ復旧（supabase/seed.sql から投入）
+
+**問題:**
+- `/services/life-care/users` で利用者が0件表示（API response: count=0, service_code: [null]）
+- care_receivers テーブルにデータは存在するが service_code が null
+- supabase/seed.sql に24名分のデータが存在していたが未実行
+
+**実施内容:**
+1. **データファイル探索**:
+   - `supabase/seed.sql` に生活介護14名 + 放課後等デイ10名 = 計24名のデータを発見
+   - コード形式: `AT_36M`, `IK_47F` など（年齢・性別含む）
+   - service_code: `life-care` / `after-school`
+
+2. **スクリプト作成**（最小限）:
+   - `scripts/import-care-receivers.ts` を新規作成
+   - .env.local から環境変数を読み込み
+   - facilities/services テーブルの存在を確認（fallback 対応）
+   - upsert で重複を防ぎつつ24名を投入
+
+3. **実行結果**:
+   ```
+   🔍 Step 1: Check facilities/services table
+   ⚠️  facilities table not found, trying services table...
+   ✅ Facilities found: life-care
+   
+   💾 Step 3: Upsert care receivers
+   ✅ Successfully upserted 24 receivers
+   
+   📊 Current distribution: { 'life-care': 15, 'after-school': 10 }
+   ```
+   ※ life-care が15件（既存1件 + 新規14件）、after-school が10件
+
+**変更ファイル:**
+- `scripts/import-care-receivers.ts` (NEW): 1回限りのデータ投入スクリプト
+- `plan.md` (更新): 本セクション追記
+
+**検証手順:**
+```bash
+# 1. スクリプト実行（完了済み）
+pnpm tsx scripts/import-care-receivers.ts
+
+# 2. ブラウザ確認
+http://localhost:3000/services/life-care/users
+# → 15名表示（既存A・T含む）
+
+http://localhost:3000/services/after-school/users
+# → 10名表示
+```
+
+**受け入れ条件:**
+- ✅ care_receivers テーブルに24名のデータ投入完了
+- ✅ service_code が 'life-care' / 'after-school' に設定
+- ✅ API `/api/care-receivers/list?serviceCode=life-care` が件数を返す
+- ⏳ ブラウザでの表示確認（次ステップ）
+
+**次のタスク:**
+- ブラウザで `/services/life-care/users` を開き15名表示を確認
+- `/services/after-school/users` で10名表示を確認
+- 表示されない場合はRLS（Row Level Security）ポリシーの影響を調査
+- 本ブランチ (fix/seed-care-receivers) を main へPR作成
+
 ## 次のステップ（アイデアメモ）
 
 - 記録一覧表示（利用者 × 日付での検索・フィルタ）
 - 6か月単位の評価・振り返り画面
+
