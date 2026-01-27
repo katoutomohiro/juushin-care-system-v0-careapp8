@@ -70,8 +70,10 @@ export default function UsersManagementPage() {
             cache: 'no-store',
           })
           const data = await response.json()
+          console.log(`[UI] Fetch response for ${section.code}:`, { ok: data.ok, usersLength: data.users?.length, count: data.count })
 
           if (data.ok) {
+            console.log(`[UI] Setting users for ${section.code}:`, data.users?.length, 'users')
             return {
               code: section.code,
               users: data.users || [],
@@ -102,6 +104,7 @@ export default function UsersManagementPage() {
     )
 
     results.forEach((result) => {
+      console.log(`[UI] Setting section ${result.code}:`, { usersCount: result.users.length, error: result.error })
       newSections[result.code] = {
         users: result.users,
         loading: result.loading,
@@ -110,6 +113,7 @@ export default function UsersManagementPage() {
     })
 
     setSections(newSections)
+    console.log('[UI] All sections set:', Object.keys(newSections).map(k => ({ code: k, count: newSections[k].users.length })))
     setIsInitializing(false)
     setLastRefresh(new Date().toLocaleTimeString('ja-JP'))
   }

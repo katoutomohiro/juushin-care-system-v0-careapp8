@@ -20,6 +20,7 @@ export const runtime = 'nodejs'
  *   { ok: false, error: "message" }
  */
 export async function GET(req: NextRequest) {
+  console.log('[API /care-receivers/list] ===== START =====')
   try {
     if (!supabaseAdmin) {
       return NextResponse.json(
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
     // Query params を取得（オプション）
     const { searchParams } = new URL(req.url)
     const serviceCode = searchParams.get('serviceCode')
+    console.log('[API] serviceCode:', serviceCode)
 
     // RLS により自動的に facility_id に基づいてフィルタリング
     let query = supabaseAdmin
@@ -43,7 +45,9 @@ export async function GET(req: NextRequest) {
       query = query.eq('service_code', serviceCode)
     }
 
+    console.log('[API] Before Supabase query...')
     const { data, error, count } = await query
+    console.log('[API] After Supabase query - error:', error, 'count:', count, 'data.length:', data?.length)
 
     if (error) {
       console.error('[GET /api/care-receivers/list] Query error:', error)
@@ -53,6 +57,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    console.log('[API] Returning response - ok: true, users.length:', (data || []).length, 'count:', count || 0)
     return NextResponse.json(
       {
         ok: true,
