@@ -14,7 +14,7 @@ export async function login(formData: FormData) {
     return redirect(url.toString())
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({

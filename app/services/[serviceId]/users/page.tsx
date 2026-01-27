@@ -19,6 +19,17 @@ type User = {
 export default function UsersPage() {
   const params = useParams()
   const router = useRouter()
+  
+  // Params validation - prevent crash
+  if (!params?.serviceId) {
+    return (
+      <div style={{ padding: 16 }}>
+        <h2>エラー</h2>
+        <p>サービスIDが指定されていません</p>
+      </div>
+    )
+  }
+  
   const serviceId = params.serviceId as string
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -98,10 +109,23 @@ export default function UsersPage() {
       <h1>利用者一覧 ({serviceId})</h1>
       <p style={{ marginBottom: 16, color: '#666' }}>件数: {users.length}</p>
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {users.map((u) => (
+        {users.map((u) => {
+          // Safety check - skip invalid entries
+          if (!u?.id || !u?.code) {
+            console.warn('[UsersPage] Skipping invalid user:', u)
+            return null
+          }
+          
+          return (
           <li
             key={u.id}
-            onClick={() => router.push(`/services/${serviceId}/users/${u.id}`)}
+            onClick={() => {
+              try {
+                router.push(`/services/${serviceId}/users/${u.id}`)
+              } catch (err) {
+                console.error('[UsersPage] Navigation error:', err)
+              }
+            }}
             style={{
               padding: 16,
               marginBottom: 8,
@@ -120,7 +144,8 @@ export default function UsersPage() {
               {u.gender && ` | 性別: ${u.gender}`}
             </div>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </div>
   )
