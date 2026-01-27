@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -278,7 +278,20 @@ const userDetails: Record<string, UserDetail> = {
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
+  
+  // Params validation - prevent crash if undefined
+  if (!params?.serviceId || !params?.userId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">パラメータが不正です</h2>
+          <p className="text-muted-foreground mb-4">URLを確認してください</p>
+          <Button onClick={() => router.push('/')}>トップに戻る</Button>
+        </div>
+      </div>
+    )
+  }
+  
   const serviceId = params.serviceId as string
   const userId = decodeURIComponent(params.userId as string)
   const normalizedUserId = normalizeUserId(userId)
@@ -653,8 +666,8 @@ export default function UserDetailPage() {
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
-                  const careReceiverId = searchParams.get("careReceiverId")
-                  router.push(buildUserDiaryUrl(serviceId, userId, careReceiverId))
+                  // Navigate to diary without careReceiverId query param
+                  router.push(buildUserDiaryUrl(serviceId, userId))
                 }}
               >
                 <CardHeader>
