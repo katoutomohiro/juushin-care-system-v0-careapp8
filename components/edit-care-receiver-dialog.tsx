@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,7 +35,6 @@ type Props = {
 }
 
 export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpen, onClose, onSuccess }: Props) {
-  const router = useRouter()
   const { toast } = useToast()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
