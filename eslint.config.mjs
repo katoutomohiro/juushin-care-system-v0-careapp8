@@ -2,7 +2,7 @@
 import globals from 'globals';
 
 export default [
-	{ ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts'] },
+	{ ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'docs/**', 'supabase/migrations/**', '**/*.md', '**/*.sql'] },
 
 	// Minimal TS lint: parser + basic unused vars as warning
 	{

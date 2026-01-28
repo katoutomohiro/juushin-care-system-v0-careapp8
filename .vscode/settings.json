@@ -3,5 +3,34 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "katoutomohiro",
         "projectKey": "katoutomohiro_juushin-care-system-v0-careapp8"
-    }
+    },
+    // Reduce noise from docs and migrations in Problems view
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/coverage": true,
+        "**/.next": true
+    },
+    // Disable validation for SQL files in migrations (avoid linting noise)
+    "files.associations": {
+        "supabase/migrations/*.sql": "plaintext"
+    },
+    // Markdown linting: only warn, not error
+    "markdownlint.config": {
+        "default": true,
+        "MD013": false,
+        "MD033": false,
+        "MD041": false
+    },
+    // Suppress errors from docs folder
+    "typescript.validate.enable": true,
+    "eslint.workingDirectories": [
+        { "mode": "auto" }
+    ]
 }
