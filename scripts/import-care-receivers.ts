@@ -21,7 +21,7 @@ try {
       process.env[match[1]] = match[2].trim()
     }
   })
-} catch (e) {
+} catch {
   console.warn('⚠️  Could not load .env.local, using existing env vars')
 }
 

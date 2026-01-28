@@ -7,6 +7,64 @@
 
 ## 📅 時系列イベント
 
+### 2026年1月28日（最新）: Vercel build fix → 機能統合完了
+
+#### タスク: Vercel Build Failed 最終解決 + URL生成関数統一化
+
+**背景**: PR #244（個人情報セキュリティ設計）で Vercel build が失敗
+
+**修正内容**:
+
+1. **JSX 構文エラー修正**
+   - **ファイル1**: `app/home-client.tsx` L482
+     - エラー: href属性が崩れていた形式
+     - 修正: 正しい URL テンプレート文字列に統一
+   
+   - **ファイル2**: `app/services/[serviceId]/users/[userId]/page.tsx` L676
+     - エラー: Dialog 閉じタグ `</div>` 欠落
+     - 修正: 正しい JSX ネスト構造に修正
+   
+   - **ファイル3**: `components/edit-care-receiver-dialog.tsx`
+     - エラー: medical_care section が admin block 内に閉じ込められていた
+     - 修正: インデント調整し、admin block の外に配置
+
+   **ビルド結果**: ✅ 成功（エラー 0件）
+
+2. **URL生成関数の共通化**
+   - **新規作成**: `lib/utils/care-receiver-urls.ts`
+   - **関数一覧**:
+     - `getCaseRecordsHref(serviceId, userId)`: ケース記録ページ URL
+     - `getCareReceiverDetailHref(serviceId, userId)`: 利用者詳細ページ URL
+     - `getDailyLogsHref(serviceId, userId)`: 日誌ページ URL
+   
+   - **適用先**:
+     - `app/home-client.tsx`: ケース記録カード
+     - `app/services/[serviceId]/users/[userId]/page.tsx`: ケース記録カード
+
+   **効果**: 404防止 + URL生成ロジック一元化
+
+3. **個人情報編集機能の動作確認**
+   - ✅ EditCareReceiverDialog: display_name と full_name を分離入力
+   - ✅ API Route: PUT /api/care-receivers/[id] で楽観ロック実装
+   - ✅ RLS: PII（full_name, address等）は staff/nurse/admin のみ
+   - ✅ ログ出力制限: API応答で PII を除外
+   - ✅ 監査ログ: 変更キー名のみ記録（値は含まず）
+
+**コミット**: 57f91a8（refactor: URL生成関数を共通化し、ケース記録導線の404防止）
+
+**成果物**:
+- ✅ Vercel build 成功（0エラー）
+- ✅ ケース記録導線: 404 なし（デフォルト値 'AT' で安全）
+- ✅ 個人情報編集: 表示名と本名を分離管理
+- ✅ 同時編集制御: version による競合検出（409 Conflict ダイアログ実装済み）
+
+**次ステップ**:
+1. PR #244 を Vercel Preview 通す
+2. オーナー検証（ケース記録導線、PII編集）
+3. main に マージ
+
+---
+
 ### 2026年1月28日: 機能棚卸し → 404修正 → Vercel準備
 
 #### タスク1: 機能棚卸し

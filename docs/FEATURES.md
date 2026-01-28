@@ -131,10 +131,24 @@
 | **同時編集制御** | 409 Conflict エラー処理 | ✅ 実装済 | フロントで競合ダイアログ表示 |
 | **同時編集制御** | 再読み込みボタン | ✅ 実装済 | AlertDialog から最新データ取得 |
 | **同時編集制御** | DB トリガー | ✅ 実装済 | `increment_version()` で自動 version 増加 |
+| **利用者情報管理** | 個人情報編集フォーム | ✅ 実装済 | full_name, address, phone, emergency_contact など |
+| **利用者情報管理** | 医療的ケア詳細入力 | ✅ 実装済 | 経管栄養、吸引、酸素吸入、人工呼吸器、発作対応 |
+| **利用者情報管理** | 匿名表示（display_name） | ✅ 実装済 | 個人情報保護のため display_name を基本表示 |
+| **利用者情報管理** | RLS による個人情報保護 | ✅ 実装済 | 職員のみアクセス可能、anon は拒否 |
+| **利用者情報管理** | 楽観ロック（利用者情報） | ✅ 実装済 | version カラム + 409 UI |
+| **監査ログ** | care_receiver_audits テーブル | ✅ 実装済 | 変更されたフィールド名のみ記録 |
+| **監査ログ** | 自動監査ログ記録 | ✅ 実装済 | UPDATE トリガーで自動記録 |
 
 ### 実装詳細
 
-#### 楽観ロック
+#### 利用者情報編集
+- **DB migration**: `supabase/migrations/20260128100000_add_personal_info_to_care_receivers.sql`
+- **API**: `/api/care-receivers/[id]` で PUT/GET（version チェック + 409 Conflict）
+- **UI**: `components/edit-care-receiver-dialog.tsx`（個人情報編集フォーム + 医療的ケアチェックボックス）
+- **ページ統合**: `app/services/[serviceId]/users/[userId]/page.tsx`（"🔒 詳細情報を編集" ボタン）
+- **個人情報保護**: ログ出力禁止、RLS で保護、開発環境では匿名データのみ
+
+#### 楽観ロック（ケース記録）
 - **DB migration**: `supabase/migrations/20260128093212_add_version_to_case_records.sql`
 - **API**: `/api/case-records/save` で `version` パラメータを受け取り、一致しなければ 409 を返却
 - **フロント**: `CaseRecordFormClient.tsx` で 409 受信時に競合ダイアログを表示

@@ -14,6 +14,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
+import { EditCareReceiverDialog } from "@/components/edit-care-receiver-dialog"
+import { useToast } from "@/components/ui/use-toast"
+import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -276,11 +279,86 @@ const userDetails: Record<string, UserDetail> = {
 }
 
 export default function UserDetailPage() {
+  // Extract params and router FIRST (always safe to call hooks at top level)
   const params = useParams()
   const router = useRouter()
+  const { toast } = useToast()
+
+  // Compute values from params (safe even if params is undefined, we check below)
+  const serviceId = params?.serviceId as string | undefined
+  const rawUserId = params?.userId as string | undefined
+  const userId = rawUserId ? decodeURIComponent(rawUserId) : ""
+  const normalizedUserId = userId ? normalizeUserId(userId) : ""
+  const service = serviceId ? welfareServices[serviceId] : undefined
+
+  // All hooks MUST be called before any early returns
+  const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isNewEditDialogOpen, setIsNewEditDialogOpen] = useState(false)
+  const [careReceiverData, setCareReceiverData] = useState<any>(null)
+  const [editedUser, setEditedUser] = useState<UserDetail>({
+    age: 0,
+    gender: "不明",
+    careLevel: "不明",
+    condition: "情報なし",
+    medicalCare: "情報なし",
+    service: [],
+    name: "",
+  })
+  const [displayName, setDisplayName] = useState("")
+  const [currentDate, setCurrentDate] = useState<string>("")
+  const fetchWarnedRef = useRef(false)
+
+  // useCallback MUST be declared before any early returns
+  const fetchFullCareReceiverData = useCallback(async () => {
+    if (!normalizedUserId) return null
+    try {
+      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        console.warn("[UserDetailPage] Failed to fetch full care receiver data", response.status)
+        return null
+      }
+
+      const result = await response.json()
+
+      if (!result?.ok || !result?.careReceiver) {
+        console.warn("[UserDetailPage] Care receiver API returned ok:false", result?.error)
+        return null
+      }
+
+      return result.careReceiver
+    } catch (error) {
+      console.warn("[UserDetailPage] Unexpected error fetching full care receiver data", error)
+      return null
+    }
+  }, [normalizedUserId])
+
+  // Initialize state values when userId/serviceId change
+  useEffect(() => {
+    if (!userId || !serviceId) return
+    const details = userDetails[userId]
+    if (details) {
+      setEditedUser({ ...details })
+      setDisplayName(details.name ?? userId)
+    } else {
+      setEditedUser({
+        age: 0,
+        gender: "不明",
+        careLevel: "不明",
+        condition: "情報なし",
+        medicalCare: "情報なし",
+        service: [serviceId],
+        name: userId,
+      })
+      setDisplayName(userId)
+    }
+  }, [userId, serviceId])
   
-  // Params validation - prevent crash if undefined
-  if (!params?.serviceId || !params?.userId) {
+  // Params validation - NOW we can do early returns
+  if (!serviceId || !userId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
@@ -291,33 +369,32 @@ export default function UserDetailPage() {
       </div>
     )
   }
-  
-  const serviceId = params.serviceId as string
-  const userId = decodeURIComponent(params.userId as string)
-  const normalizedUserId = normalizeUserId(userId)
-  const service = welfareServices[serviceId]
 
-  const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editedUser, setEditedUser] = useState<UserDetail>(() => {
-    const details = userDetails[userId]
-    if (details) {
-      return { ...details }
+  /**
+   * 🆕 新しい編集ダイアログを開く（完全データを取得）
+   */
+  const handleOpenEditDialog = async () => {
+    const fullData = await fetchFullCareReceiverData()
+    if (fullData) {
+      setCareReceiverData(fullData)
+      setIsNewEditDialogOpen(true)
+    } else {
+      toast({
+        variant: "destructive",
+        title: "❌ データ取得エラー",
+        description: "利用者情報を取得できませんでした",
+      })
     }
+  }
 
-    return {
-      age: 0,
-      gender: "不明",
-      careLevel: "不明",
-      condition: "情報なし",
-      medicalCare: "情報なし",
-      service: [serviceId],
-      name: userId,
-    }
-  })
-  const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
-  const [currentDate, setCurrentDate] = useState<string>("")
-  const fetchWarnedRef = useRef(false) // Prevent console.warn spam
+  /**
+   * 🆕 編集成功後のリフレッシュ
+   */
+  const handleEditSuccess = async () => {
+    const latestName = await fetchCareReceiverName()
+    setDisplayName(latestName)
+    setEditedUser((prev) => ({ ...prev, name: latestName }))
+  }
 
   /**
    * Fetch care receiver name from API
@@ -475,16 +552,27 @@ export default function UserDetailPage() {
                   <div className="p-2 bg-primary/10 rounded-lg">👤</div>
                   利用者情報
                 </CardTitle>
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
-                    >
-                      ✏️ 編集
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  {/* 🆕 新しい編集ダイアログ（個人情報を含む） */}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleOpenEditDialog}
+                  >
+                    🔒 詳細情報を編集
+                  </Button>
+                  
+                  {/* 既存の編集ダイアログ（互換性のため残す） */}
+                  <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
+                      >
+                        ✏️ 簡易編集
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
                     <DialogHeader>
                       <DialogTitle>利用者情報を編集</DialogTitle>
@@ -603,6 +691,7 @@ export default function UserDetailPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -647,7 +736,7 @@ export default function UserDetailPage() {
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
                   // Navigate to case-records page
-                  router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
+                  router.push(getCaseRecordsHref(serviceId, normalizedUserId))
                 }}
               >
                 <CardHeader>
@@ -726,6 +815,16 @@ export default function UserDetailPage() {
           </div>
         )}
       </main>
+
+      {/* 🆕 新しい編集ダイアログ（個人情報を含む、楽観ロック対応） */}
+      {careReceiverData && (
+        <EditCareReceiverDialog
+          careReceiver={careReceiverData}
+          isOpen={isNewEditDialogOpen}
+          onClose={() => setIsNewEditDialogOpen(false)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   )
 }

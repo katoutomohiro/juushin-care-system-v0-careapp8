@@ -17,7 +17,7 @@ export function createSupabaseMiddlewareClient(req: NextRequest, res: NextRespon
       // preserve existing cookie attributes minimally
       res.cookies.set({ name: c.name, value: c.value })
     }
-  } catch (err) {
+  } catch {
     // ignore
   }
 
