@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 診断用：絞り込みなしで全件取得してservice_codeを確認
-    const { data: allData, error: allError } = await supabaseAdmin
+    const { data: allData, error: _allError } = await supabaseAdmin
       .from('care_receivers')
       .select('service_code', { count: 'exact' })
       .eq('is_active', true)

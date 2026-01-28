@@ -279,56 +279,39 @@ const userDetails: Record<string, UserDetail> = {
 }
 
 export default function UserDetailPage() {
+  // Extract params and router FIRST (always safe to call hooks at top level)
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  
-  // Params validation - prevent crash if undefined
-  if (!params?.serviceId || !params?.userId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-2">パラメータが不正です</h2>
-          <p className="text-muted-foreground mb-4">URLを確認してください</p>
-          <Button onClick={() => router.push('/')}>トップに戻る</Button>
-        </div>
-      </div>
-    )
-  }
-  
-  const serviceId = params.serviceId as string
-  const userId = decodeURIComponent(params.userId as string)
-  const normalizedUserId = normalizeUserId(userId)
-  const service = welfareServices[serviceId]
 
+  // Compute values from params (safe even if params is undefined, we check below)
+  const serviceId = params?.serviceId as string | undefined
+  const rawUserId = params?.userId as string | undefined
+  const userId = rawUserId ? decodeURIComponent(rawUserId) : ""
+  const normalizedUserId = userId ? normalizeUserId(userId) : ""
+  const service = serviceId ? welfareServices[serviceId] : undefined
+
+  // All hooks MUST be called before any early returns
   const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isNewEditDialogOpen, setIsNewEditDialogOpen] = useState(false)  // 🆕 新しい編集ダイアログ用
-  const [careReceiverData, setCareReceiverData] = useState<any>(null)    // 🆕 API から取得した完全なデータ
-  const [editedUser, setEditedUser] = useState<UserDetail>(() => {
-    const details = userDetails[userId]
-    if (details) {
-      return { ...details }
-    }
-
-    return {
-      age: 0,
-      gender: "不明",
-      careLevel: "不明",
-      condition: "情報なし",
-      medicalCare: "情報なし",
-      service: [serviceId],
-      name: userId,
-    }
+  const [isNewEditDialogOpen, setIsNewEditDialogOpen] = useState(false)
+  const [careReceiverData, setCareReceiverData] = useState<any>(null)
+  const [editedUser, setEditedUser] = useState<UserDetail>({
+    age: 0,
+    gender: "不明",
+    careLevel: "不明",
+    condition: "情報なし",
+    medicalCare: "情報なし",
+    service: [],
+    name: "",
   })
-  const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
+  const [displayName, setDisplayName] = useState("")
   const [currentDate, setCurrentDate] = useState<string>("")
-  const fetchWarnedRef = useRef(false) // Prevent console.warn spam
+  const fetchWarnedRef = useRef(false)
 
-  /**
-   * 🆕 完全な利用者データを取得（個人情報を含む）
-   */
+  // useCallback MUST be declared before any early returns
   const fetchFullCareReceiverData = useCallback(async () => {
+    if (!normalizedUserId) return null
     try {
       const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
         cache: "no-store",
@@ -352,6 +335,40 @@ export default function UserDetailPage() {
       return null
     }
   }, [normalizedUserId])
+
+  // Initialize state values when userId/serviceId change
+  useEffect(() => {
+    if (!userId || !serviceId) return
+    const details = userDetails[userId]
+    if (details) {
+      setEditedUser({ ...details })
+      setDisplayName(details.name ?? userId)
+    } else {
+      setEditedUser({
+        age: 0,
+        gender: "不明",
+        careLevel: "不明",
+        condition: "情報なし",
+        medicalCare: "情報なし",
+        service: [serviceId],
+        name: userId,
+      })
+      setDisplayName(userId)
+    }
+  }, [userId, serviceId])
+  
+  // Params validation - NOW we can do early returns
+  if (!serviceId || !userId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">パラメータが不正です</h2>
+          <p className="text-muted-foreground mb-4">URLを確認してください</p>
+          <Button onClick={() => router.push('/')}>トップに戻る</Button>
+        </div>
+      </div>
+    )
+  }
 
   /**
    * 🆕 新しい編集ダイアログを開く（完全データを取得）

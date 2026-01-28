@@ -153,7 +153,7 @@ export async function PUT(
       updateQuery = updateQuery.eq("version", currentVersion)
     }
 
-    const { data, error, count } = await updateQuery
+    const { data, error, count: _count } = await updateQuery
       .select()
       .single()
 
