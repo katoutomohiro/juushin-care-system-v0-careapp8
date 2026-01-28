@@ -151,6 +151,35 @@ npx supabase db push
 
 ---
 
+## 🔐 個人情報の運用ポリシー（重要）
+
+### 基本方針
+- **開発環境では個人情報を使用しない**: 開発・レビュー時は匿名データ（`display_name: AT`, `display_name: User-001` など）のみ使用
+- **本番環境でのみ実名を入力**: 利用者情報の `full_name`, `address`, `phone`, `emergency_contact` は本番環境のみで入力
+- **シードデータは匿名のみ**: migration や seed ファイルには実名・住所・電話番号を含めない
+
+### 確認手順
+
+#### 1. RLS ポリシー確認（anon から個人情報が取得できないこと）
+```sql
+-- Supabase SQL Editor で実行
+SET ROLE anon;  -- 認証前のユーザーロール
+SELECT full_name, address, phone FROM care_receivers LIMIT 1;
+-- 期待結果: 0件返却（RLS で拒否される）
+```
+
+#### 2. ログ出力確認（個人情報がログに出ないこと）
+- ブラウザの Developer Tools → Console を開く
+- 利用者情報編集画面を開く → フォーム送信
+- Console に `full_name`, `address`, `phone` などが出力されていないこと確認
+- API レスポンスは sanitized されている（個人情報を除外したログのみ）
+
+#### 3. 本番環境での初回データ入力
+- デプロイ後、**本番環境のみ**で利用者情報を入力
+- 開発環境（ローカル/Preview）では引き続き匿名データを使用
+
+---
+
 ## ✅ デプロイ後の確認手順
 
 ### 1. トップページ表示確認
