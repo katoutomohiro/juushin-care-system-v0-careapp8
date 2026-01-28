@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     const mainStaffId = body?.mainStaffId ?? body?.main_staff_id ?? null
     const subStaffId = body?.subStaffId ?? body?.sub_staff_id ?? null
     const recordId = body?.id ?? body?.recordId ?? null
+    const version = body?.version ?? null  // 🔐 Optimistic locking version
 
     const recordDate = normalizeDate(recordDateRaw)
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
@@ -308,14 +309,37 @@ export async function POST(req: NextRequest) {
     let error: any = null
 
     if (recordId && uuidRegex.test(String(recordId))) {
-      const updateResult = await supabaseAdmin
+      // 既存レコードの更新
+      let updateQuery = supabaseAdmin
         .from("case_records")
         .update(recordRow)
         .eq("id", recordId)
+      
+      // 🔐 楽観的ロック: version が指定されている場合のみチェック
+      if (version !== null && version !== undefined) {
+        updateQuery = updateQuery.eq("version", version)
+      }
+      
+      const updateResult = await updateQuery
         .select("*")
         .maybeSingle()
+      
       data = updateResult.data
       error = updateResult.error
+      
+      // 🔐 競合検知: version 指定時に 0 件更新なら 409 Conflict
+      if (version !== null && version !== undefined && !data && !error) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "conflict",
+            message: "他の端末でこのケース記録が更新されています。最新の内容を確認してから、再度編集してください。",
+            detail: `Expected version ${version} but record was modified by another user.`,
+            where: "case-records/save POST",
+          },
+          { status: 409 }  // 409 Conflict
+        )
+      }
     } else {
       const insertResult = await supabaseAdmin
         .from("case_records")
