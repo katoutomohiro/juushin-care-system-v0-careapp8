@@ -289,7 +289,6 @@ export default function UserDetailPage() {
   const rawUserId = params?.userId as string | undefined
   const userId = rawUserId ? decodeURIComponent(rawUserId) : ""
   const normalizedUserId = userId ? normalizeUserId(userId) : ""
-  const service = serviceId ? welfareServices[serviceId] : undefined
 
   // All hooks MUST be called before any early returns
   const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
@@ -530,7 +529,7 @@ export default function UserDetailPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{displayName}</h1>
-                  <p className="text-sm text-muted-foreground">{service.name}</p>
+                  <p className="text-sm text-muted-foreground">{welfareServices[serviceId]?.name}</p>
                 </div>
               </div>
             </div>
@@ -705,7 +704,7 @@ export default function UserDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">サービス</p>
-                    <p className="text-lg font-semibold">{service.name}</p>
+                    <p className="text-lg font-semibold">{welfareServices[serviceId]?.name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">年齢</p>
