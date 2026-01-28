@@ -25,14 +25,17 @@ type CareReceiverData = {
   version?: number
 }
 
+type UserRole = "staff" | "nurse" | "admin" | "anon"
+
 type Props = {
   careReceiver: CareReceiverData
+  userRole?: UserRole  // 🔐 権限ベース表示制御
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export function EditCareReceiverDialog({ careReceiver, isOpen, onClose, onSuccess }: Props) {
+export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpen, onClose, onSuccess }: Props) {
   const router = useRouter()
   const { toast } = useToast()
 
@@ -142,164 +145,161 @@ export function EditCareReceiverDialog({ careReceiver, isOpen, onClose, onSucces
               </p>
             </div>
 
-            {/* 実名 */}
-            <div>
-              <Label htmlFor="full_name">実名</Label>
-              <Input
-                id="full_name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="例: 山田 太郎"
-              />
-              <p className="text-xs text-red-600 mt-1">
-                ⚠️ 個人情報: ログに出力されません
-              </p>
-            </div>
+            {/* 実名（staff/nurse/admin のみ表示） */}
+            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+              <div>
+                <Label htmlFor="full_name">実名</Label>
+                <Input
+                  id="full_name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="例: 山田 太郎"
+                  disabled={userRole === "staff"}  // staff は読み取り専用
+                />
+                <p className="text-xs text-red-600 mt-1">
+                  ⚠️ 個人情報: ログに出力されません
+                </p>
+              </div>
+            )}
 
-            {/* 生年月日 */}
-            <div>
-              <Label htmlFor="birthday">生年月日</Label>
-              <Input
-                id="birthday"
-                type="date"
-                value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
-              />
-            </div>
+            {/* 生年月日（staff/nurse/admin のみ表示） */}
+            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+              <div>
+                <Label htmlFor="birthday">生年月日</Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
+                  disabled={userRole === "staff"}
+                />
+              </div>
+            )}
 
-            {/* 性別 */}
-            <div>
-              <Label htmlFor="gender">性別</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="選択してください" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">未設定</SelectItem>
-                  <SelectItem value="male">男性</SelectItem>
-                  <SelectItem value="female">女性</SelectItem>
-                  <SelectItem value="other">その他</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* 性別（staff/nurse/admin のみ表示） */}
+            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+              <div>
+                <Label htmlFor="gender">性別</Label>
+                <Select value={gender} onValueChange={setGender} disabled={userRole === "staff"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">未設定</SelectItem>
+                    <SelectItem value="male">男性</SelectItem>
+                    <SelectItem value="female">女性</SelectItem>
+                    <SelectItem value="other">その他</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            {/* 住所 */}
-            <div>
-              <Label htmlFor="address">住所</Label>
-              <Input
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="例: 東京都渋谷区..."
-              />
-              <p className="text-xs text-red-600 mt-1">
-                ⚠️ 個人情報
-              </p>
-            </div>
+            {/* 住所（admin のみ表示） */}
+            {userRole === "admin" && (
+              <div>
+                <Label htmlFor="address">住所</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="例: 東京都渋谷区..."
+                />
+                <p className="text-xs text-red-600 mt-1">
+                  ⚠️ 個人情報（管理者のみ）
+                </p>
+              </div>
+            )}
 
-            {/* 電話番号 */}
-            <div>
-              <Label htmlFor="phone">電話番号</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="例: 03-1234-5678"
-              />
-              <p className="text-xs text-red-600 mt-1">
-                ⚠️ 個人情報
-              </p>
-            </div>
+            {/* 電話番号（admin のみ表示） */}
+            {userRole === "admin" && (
+              <div>
+                <Label htmlFor="phone">電話番号</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="例: 03-1234-5678"
+                />
+                <p className="text-xs text-red-600 mt-1">
+                  ⚠️ 個人情報（管理者のみ）
+                </p>
+              </div>
+            )}
 
-            {/* 緊急連絡先 */}
-            <div>
-              <Label htmlFor="emergency_contact">緊急連絡先</Label>
-              <Textarea
-                id="emergency_contact"
-                value={emergencyContact}
-                onChange={(e) => setEmergencyContact(e.target.value)}
-                placeholder="例: 母親 090-1234-5678 / 父親 080-9876-5432"
-                rows={2}
-              />
-              <p className="text-xs text-red-600 mt-1">
-                ⚠️ 個人情報
-              </p>
-            </div>
+            {/* 緊急連絡先（admin のみ表示） */}
+            {userRole === "admin" && (
+              <div>
+                <Label htmlFor="emergency_contact">緊急連絡先</Label>
+                <Textarea
+                  id="emergency_contact"
+                  value={emergencyContact}
+                  onChange={(e) => setEmergencyContact(e.target.value)}
+                  placeholder="例: 母親 090-1234-5678 / 父親 080-9876-5432"
+                  rows={2}
+                    />
+                    <Label htmlFor="tube_feeding" className="font-normal">経管栄養</Label>
+                  </div>
 
-            {/* 医療的ケア */}
-            <div>
-              <Label>医療的ケア</Label>
-              <div className="space-y-2 mt-2 border rounded-md p-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="tube_feeding"
-                    checked={medicalCareDetail.tube_feeding || false}
-                    onChange={(e) => handleMedicalCareChange("tube_feeding", e.target.checked)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="tube_feeding" className="font-normal">経管栄養</Label>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="suctioning"
+                      checked={medicalCareDetail.suctioning || false}
+                      onChange={(e) => handleMedicalCareChange("suctioning", e.target.checked)}
+                      className="rounded"
+                    />
+                    <Label htmlFor="suctioning" className="font-normal">吸引</Label>
+                  </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="suctioning"
-                    checked={medicalCareDetail.suctioning || false}
-                    onChange={(e) => handleMedicalCareChange("suctioning", e.target.checked)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="suctioning" className="font-normal">吸引</Label>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="oxygen"
+                      checked={medicalCareDetail.oxygen || false}
+                      onChange={(e) => handleMedicalCareChange("oxygen", e.target.checked)}
+                      className="rounded"
+                    />
+                    <Label htmlFor="oxygen" className="font-normal">酸素吸入</Label>
+                  </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="oxygen"
-                    checked={medicalCareDetail.oxygen || false}
-                    onChange={(e) => handleMedicalCareChange("oxygen", e.target.checked)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="oxygen" className="font-normal">酸素吸入</Label>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="ventilator"
+                      checked={medicalCareDetail.ventilator || false}
+                      onChange={(e) => handleMedicalCareChange("ventilator", e.target.checked)}
+                      className="rounded"
+                    />
+                    <Label htmlFor="ventilator" className="font-normal">人工呼吸器</Label>
+                  </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="ventilator"
-                    checked={medicalCareDetail.ventilator || false}
-                    onChange={(e) => handleMedicalCareChange("ventilator", e.target.checked)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="ventilator" className="font-normal">人工呼吸器</Label>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="seizure_care"
+                      checked={medicalCareDetail.seizure_care || false}
+                      onChange={(e) => handleMedicalCareChange("seizure_care", e.target.checked)}
+                      className="rounded"
+                    />
+                    <Label htmlFor="seizure_care" className="font-normal">発作対応</Label>
+                  </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="seizure_care"
-                    checked={medicalCareDetail.seizure_care || false}
-                    onChange={(e) => handleMedicalCareChange("seizure_care", e.target.checked)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="seizure_care" className="font-normal">発作対応</Label>
-                </div>
-
-                <div className="mt-3">
-                  <Label htmlFor="medical_care_notes" className="text-sm">その他の医療的ケア</Label>
-                  <Textarea
-                    id="medical_care_notes"
-                    value={medicalCareDetail.notes || ""}
-                    onChange={(e) => handleMedicalCareChange("notes", e.target.value)}
-                    placeholder="例: 特殊な薬剤、アレルギー情報など"
-                    rows={2}
-                  />
+                  <div className="mt-3">
+                    <Label htmlFor="medical_care_notes" className="text-sm">その他の医療的ケア</Label>
+                    <Textarea
+                      id="medical_care_notes"
+                      value={medicalCareDetail.notes || ""}
+                      onChange={(e) => handleMedicalCareChange("notes", e.target.value)}
+                      placeholder="例: 特殊な薬剤、アレルギー情報など"
+                      rows={2}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* メモ */}
+            {/* メモ（全員表示） */}
             <div>
               <Label htmlFor="notes">メモ（自由記述）</Label>
               <Textarea

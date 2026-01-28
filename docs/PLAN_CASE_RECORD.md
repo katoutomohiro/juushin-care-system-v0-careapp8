@@ -2,6 +2,7 @@
 
 > **📌 対象読者**: ケース記録機能を実装・修正する開発者  
 > **前提**: `docs/PLAN_MASTER.md` を先に読んでいること  
+> **関連**: `docs/PLAN_PERSONAL_INFO_SECURITY.md`（個人情報管理）  
 > **完成形リファレンス**: ATさんのページ (`/services/life-care/users/AT/case-records`)
 
 ---
@@ -17,8 +18,57 @@
 
 ### 重要なセキュリティ要件
 - **同時編集制御**: 複数スタッフが同じ記録を編集しても上書きされない（楽観ロック）
-- **RLS（Row Level Security）**: Supabase で利用者ごとにアクセス制御
+- **RLS（Row Level Security）**: Supabase で利用者ごと・職員ごとにアクセス制御
+- **個人情報管理**: ケース記録に利用者の個人情報を含めない（display_name で表示）
 - **バリデーション**: 必須フィールドチェック、日付形式検証
+
+---
+
+## 🔗 個人情報との連携
+
+### 利用者情報の参照方法
+
+ケース記録フォームで利用者を選択する際、以下のように個人情報と匿名表示を使い分けます。
+
+```
+┌─ ケース記録フォーム ────────────────────────┐
+│  利用者選択: [AT ▼]                          │  ← display_name を表示
+│                                             │
+│  記録内容                                    │
+│  ├ 主担当スタッフ: [Aさん ▼]                │
+│  ├ 副担当スタッフ: [Bさん ▼]                │
+│  └ 特記事項: [フリー入力]                   │
+│                                             │
+│  [保存]                                      │
+└─────────────────────────────────────────────┘
+
+※ 実名（full_name）は、ケース記録フォームに
+  表示しない（利用者の個人情報保護）
+```
+
+### API からのデータ取得
+
+ケース記録保存時の API リクエストは、以下の情報のみを送信します。
+
+```typescript
+{
+  date: "2026-01-28",
+  care_receiver_id: "uuid-of-AT",  // ID で識別
+  // （注）full_name, address, phone などは含めない
+  main_staff_id: "uuid-of-staff-A",
+  sub_staff_id: "uuid-of-staff-B",
+  special_notes: "...",
+  custom: { ... }
+}
+```
+
+### 利用者詳細ページとの関連
+
+- `display_name`: ケース記録フォームで使用（常時表示）
+- `full_name`, `birthday`: 利用者詳細ページの「詳細情報を編集」ダイアログのみで表示
+- `medical_care_detail`: 個別の編集ダイアログで管理（ケース記録には含めない）
+
+詳細: [PLAN_PERSONAL_INFO_SECURITY.md](./PLAN_PERSONAL_INFO_SECURITY.md) を参照
 
 ---
 

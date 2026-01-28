@@ -95,27 +95,78 @@ docs/ROUTING_ANALYSIS.md（ケース記録ルーティング調査）
 
 ---
 
-## 📂 ディレクトリ構造（重要ファイル）
+## � 個人情報管理レイヤ（必読）
+
+### 概要
+医療機関として求められるセキュリティと利便性のバランスを実現するため、多層防御を実装しています。
+
+### 関連ドキュメント
+- **詳細設計書**: [PLAN_PERSONAL_INFO_SECURITY.md](./PLAN_PERSONAL_INFO_SECURITY.md)
+- **RLS ポリシー**: `supabase/migrations/20260128110000_extend_rls_role_separation.sql`
+- **UI 権限制御**: `components/edit-care-receiver-dialog.tsx`
+
+### 権限別表示制御
+
+```
+display_name（匿名表示）
+├ 全ユーザー表示
+├ ログ出力: ✅ OK
+└ 編集権限: staff/nurse/admin
+
+full_name, birthday, gender（個人識別情報）
+├ staff/nurse/admin のみ表示
+├ nurse/admin が編集可
+└ ログ出力: ❌ 禁止
+
+address, phone, emergency_contact（連絡先情報）
+├ admin のみ表示
+├ admin のみ編集
+└ ログ出力: ❌ 禁止
+
+medical_care_detail（医療情報）
+├ nurse/admin のみ表示
+├ nurse/admin が編集可
+└ ログ出力: ❌ 禁止
+```
+
+### 実装状況
+
+| 項目 | ファイル | 状態 |
+|------|---------|------|
+| セキュリティ設計書 | `docs/PLAN_PERSONAL_INFO_SECURITY.md` | ✅ 完成 |
+| DB Migration 1 | `supabase/migrations/20260128100000_add_personal_info_to_care_receivers.sql` | ✅ 完成 |
+| DB Migration 2 | `supabase/migrations/20260128110000_extend_rls_role_separation.sql` | ✅ 完成 |
+| UI コンポーネント | `components/edit-care-receiver-dialog.tsx` | ✅ 権限ベース表示実装 |
+| テスト手順 | `docs/TEST_CARE_RECEIVER_EDIT.md` | ✅ 7シナリオ記載 |
+
+---
+
+## �📂 ディレクトリ構造（重要ファイル）
 
 ```
 juushin-care-system-v0-careapp8/
 ├── docs/
 │   ├── PLAN_MASTER.md ← 本ファイル（エントリーポイント）
+│   ├── PLAN_PERSONAL_INFO_SECURITY.md ← 個人情報セキュリティ設計
 │   ├── PLAN_DEPLOY.md ← Vercel 本番デプロイ手順
 │   ├── PLAN_CASE_RECORD.md ← ケース記録仕様
 │   ├── PLAN_HISTORY.md ← 開発経緯ログ
 │   ├── FEATURES.md ← 全機能一覧（32ルート）
 │   ├── CONCURRENCY.md ← 楽観ロック設計
 │   ├── DEPLOYMENT.md ← デプロイ詳細手順
+│   ├── TEST_CARE_RECEIVER_EDIT.md ← 利用者情報編集テスト手順
 │   └── ai-collaboration-handbook.md ← AI協調開発ルール
 ├── app/
-│   ├── api/case-records/save/route.ts ← 保存API（409 Conflict 対応）
+│   ├── api/care-receivers/[id]/route.ts ← 個人情報 API（権限チェック）
+│   ├── api/case-records/save/route.ts ← ケース記録保存API（409 Conflict 対応）
 │   └── services/[serviceId]/users/[userId]/case-records/page.tsx
-├── src/components/case-records/
-│   ├── CaseRecordFormClient.tsx ← フロント（楽観ロック実装）
-│   └── CaseRecordForm.tsx ← フォームUI
+├── components/
+│   ├── edit-care-receiver-dialog.tsx ← 権限ベース個人情報編集フォーム
+│   └── case-records/CaseRecordFormClient.tsx
 ├── supabase/migrations/
-│   └── 20260128093212_add_version_to_case_records.sql ← version カラム追加
+│   ├── 20260128100000_add_personal_info_to_care_receivers.sql
+│   ├── 20260128110000_extend_rls_role_separation.sql
+│   └── 20260128093212_add_version_to_case_records.sql
 ├── .env.local ← ローカル環境変数（.gitignore 必須）
 └── .github/copilot-instructions.md ← AI Copilot への指示
 ```
@@ -142,8 +193,9 @@ juushin-care-system-v0-careapp8/
 ### 作業開始時の必須チェック
 1. ✅ `docs/PLAN_MASTER.md`（本ファイル）を読んだ
 2. ✅ `docs/ai-collaboration-handbook.md` で役割分担を確認した
-3. ✅ 不明点は "不明" と書いて質問する準備ができた
-4. ✅ シークレットをコミットしないことを確認した
+3. ✅ `docs/PLAN_PERSONAL_INFO_SECURITY.md` で個人情報管理を確認した
+4. ✅ 不明点は "不明" と書いて質問する準備ができた
+5. ✅ シークレットをコミットしないことを確認した
 
 ### タスク実行順序
 ```
