@@ -238,66 +238,75 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   placeholder="例: 母親 090-1234-5678 / 父親 080-9876-5432"
                   rows={2}
                     />
-                    <Label htmlFor="tube_feeding" className="font-normal">経管栄養</Label>
                   </div>
+                )}
 
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="suctioning"
-                      checked={medicalCareDetail.suctioning || false}
-                      onChange={(e) => handleMedicalCareChange("suctioning", e.target.checked)}
-                      className="rounded"
-                    />
-                    <Label htmlFor="suctioning" className="font-normal">吸引</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="oxygen"
-                      checked={medicalCareDetail.oxygen || false}
-                      onChange={(e) => handleMedicalCareChange("oxygen", e.target.checked)}
-                      className="rounded"
-                    />
-                    <Label htmlFor="oxygen" className="font-normal">酸素吸入</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="ventilator"
-                      checked={medicalCareDetail.ventilator || false}
-                      onChange={(e) => handleMedicalCareChange("ventilator", e.target.checked)}
-                      className="rounded"
-                    />
-                    <Label htmlFor="ventilator" className="font-normal">人工呼吸器</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="seizure_care"
-                      checked={medicalCareDetail.seizure_care || false}
-                      onChange={(e) => handleMedicalCareChange("seizure_care", e.target.checked)}
-                      className="rounded"
-                    />
-                    <Label htmlFor="seizure_care" className="font-normal">発作対応</Label>
-                  </div>
-
-                  <div className="mt-3">
-                    <Label htmlFor="medical_care_notes" className="text-sm">その他の医療的ケア</Label>
-                    <Textarea
-                      id="medical_care_notes"
-                      value={medicalCareDetail.notes || ""}
-                      onChange={(e) => handleMedicalCareChange("notes", e.target.value)}
-                      placeholder="例: 特殊な薬剤、アレルギー情報など"
-                      rows={2}
-                    />
-                  </div>
+                {/* 医療ケア詳細 */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="tube_feeding"
+                    checked={medicalCareDetail.tube_feeding || false}
+                    onChange={(e) => handleMedicalCareChange("tube_feeding", e.target.checked)}
+                    className="rounded"
+                  />
+                  <Label htmlFor="tube_feeding" className="font-normal">経管栄養</Label>
                 </div>
-              </div>
-            )}
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="suctioning"
+                    checked={medicalCareDetail.suctioning || false}
+                    onChange={(e) => handleMedicalCareChange("suctioning", e.target.checked)}
+                    className="rounded"
+                  />
+                  <Label htmlFor="suctioning" className="font-normal">吸引</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="oxygen"
+                    checked={medicalCareDetail.oxygen || false}
+                    onChange={(e) => handleMedicalCareChange("oxygen", e.target.checked)}
+                    className="rounded"
+                  />
+                  <Label htmlFor="oxygen" className="font-normal">酸素吸入</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="ventilator"
+                    checked={medicalCareDetail.ventilator || false}
+                    onChange={(e) => handleMedicalCareChange("ventilator", e.target.checked)}
+                    className="rounded"
+                  />
+                  <Label htmlFor="ventilator" className="font-normal">人工呼吸器</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="seizure_care"
+                    checked={medicalCareDetail.seizure_care || false}
+                    onChange={(e) => handleMedicalCareChange("seizure_care", e.target.checked)}
+                    className="rounded"
+                  />
+                  <Label htmlFor="seizure_care" className="font-normal">発作対応</Label>
+                </div>
+
+                <div className="mt-3">
+                  <Label htmlFor="medical_care_notes" className="text-sm">その他の医療的ケア</Label>
+                  <Textarea
+                    id="medical_care_notes"
+                    value={medicalCareDetail.notes || ""}
+                    onChange={(e) => handleMedicalCareChange("notes", e.target.value)}
+                    placeholder="例: 特殊な薬剤、アレルギー情報など"
+                    rows={2}
+                  />
+                </div>
 
             {/* メモ（全員表示） */}
             <div>

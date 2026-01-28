@@ -479,7 +479,7 @@ HEAD
             </Link>
 
             {/* C. ケース記録（管理用） */}
-            <Link href={`/services/life-care/users/${selectedCareReceiverId || 'AT'}/case-records`}eceiverId || 'AT'}/case-records`} className="group">
+            <Link href={`/services/life-care/users/${selectedCareReceiverId || 'AT'}/case-records`} className="group">
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-purple-300 cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
