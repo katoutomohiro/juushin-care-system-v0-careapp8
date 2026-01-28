@@ -8,6 +8,16 @@ import { CaseRecordsListClient } from "@/src/components/case-records/CaseRecords
 import { CareReceiverTemplate } from "@/lib/templates/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CaseRecordFormSchema } from "@/src/lib/case-records/form-schemas"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type StaffOption = { value: string; label: string }
 
@@ -40,6 +50,9 @@ export function CaseRecordFormClient({
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
   const [allStaff, setAllStaff] = useState<Array<{ id: string; name: string; sort_order: number; is_active: boolean }>>([])
   const [isLoadingStaff, setIsLoadingStaff] = useState(true)
+  const [currentVersion, setCurrentVersion] = useState<number | null>(null)  // 🔐 楽観的ロック用
+  const [currentRecordId, setCurrentRecordId] = useState<string | null>(null)  // レコードID
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false)  // 競合ダイアログ
   const submittingRef = useRef(false)
   const didFetchStaffRef = useRef(false)
 
@@ -192,6 +205,8 @@ export function CaseRecordFormClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: currentRecordId,  // 更新時は既存レコードID
+          version: currentVersion,  // 🔐 楽観的ロック: 現在のバージョン
           careReceiverId: careReceiverUuid, // 保存は必ず UUID で紐付け
           serviceId: resolvedServiceId,
           userId,
@@ -214,6 +229,18 @@ export function CaseRecordFormClient({
 
       const apiResult = await apiResponse.json()
 
+      // 🔐 競合検知: 409 Conflict
+      if (apiResponse.status === 409) {
+        setConflictDialogOpen(true)
+        setStatusMessage("他の端末で更新されています")
+        toast({
+          variant: "destructive",
+          title: "⚠️ 他の端末で更新されています",
+          description: "最新の内容を確認してから、再度編集してください。",
+        })
+        return  // 保存処理を中断
+      }
+
       if (!apiResponse.ok || !apiResult?.ok) {
         const errorMsg = apiResult?.error || `保存に失敗しました (${apiResponse.status})`
         const detail = apiResult?.detail || apiResult?.message
@@ -227,6 +254,14 @@ export function CaseRecordFormClient({
       }
 
       console.log("[CaseRecordFormClient] Saved:", apiResult.record)
+
+      // 🔐 保存成功: version とレコードIDを更新
+      if (apiResult.record?.version !== undefined) {
+        setCurrentVersion(apiResult.record.version)
+      }
+      if (apiResult.record?.id) {
+        setCurrentRecordId(apiResult.record.id)
+      }
 
       setStatusMessage("保存しました")
       setFieldErrors([])
@@ -351,6 +386,25 @@ export function CaseRecordFormClient({
           refreshKey={listRefreshKey}
         />
       </div>
+
+      {/* 🔐 同時編集競合ダイアログ */}
+      <AlertDialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ 他の端末で更新されています</AlertDialogTitle>
+            <AlertDialogDescription>
+              保存しようとした記録は、他のスタッフまたは別の端末で既に更新されています。
+              最新のデータを再読み込みしてから、再度編集してください。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>閉じる</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.refresh()}>
+              最新データを再読み込み
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -120,7 +120,35 @@
 
 ---
 
-## 📊 機能ステータスサマリー
+## �️ セキュリティ・運用機能
+
+| 機能分類 | 機能名 | 実装状況 | 説明 |
+|---------|-------|---------|------|
+| **デプロイメント** | Vercel + Supabase 本番構成 | ✅ 設計済 | `docs/DEPLOYMENT.md` にデプロイ手順を記載 |
+| **デプロイメント** | 環境変数管理 | ✅ 設計済 | `NEXT_PUBLIC_SUPABASE_URL` など必須変数を整理 |
+| **デプロイメント** | ヘルスチェック | ✅ 設計済 | `/api/health` エンドポイント（予定） |
+| **同時編集制御** | 楽観ロック（Optimistic Locking） | ✅ 実装済 | `version` カラムによる競合検出 |
+| **同時編集制御** | 409 Conflict エラー処理 | ✅ 実装済 | フロントで競合ダイアログ表示 |
+| **同時編集制御** | 再読み込みボタン | ✅ 実装済 | AlertDialog から最新データ取得 |
+| **同時編集制御** | DB トリガー | ✅ 実装済 | `increment_version()` で自動 version 増加 |
+
+### 実装詳細
+
+#### 楽観ロック
+- **DB migration**: `supabase/migrations/20260128093212_add_version_to_case_records.sql`
+- **API**: `/api/case-records/save` で `version` パラメータを受け取り、一致しなければ 409 を返却
+- **フロント**: `CaseRecordFormClient.tsx` で 409 受信時に競合ダイアログを表示
+- **設計書**: `docs/CONCURRENCY.md` に詳細設計を記載
+
+#### デプロイメント
+- **Vercel**: Next.js アプリを Vercel にデプロイ
+- **Supabase**: 本番用プロジェクトを新規作成し、環境変数に設定
+- **環境変数**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **設計書**: `docs/DEPLOYMENT.md` にデプロイ手順を記載
+
+---
+
+## �📊 機能ステータスサマリー
 
 | カテゴリ | 実装済 | 404 | 未実装 | 合計 |
 |---------|------|-----|-------|------|
