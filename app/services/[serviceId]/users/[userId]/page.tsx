@@ -16,6 +16,7 @@ import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
 import { EditCareReceiverDialog } from "@/components/edit-care-receiver-dialog"
 import { useToast } from "@/components/ui/use-toast"
+import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -718,7 +719,7 @@ export default function UserDetailPage() {
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
                   // Navigate to case-records page
-                  router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
+                  router.push(getCaseRecordsHref(serviceId, normalizedUserId))
                 }}
               >
                 <CardHeader>

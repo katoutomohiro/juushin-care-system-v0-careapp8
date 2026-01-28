@@ -8,6 +8,7 @@ import { useTranslation } from "@/lib/i18n-client"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
 import dynamic from "next/dynamic"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
+import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 import { SettingsPanel } from "@/components/settings-panel"
 import { A4RecordSheet } from "@/components/a4-record-sheet"
 import { DailyLogExportService } from "@/services/daily-log-export-service"
@@ -479,7 +480,7 @@ HEAD
             </Link>
 
             {/* C. ケース記録（管理用） */}
-            <Link href={`/services/life-care/users/${selectedCareReceiverId || 'AT'}/case-records`} className="group">
+            <Link href={getCaseRecordsHref('life-care', selectedCareReceiverId)} className="group">
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-purple-300 cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
