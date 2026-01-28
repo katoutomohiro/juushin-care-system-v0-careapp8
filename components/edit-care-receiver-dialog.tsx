@@ -244,6 +244,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   <input
                     type="checkbox"
                     id="tube_feeding"
+                    aria-label="経管栄養"
                     checked={medicalCareDetail.tube_feeding || false}
                     onChange={(e) => handleMedicalCareChange("tube_feeding", e.target.checked)}
                     className="rounded"
@@ -255,6 +256,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   <input
                     type="checkbox"
                     id="suctioning"
+                    aria-label="吸引"
                     checked={medicalCareDetail.suctioning || false}
                     onChange={(e) => handleMedicalCareChange("suctioning", e.target.checked)}
                     className="rounded"
@@ -266,6 +268,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   <input
                     type="checkbox"
                     id="oxygen"
+                    aria-label="酸素吸入"
                     checked={medicalCareDetail.oxygen || false}
                     onChange={(e) => handleMedicalCareChange("oxygen", e.target.checked)}
                     className="rounded"
@@ -277,6 +280,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   <input
                     type="checkbox"
                     id="ventilator"
+                    aria-label="人工呼吸器"
                     checked={medicalCareDetail.ventilator || false}
                     onChange={(e) => handleMedicalCareChange("ventilator", e.target.checked)}
                     className="rounded"
@@ -288,6 +292,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
                   <input
                     type="checkbox"
                     id="seizure_care"
+                    aria-label="発作対応"
                     checked={medicalCareDetail.seizure_care || false}
                     onChange={(e) => handleMedicalCareChange("seizure_care", e.target.checked)}
                     className="rounded"
