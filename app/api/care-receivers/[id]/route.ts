@@ -139,11 +139,9 @@ export async function PUT(
       )
     }
 
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 500 }
-      )
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
+      return clientError
     }
 
     const body = await req.json()
@@ -177,7 +175,7 @@ export async function PUT(
     delete updateData.version  // version は DB トリガーで自動インクリメント
 
     // 🔐 UPDATE クエリ構築: version チェック付き
-    let updateQuery = supabaseAdmin
+    let updateQuery = supabaseAdmin!
       .from("care_receivers")
       .update(updateData)
       .eq("id", id)
@@ -278,14 +276,12 @@ export async function DELETE(
       )
     }
 
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 500 }
-      )
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
+      return clientError
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin!
       .from("care_receivers")
       .delete()
       .eq("id", id)
