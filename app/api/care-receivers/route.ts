@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { getApiUser } from "@/lib/auth/get-api-user"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 export const dynamic = "force-dynamic"
@@ -19,6 +20,11 @@ export const runtime = "nodejs"
  */
 export async function GET(req: NextRequest) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
     const codeInput = searchParams.get("code")

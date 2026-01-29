@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
+import { getApiUser } from "@/lib/auth/get-api-user"
 // UUID専用エンドポイントに修正（slug/codeの解決を排除）
 
 export const runtime = "nodejs"
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
     // Validate Supabase admin client
     if (!supabaseAdmin || supabaseAdminEnv.branch !== "server") {
       const missingKeys =

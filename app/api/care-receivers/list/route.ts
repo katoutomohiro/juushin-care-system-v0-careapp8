@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { getApiUser } from "@/lib/auth/get-api-user"
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -12,12 +13,19 @@ export const runtime = 'nodejs'
  *   { ok: false, users: [], count: 0, error: string, serviceCode: string }
  */
 export async function GET(req: NextRequest) {
+  const user = await getApiUser()
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  }
+
   const { searchParams } = new URL(req.url)
   const serviceCode = searchParams.get('serviceCode') ?? ''
 
   console.log('[API] GET /care-receivers/list - serviceCode:', serviceCode)
 
   try {
+    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
+
     if (!supabaseAdmin) {
       console.error('[API] supabaseAdmin is null')
       return NextResponse.json(
@@ -68,11 +76,17 @@ export async function GET(req: NextRequest) {
 
     console.log('[API] Query success - count:', count, 'dataLength:', data?.length)
 
+    const users = allowRealPii
+      ? (data ?? [])
+      : (data ?? []).map(
+          ({ full_name: _fullName, birthday: _birthday, address: _address, phone: _phone, emergency_contact: _emergencyContact, ...rest }: any) => rest,
+        )
+
     return NextResponse.json(
       {
         ok: true,
         serviceCode,
-        users: data ?? [],
+        users,
         count: count ?? (data?.length ?? 0),
       },
       { status: 200 }

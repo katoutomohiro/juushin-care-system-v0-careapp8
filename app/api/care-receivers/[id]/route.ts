@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { getApiUser } from "@/lib/auth/get-api-user"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -18,6 +19,12 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
+    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
     const { id } = await context.params
 
     if (!id) {
@@ -56,11 +63,15 @@ export async function GET(
         code: data.code,
         name: data.name,
         display_name: data.display_name,
-        full_name: data.full_name,              // 🔒 個人情報
-        birthday: data.birthday,                // 🔒 個人情報
-        address: data.address,                  // 🔒 個人情報
-        phone: data.phone,                      // 🔒 個人情報
-        emergency_contact: data.emergency_contact, // 🔒 個人情報
+        ...(allowRealPii
+          ? {
+              full_name: data.full_name,
+              birthday: data.birthday,
+              address: data.address,
+              phone: data.phone,
+              emergency_contact: data.emergency_contact,
+            }
+          : {}),
         notes: data.notes,
         service_code: data.service_code,
         age: data.age,
@@ -105,6 +116,11 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
     const { id } = await context.params
 
     if (!id) {
@@ -122,6 +138,18 @@ export async function PUT(
     }
 
     const body = await req.json()
+
+    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
+    if (!allowRealPii) {
+      const piiKeys = ["full_name", "birthday", "address", "phone", "emergency_contact"]
+      const hasPii = piiKeys.some((key) => Object.prototype.hasOwnProperty.call(body, key))
+      if (hasPii) {
+        return NextResponse.json(
+          { ok: false, error: "PII is disabled" },
+          { status: 400 },
+        )
+      }
+    }
 
     // 🔐 楽観ロック: version を取得
     const currentVersion = body.version !== undefined ? body.version : null
@@ -230,6 +258,11 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
     const { id } = await context.params
 
     if (!id) {

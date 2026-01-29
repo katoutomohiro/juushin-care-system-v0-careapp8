@@ -36,6 +36,7 @@ type Props = {
 
 export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpen, onClose, onSuccess }: Props) {
   const { toast } = useToast()
+  const allowRealPii = process.env.NEXT_PUBLIC_ALLOW_REAL_PII === "true"
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
@@ -66,21 +67,26 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
     setIsSubmitting(true)
 
     try {
+      const payload: Record<string, unknown> = {
+        version: careReceiver.version, // 🔐 楽観ロック
+        display_name: displayName,
+        notes: notes,
+        medical_care_detail: medicalCareDetail,
+      }
+
+      if (allowRealPii) {
+        payload.full_name = fullName
+        payload.birthday = birthday || null
+        payload.gender = gender || null
+        payload.address = address
+        payload.phone = phone
+        payload.emergency_contact = emergencyContact
+      }
+
       const response = await fetch(`/api/care-receivers/${careReceiver.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          version: careReceiver.version,  // 🔐 楽観ロック
-          display_name: displayName,
-          full_name: fullName,
-          birthday: birthday || null,
-          gender: gender || null,
-          address: address,
-          phone: phone,
-          emergency_contact: emergencyContact,
-          notes: notes,
-          medical_care_detail: medicalCareDetail,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const result = await response.json()
@@ -129,6 +135,11 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {!allowRealPii && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                実名などの個人情報の入力は現在無効です。
+              </div>
+            )}
             {/* 表示名 */}
             <div>
               <Label htmlFor="display_name">表示名（匿名表示可）*</Label>
@@ -144,7 +155,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             </div>
 
             {/* 実名（staff/nurse/admin のみ表示） */}
-            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+            {allowRealPii && (userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
               <div>
                 <Label htmlFor="full_name">実名</Label>
                 <Input
@@ -161,7 +172,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             )}
 
             {/* 生年月日（staff/nurse/admin のみ表示） */}
-            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+            {allowRealPii && (userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
               <div>
                 <Label htmlFor="birthday">生年月日</Label>
                 <Input
@@ -175,7 +186,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             )}
 
             {/* 性別（staff/nurse/admin のみ表示） */}
-            {(userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
+            {allowRealPii && (userRole === "staff" || userRole === "nurse" || userRole === "admin") && (
               <div>
                 <Label htmlFor="gender">性別</Label>
                 <Select value={gender} onValueChange={setGender} disabled={userRole === "staff"}>
@@ -193,7 +204,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             )}
 
             {/* 住所（admin のみ表示） */}
-            {userRole === "admin" && (
+            {allowRealPii && userRole === "admin" && (
               <div>
                 <Label htmlFor="address">住所</Label>
                 <Input
@@ -209,7 +220,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             )}
 
             {/* 電話番号（admin のみ表示） */}
-            {userRole === "admin" && (
+            {allowRealPii && userRole === "admin" && (
               <div>
                 <Label htmlFor="phone">電話番号</Label>
                 <Input
@@ -226,7 +237,7 @@ export function EditCareReceiverDialog({ careReceiver, userRole = "staff", isOpe
             )}
 
             {/* 緊急連絡先（admin のみ表示） */}
-            {userRole === "admin" && (
+            {allowRealPii && userRole === "admin" && (
               <div>
                 <Label htmlFor="emergency_contact">緊急連絡先</Label>
                 <Textarea

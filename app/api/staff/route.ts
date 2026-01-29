@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { getApiUser } from "@/lib/auth/get-api-user"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -17,6 +18,11 @@ export const runtime = "nodejs"
  */
 export async function GET(req: NextRequest) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Database not available" },

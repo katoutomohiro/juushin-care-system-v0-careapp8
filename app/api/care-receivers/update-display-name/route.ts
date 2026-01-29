@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { getApiUser } from "@/lib/auth/get-api-user"
 
 export const runtime = "nodejs"
 
@@ -17,6 +18,11 @@ export const runtime = "nodejs"
  */
 export async function PUT(req: NextRequest) {
   try {
+    const user = await getApiUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         {

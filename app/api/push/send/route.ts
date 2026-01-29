@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import webpush from "web-push"
 import { VAPID_CONTACT, VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY } from "@/lib/env"
+import { getApiUser } from "@/lib/auth/get-api-user"
 
 export const runtime = "nodejs"
 
@@ -11,6 +12,11 @@ if (hasVapidConfig) {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getApiUser()
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   if (!hasVapidConfig) {
     return NextResponse.json(
       { error: "VAPID keys are not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY." },
