@@ -9,14 +9,14 @@
 
 ## Step 1: リポジトリクローン
 
-```bash
+```powershell
 git clone https://github.com/katoutomohiro/juushin-care-system-v0-careapp8.git
 cd juushin-care-system-v0-careapp8
 ```
 
 ## Step 2: 依存パッケージをインストール
 
-```bash
+```powershell
 pnpm install
 ```
 
@@ -35,7 +35,7 @@ pnpm install
 1. Supabase Dashboard → Settings → API
 2. 以下の値をコピー:
 
-```bash
+```powershell
 # .env.local を作成
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -44,7 +44,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Step 4: Database マイグレーション実行
 
-```bash
+```powershell
 # Supabase CLI をインストール
 npm install -g @supabase/cli
 
@@ -63,7 +63,7 @@ psql postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres 
 
 ## Step 5: シードデータを投入
 
-```bash
+```powershell
 # Supabase Dashboard → SQL Editor → New Query
 # 以下を実行:
 \i supabase/seed.sql
@@ -75,7 +75,7 @@ supabase seed run
 
 ## Step 6: Dev サーバーを起動
 
-```bash
+```powershell
 pnpm run reboot
 
 # 期待結果: Ready in 2.5s
@@ -96,7 +96,7 @@ http://localhost:3000
 
 ## 開発コマンド
 
-```bash
+```powershell
 # Dev サーバー起動 (Watch mode)
 pnpm dev
 
@@ -123,25 +123,25 @@ pnpm run reboot
 
 ### Dev サーバーが起動しない
 
-```bash
+```powershell
 # 1. Port 3000 が使用中でないか確認
-lsof -i :3000
+netstat -ano | findstr :3000
 
 # 2. キャッシュをクリア
-rm -rf .next
+Remove-Item .next -Recurse -Force -ErrorAction SilentlyContinue
 pnpm run reboot
 
 # 3. Node modules を再インストール
-rm -rf node_modules pnpm-lock.yaml
+Remove-Item node_modules, pnpm-lock.yaml -Recurse -Force -ErrorAction SilentlyContinue
 pnpm install
 pnpm run reboot
 ```
 
 ### Supabase に接続できない
 
-```bash
+```powershell
 # 1. 環境変数を確認
-cat .env.local
+Get-Content .env.local
 
 # 2. Supabase ステータスを確認
 # https://status.supabase.com
@@ -212,7 +212,7 @@ SELECT * FROM pg_policies WHERE tablename = 'care_receivers';
 
 詳細は [PRODUCTION_CHECKLIST.md](./docs/PRODUCTION_CHECKLIST.md) を参照してください。
 
-```bash
+```powershell
 # Vercel にデプロイ
 pnpm install -g vercel
 vercel
@@ -233,4 +233,4 @@ git push origin main
 
 ---
 
-最終更新: 2025-02-17
+最終更新: 2026-01-29

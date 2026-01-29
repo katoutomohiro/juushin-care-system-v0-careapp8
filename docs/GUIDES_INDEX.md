@@ -21,9 +21,9 @@
    - トラブルシューティング詳細
 
 **次のアクション**:
-```bash
+```powershell
 # 1. ローカルで修正を確認
-pnpm typecheck && pnpm lint && pnpm build && pnpm dev
+pnpm typecheck; pnpm lint; pnpm build; pnpm dev
 
 # 2. Vercel にデプロイ
 git add app/page.tsx app/home-client.tsx
