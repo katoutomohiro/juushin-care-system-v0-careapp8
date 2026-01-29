@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OPENAI_API_KEY } from '@/lib/env'
+import { requireApiUser, unauthorizedResponse } from '@/lib/api/route-helpers'
 
 export const runtime = 'nodejs'
 
@@ -10,6 +11,11 @@ export const runtime = 'nodejs'
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(false)
+    }
+
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File | null
     if (!audioFile) {

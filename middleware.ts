@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseMiddlewareClient } from "./lib/supabase/middleware"
 
 // Routes that never require authentication
-const publicRoutes = ["/login", "/auth", "/api", "/api/auth", "/_next", "/favicon.ico"]
+const publicRoutes = ["/login", "/auth", "/api/auth", "/_next", "/favicon.ico"]
 
 function isPublic(pathname: string) {
   return publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}`))
@@ -30,6 +30,9 @@ export async function middleware(req: NextRequest) {
 
   // No session -> redirect to login with redirect target
   if (!session) {
+    if (pathname.startsWith("/api")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("redirect", pathname || "/")
     return NextResponse.redirect(loginUrl)

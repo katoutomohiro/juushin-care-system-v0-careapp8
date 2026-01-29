@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env'
+import { requireApiUser, unauthorizedResponse } from '@/lib/api/route-helpers'
 
 export const runtime = 'nodejs'
 
@@ -11,6 +12,11 @@ export const runtime = 'nodejs'
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(false)
+    }
+
     const body = await req.json()
     const { text, durationMs, avgLevel, device } = body
 

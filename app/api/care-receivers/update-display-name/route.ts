@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -17,6 +18,11 @@ export const runtime = "nodejs"
  */
 export async function PUT(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(true)
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         {

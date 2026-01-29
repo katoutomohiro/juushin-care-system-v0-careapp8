@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -22,6 +23,11 @@ export const runtime = "nodejs"
  */
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(false)
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Database not available" },

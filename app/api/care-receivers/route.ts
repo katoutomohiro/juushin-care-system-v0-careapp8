@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 export const dynamic = "force-dynamic"
@@ -19,6 +20,11 @@ export const runtime = "nodejs"
  */
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(true)
+    }
+
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
     const codeInput = searchParams.get("code")

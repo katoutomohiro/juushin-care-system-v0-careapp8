@@ -26,6 +26,8 @@ Create `.env.local` (or set in Vercel) with:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...   # required for server-side admin ops
+ALLOW_REAL_PII=false            # disable real-name input (server)
+NEXT_PUBLIC_ALLOW_REAL_PII=false # disable real-name input (client)
 ```
 
 The app reads `NEXT_PUBLIC_*` on both client and server. `SUPABASE_SERVICE_ROLE_KEY` is only for server code that needs admin queries.
