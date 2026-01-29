@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { getApiUser } from "@/lib/auth/get-api-user"
+import { isRealPiiEnabled, piiDisabledResponse, requireApiUser, unauthorizedResponse, withPii } from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -19,12 +19,12 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getApiUser()
+    const user = await requireApiUser()
     if (!user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse(true)
     }
 
-    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
+    const allowRealPii = isRealPiiEnabled()
     const { id } = await context.params
 
     if (!id) {
@@ -56,36 +56,41 @@ export async function GET(
     }
 
     // ⚠️ 個人情報を含むレスポンス（職員UIでは必要、ただしログには出力しない）
+    const baseUser = {
+      id: data.id,
+      code: data.code,
+      name: data.name,
+      display_name: data.display_name,
+      notes: data.notes,
+      service_code: data.service_code,
+      age: data.age,
+      gender: data.gender,
+      care_level: data.care_level,
+      condition: data.condition,
+      medical_care: data.medical_care,
+      medical_care_detail: data.medical_care_detail,
+      is_active: data.is_active,
+      version: data.version,                  // 🔐 楽観ロック用
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      updated_by: data.updated_by,
+    }
+
+    const userWithPii = withPii(
+      baseUser,
+      {
+        full_name: data.full_name,
+        birthday: data.birthday,
+        address: data.address,
+        phone: data.phone,
+        emergency_contact: data.emergency_contact,
+      },
+      allowRealPii,
+    )
+
     return NextResponse.json({
       ok: true,
-      user: {
-        id: data.id,
-        code: data.code,
-        name: data.name,
-        display_name: data.display_name,
-        ...(allowRealPii
-          ? {
-              full_name: data.full_name,
-              birthday: data.birthday,
-              address: data.address,
-              phone: data.phone,
-              emergency_contact: data.emergency_contact,
-            }
-          : {}),
-        notes: data.notes,
-        service_code: data.service_code,
-        age: data.age,
-        gender: data.gender,
-        care_level: data.care_level,
-        condition: data.condition,
-        medical_care: data.medical_care,
-        medical_care_detail: data.medical_care_detail,
-        is_active: data.is_active,
-        version: data.version,                  // 🔐 楽観ロック用
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        updated_by: data.updated_by,
-      },
+      user: userWithPii,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -116,9 +121,9 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getApiUser()
+    const user = await requireApiUser()
     if (!user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse(true)
     }
 
     const { id } = await context.params
@@ -139,15 +144,12 @@ export async function PUT(
 
     const body = await req.json()
 
-    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
+    const allowRealPii = isRealPiiEnabled()
     if (!allowRealPii) {
       const piiKeys = ["full_name", "birthday", "address", "phone", "emergency_contact"]
       const hasPii = piiKeys.some((key) => Object.prototype.hasOwnProperty.call(body, key))
       if (hasPii) {
-        return NextResponse.json(
-          { ok: false, error: "PII is disabled" },
-          { status: 400 },
-        )
+        return piiDisabledResponse()
       }
     }
 
@@ -258,9 +260,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getApiUser()
+    const user = await requireApiUser()
     if (!user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse(true)
     }
 
     const { id } = await context.params

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
-import { getApiUser } from "@/lib/auth/get-api-user"
+import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -50,9 +50,9 @@ function normalizeDate(input: unknown): string | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getApiUser()
+    const user = await requireApiUser()
     if (!user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse(true)
     }
 
     const urlPrefix = supabaseAdminEnv.url ? `${supabaseAdminEnv.url.slice(0, 8)}...` : ""

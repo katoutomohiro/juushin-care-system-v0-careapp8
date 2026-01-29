@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import webpush from "web-push"
 import { VAPID_CONTACT, VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY } from "@/lib/env"
-import { getApiUser } from "@/lib/auth/get-api-user"
+import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -12,9 +12,9 @@ if (hasVapidConfig) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getApiUser()
+  const user = await requireApiUser()
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return unauthorizedResponse(false)
   }
 
   if (!hasVapidConfig) {

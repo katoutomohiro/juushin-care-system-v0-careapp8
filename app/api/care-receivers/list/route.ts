@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { getApiUser } from "@/lib/auth/get-api-user"
+import { isRealPiiEnabled, omitPii, requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -13,9 +13,9 @@ export const runtime = 'nodejs'
  *   { ok: false, users: [], count: 0, error: string, serviceCode: string }
  */
 export async function GET(req: NextRequest) {
-  const user = await getApiUser()
+  const user = await requireApiUser()
   if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    return unauthorizedResponse(true)
   }
 
   const { searchParams } = new URL(req.url)
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   console.log('[API] GET /care-receivers/list - serviceCode:', serviceCode)
 
   try {
-    const allowRealPii = process.env.ALLOW_REAL_PII === "true"
+    const allowRealPii = isRealPiiEnabled()
 
     if (!supabaseAdmin) {
       console.error('[API] supabaseAdmin is null')
@@ -76,11 +76,7 @@ export async function GET(req: NextRequest) {
 
     console.log('[API] Query success - count:', count, 'dataLength:', data?.length)
 
-    const users = allowRealPii
-      ? (data ?? [])
-      : (data ?? []).map(
-          ({ full_name: _fullName, birthday: _birthday, address: _address, phone: _phone, emergency_contact: _emergencyContact, ...rest }: any) => rest,
-        )
+    const users = allowRealPii ? (data ?? []) : (data ?? []).map((row: Record<string, unknown>) => omitPii(row))
 
     return NextResponse.json(
       {

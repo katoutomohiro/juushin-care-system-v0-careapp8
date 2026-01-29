@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env'
-import { getApiUser } from '@/lib/auth/get-api-user'
+import { requireApiUser, unauthorizedResponse } from '@/lib/api/route-helpers'
 
 export const runtime = 'nodejs'
 
@@ -12,9 +12,9 @@ export const runtime = 'nodejs'
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getApiUser()
+    const user = await requireApiUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse(false)
     }
 
     const body = await req.json()
