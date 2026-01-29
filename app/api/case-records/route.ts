@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
+import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import { 
   requireApiUser, 
   unauthorizedResponse,
   unexpectedErrorResponse,
   getPaginationParams,
   validateRequiredFields,
-  missingFieldsResponse
+  missingFieldsResponse,
+  ensureSupabaseAdmin
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
@@ -21,18 +22,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Validate Supabase admin client
-    if (!supabaseAdmin || supabaseAdminEnv.branch !== "server") {
-      const missingKeys =
-        supabaseAdminEnv.missingKeys.length > 0 ? supabaseAdminEnv.missingKeys : ["Supabase env not resolved"]
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Supabase client not initialized",
-          detail: `Missing required env for Supabase service_role client: ${missingKeys.join(", ")}`,
-          where: "case-records GET",
-        },
-        { status: 500 },
-      )
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
+      return clientError
     }
 
     // Parse query parameters
@@ -83,7 +75,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query
-    let query = supabaseAdmin
+    let query = supabaseAdmin!
       .from("case_records")
       .select("id, service_id, care_receiver_id, record_date, record_time, record_data, created_at", { count: "exact" })
       .eq("service_id", serviceId!)

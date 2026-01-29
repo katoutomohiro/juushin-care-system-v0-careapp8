@@ -4,7 +4,8 @@ import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { 
   requireApiUser, 
   unauthorizedResponse,
-  unexpectedErrorResponse
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
@@ -70,23 +71,13 @@ export async function POST(req: NextRequest) {
       branch: supabaseAdminEnv.branch,
     })
 
-    if (!supabaseAdmin || supabaseAdminEnv.branch !== "server") {
-      const missingKeys =
-        supabaseAdminEnv.missingKeys.length > 0 ? supabaseAdminEnv.missingKeys : ["Supabase env not resolved"]
-      return NextResponse.json(
-        {
-          ok: false,
-          where: "case-records/save POST",
-          error: "Supabase client not initialized",
-          detail: `Missing required env for Supabase service_role client: ${missingKeys.join(", ")}`,
-          env: {
-            urlSource: supabaseAdminEnv.urlSource,
-            keySource: supabaseAdminEnv.keySource,
-            branch: supabaseAdminEnv.branch,
-          },
-        },
-        { status: 500 },
-      )
+    const missingKeys = supabaseAdminEnv.missingKeys.length > 0 ? supabaseAdminEnv.missingKeys : ["Supabase env not resolved"]
+    const clientError = ensureSupabaseAdmin(
+      supabaseAdmin,
+      `Missing required env for Supabase service_role client: ${missingKeys.join(", ")}`
+    )
+    if (clientError) {
+      return clientError
     }
 
     const body = await req.json().catch(() => null)
@@ -172,7 +163,7 @@ export async function POST(req: NextRequest) {
       serviceId = serviceInput
     } else {
       console.info("[case-records/save POST] service lookup", { serviceSlug: serviceInput })
-      const { data: serviceData, error: serviceError } = await supabaseAdmin
+      const { data: serviceData, error: serviceError } = await supabaseAdmin!
         .from("services")
         .select("id")
         .eq("slug", serviceInput)
@@ -229,7 +220,7 @@ export async function POST(req: NextRequest) {
 
     let careReceiver = null
     if (careReceiverId) {
-      const { data, error: careReceiverIdError } = await supabaseAdmin
+      const { data, error: careReceiverIdError } = await supabaseAdmin!
         .from("care_receivers")
         .select("id, code")
         .eq("id", careReceiverId)
@@ -254,7 +245,7 @@ export async function POST(req: NextRequest) {
       }
       careReceiver = data
     } else {
-      const { data, error: careReceiverError } = await supabaseAdmin
+      const { data, error: careReceiverError } = await supabaseAdmin!
         .from("care_receivers")
         .select("id, code")
         .eq("code", careReceiverCode)
@@ -320,7 +311,7 @@ export async function POST(req: NextRequest) {
 
     if (recordId && uuidRegex.test(String(recordId))) {
       // 既存レコードの更新
-      let updateQuery = supabaseAdmin
+      let updateQuery = supabaseAdmin!
         .from("case_records")
         .update(recordRow)
         .eq("id", recordId)
@@ -351,7 +342,7 @@ export async function POST(req: NextRequest) {
         )
       }
     } else {
-      const insertResult = await supabaseAdmin
+      const insertResult = await supabaseAdmin!
         .from("case_records")
         .insert([recordRow])
         .select("*")
