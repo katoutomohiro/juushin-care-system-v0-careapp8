@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin
+} from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -23,15 +28,9 @@ export async function PUT(req: NextRequest) {
       return unauthorizedResponse(true)
     }
 
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Supabase client not initialized",
-          detail: "Missing required Supabase environment variables",
-        },
-        { status: 500 }
-      )
+    const clientError = ensureSupabaseAdmin(supabaseAdmin, "Missing required Supabase environment variables")
+    if (clientError) {
+      return clientError
     }
 
     const body = await req.json().catch(() => null)
@@ -74,7 +73,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update care_receivers.name where code = normalizedCode
-    const { data: updatedRows, error } = await supabaseAdmin
+    const { data: updatedRows, error } = await supabaseAdmin!
       .from("care_receivers")
       .update({ name: trimmedName })
       .eq("code", normalizedCode)
@@ -122,14 +121,8 @@ export async function PUT(req: NextRequest) {
       message: `Name updated to "${trimmedName}"`,
     })
   } catch (error) {
-    console.error("[care-receivers/update-name] Error:", error)
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Internal server error",
-        detail: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('care-receivers/update-display-name PUT', error)
   }
 }
+
+

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  ensureSupabaseAdmin,
+  unexpectedErrorResponse
+} from "@/lib/api/route-helpers"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 export const dynamic = "force-dynamic"
@@ -38,7 +43,8 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    if (!supabaseAdmin) {
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
       return NextResponse.json(
         { ok: false, error: "Database connection not available" },
         { status: 200 },
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     // LIST MODE: Get all care receivers for a service
     if (serviceId) {
-      let query = supabaseAdmin
+      let query = supabaseAdmin!
         .from("care_receivers")
         .select("id, code, name, age, gender, care_level, condition, medical_care")
 
@@ -85,7 +91,7 @@ export async function GET(req: NextRequest) {
     // SINGLE MODE: Get care receiver by id or code
     const normalizedCode = codeInput ? normalizeUserId(codeInput) : null
 
-    let query = supabaseAdmin
+    let query = supabaseAdmin!
       .from("care_receivers")
       .select("id, code, name, age, gender, care_level, condition, medical_care")
 
@@ -135,10 +141,6 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[GET /api/care-receivers] Unexpected error:", error)
-    return NextResponse.json(
-      { ok: false, error: "Internal server error" },
-      { status: 200 },
-    )
+    return unexpectedErrorResponse('care-receivers GET', error)
   }
 }

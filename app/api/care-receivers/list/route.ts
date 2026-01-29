@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { isRealPiiEnabled, omitPii, requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  isRealPiiEnabled, 
+  omitPii, 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin
+} from "@/lib/api/route-helpers"
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -13,21 +20,21 @@ export const runtime = 'nodejs'
  *   { ok: false, users: [], count: 0, error: string, serviceCode: string }
  */
 export async function GET(req: NextRequest) {
-  const user = await requireApiUser()
-  if (!user) {
-    return unauthorizedResponse(true)
-  }
-
-  const { searchParams } = new URL(req.url)
-  const serviceCode = searchParams.get('serviceCode') ?? ''
-
-  console.log('[API] GET /care-receivers/list - serviceCode:', serviceCode)
-
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(true)
+    }
+
+    const { searchParams } = new URL(req.url)
+    const serviceCode = searchParams.get('serviceCode') ?? ''
+
+    console.log('[API] GET /care-receivers/list - serviceCode:', serviceCode)
+
     const allowRealPii = isRealPiiEnabled()
 
-    if (!supabaseAdmin) {
-      console.error('[API] supabaseAdmin is null')
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
       return NextResponse.json(
         {
           ok: false,
@@ -41,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 診断用：絞り込みなしで全件取得してservice_codeを確認
-    const { data: allData, error: _allError } = await supabaseAdmin
+    const { data: allData, error: _allError } = await supabaseAdmin!
       .from('care_receivers')
       .select('service_code', { count: 'exact' })
       .eq('is_active', true)
@@ -53,7 +60,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 実際のクエリ
-    const { data, error, count } = await supabaseAdmin
+    const { data, error, count } = await supabaseAdmin!
       .from('care_receivers')
       .select('*', { count: 'exact' })
       .eq('is_active', true)
@@ -88,19 +95,7 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     )
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err)
-    console.error('[API] Unexpected error:', errMsg, err)
-    return NextResponse.json(
-      {
-        ok: false,
-        serviceCode,
-        users: [],
-        count: 0,
-        error: errMsg
-      },
-      { status: 500 }
-    )
-  }
+    return unexpectedErrorResponse('care-receivers/list GET', err)  }
 }
 
 /**

@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { isRealPiiEnabled, piiDisabledResponse, requireApiUser, unauthorizedResponse, withPii } from "@/lib/api/route-helpers"
+import { 
+  isRealPiiEnabled, 
+  piiDisabledResponse, 
+  requireApiUser, 
+  unauthorizedResponse, 
+  withPii,
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin
+} from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -34,14 +42,15 @@ export async function GET(
       )
     }
 
-    if (!supabaseAdmin) {
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
       return NextResponse.json(
         { ok: false, error: "Database connection not available" },
         { status: 500 }
       )
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin!
       .from("care_receivers")
       .select("*")
       .eq("id", id)
@@ -93,12 +102,7 @@ export async function GET(
       user: userWithPii,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[GET /api/care-receivers/[id]] Unexpected error:", error)
-    return NextResponse.json(
-      { ok: false, error: "Internal server error", detail: message },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('care-receivers/[id] GET', error)
   }
 }
 
