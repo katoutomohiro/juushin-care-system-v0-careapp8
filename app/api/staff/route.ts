@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin
+} from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -23,7 +28,8 @@ export async function GET(req: NextRequest) {
       return unauthorizedResponse(false)
     }
 
-    if (!supabaseAdmin) {
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
       return NextResponse.json(
         { error: "Database not available" },
         { status: 503 }
@@ -42,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query
-    let query = supabaseAdmin
+    let query = supabaseAdmin!
       .from("staff")
       .select("id, name, sort_order, is_active, service_id")
       .eq("service_id", serviceId)
@@ -79,14 +85,6 @@ export async function GET(req: NextRequest) {
       staffOptions,
     })
   } catch (error) {
-    console.error("[GET /api/staff] Unexpected error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('staff GET', error)
   }
 }
-
-// NOTE: PUT / POST methods removed
-// staff 更新は lib/actions/staffActions.ts に移行済み
-// Client からは Server Action 経由で呼び出してください

@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
-// UUID専用エンドポイントに修正（slug/codeの解決を排除）
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  getPaginationParams,
+  validateRequiredFields,
+  missingFieldsResponse
+} from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
+
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,11 +41,12 @@ export async function GET(req: NextRequest) {
     const careReceiverId = searchParams.get("careReceiverId") || null
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
-    const limitStr = searchParams.get("limit") || "20"
-    const offsetStr = searchParams.get("offset") || "0"
 
-    const limit = Math.min(Math.max(parseInt(limitStr) || 20, 1), 100) // 1-100
-    const offset = Math.max(parseInt(offsetStr) || 0, 0)
+    const { limit, offset } = getPaginationParams(
+      searchParams.get("limit"),
+      searchParams.get("offset"),
+      { limit: 20, minLimit: 1, maxLimit: 100, defaultOffset: 0 }
+    )
 
     if (process.env.NODE_ENV === "development") {
       console.info("[case-records GET] Query params", {
@@ -51,31 +60,22 @@ export async function GET(req: NextRequest) {
     }
 
     // Validate required parameters
-    const missingFields: string[] = []
-    if (!serviceId) missingFields.push("serviceId")
-    if (!careReceiverId) missingFields.push("careReceiverId")
-
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing required query parameters",
-          detail: `Required: serviceId (UUID) and careReceiverId (UUID). Missing: ${missingFields.join(", ")}`,
-          where: "case-records GET",
-        },
-        { status: 400 },
-      )
+    const validation = validateRequiredFields(
+      { serviceId, careReceiverId },
+      ['serviceId', 'careReceiverId']
+    )
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     // Validate UUIDs
-    if (!serviceId || !uuidRegex.test(serviceId)) {
+    if (!uuidRegex.test(serviceId!)) {
       return NextResponse.json(
         { ok: false, error: "serviceId must be UUID", where: "case-records GET" },
         { status: 400 },
       )
     }
-    if (!careReceiverId || !uuidRegex.test(careReceiverId)) {
+    if (!uuidRegex.test(careReceiverId!)) {
       return NextResponse.json(
         { ok: false, error: "careReceiverId must be UUID", where: "case-records GET" },
         { status: 400 },
@@ -86,8 +86,8 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from("case_records")
       .select("id, service_id, care_receiver_id, record_date, record_time, record_data, created_at", { count: "exact" })
-      .eq("service_id", serviceId)
-      .eq("care_receiver_id", careReceiverId)
+      .eq("service_id", serviceId!)
+      .eq("care_receiver_id", careReceiverId!)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -131,16 +131,6 @@ export async function GET(req: NextRequest) {
       { status: 200 },
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[case-records GET] failed", { message })
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Unexpected error occurred",
-        message,
-        where: "case-records GET",
-      },
-      { status: 500 },
-    )
+    return unexpectedErrorResponse('case-records GET', error)
   }
 }

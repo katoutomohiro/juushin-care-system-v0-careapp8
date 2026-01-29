@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin, supabaseAdminEnv } from "@/lib/supabase/serverAdmin"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse
+} from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -396,17 +400,6 @@ export async function POST(req: NextRequest) {
       { status: 200 },
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    const errorDetails = error instanceof Error ? error.stack : undefined
-    console.error("[case-records/save POST] unexpected error", { message, errorDetails })
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Unexpected error occurred",
-        message,
-        where: "case-records/save POST",
-      },
-      { status: 500 },
-    )
+    return unexpectedErrorResponse('case-records/save POST', error)
   }
 }

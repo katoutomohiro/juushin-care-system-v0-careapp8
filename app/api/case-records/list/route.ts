@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { requireApiUser, unauthorizedResponse } from "@/lib/api/route-helpers"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  ensureSupabaseAdmin,
+  getPaginationParams
+} from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -28,7 +34,8 @@ export async function GET(req: NextRequest) {
       return unauthorizedResponse(false)
     }
 
-    if (!supabaseAdmin) {
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
       return NextResponse.json(
         { error: "Database not available" },
         { status: 503 }
@@ -42,8 +49,12 @@ export async function GET(req: NextRequest) {
     const dateTo = searchParams.get("dateTo")
     const dateExact = searchParams.get("date")
     const mainStaffId = searchParams.get("mainStaffId")
-    const limit = parseInt(searchParams.get("limit") || "50", 10)
-    const offset = parseInt(searchParams.get("offset") || "0", 10)
+    
+    const { limit, offset } = getPaginationParams(
+      searchParams.get("limit"),
+      searchParams.get("offset"),
+      { limit: 50, minLimit: 1, maxLimit: 100, defaultOffset: 0 }
+    )
 
     // Validation
     if (!serviceId || !careReceiverId) {
@@ -56,7 +67,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query
-    let query = supabaseAdmin
+    let query = supabaseAdmin!
       .from("case_records")
       .select(
         `
@@ -140,10 +151,8 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[GET /api/case-records/list] Unexpected error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('case-records/list GET', error)
   }
 }
+
+
