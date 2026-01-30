@@ -5,7 +5,11 @@ import {
   requireApiUser, 
   unauthorizedResponse,
   unexpectedErrorResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  validateRequiredFields,
+  missingFieldsResponse,
+  jsonError,
+  supabaseErrorResponse
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
@@ -35,25 +39,34 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json().catch(() => null)
     if (!body || typeof body !== "object") {
-      return NextResponse.json(
+      return jsonError(
+        'Invalid request body',
+        400,
         {
           ok: false,
-          error: "Invalid request body",
-          detail: "Request body must be a JSON object",
-        },
-        { status: 400 }
+          detail: 'Request body must be a JSON object'
+        }
       )
     }
 
     const { code, name } = body
-    if (!code || typeof code !== "string" || !name || typeof name !== "string") {
-      return NextResponse.json(
+    
+    const validation = validateRequiredFields(
+      { code, name },
+      ['code', 'name']
+    )
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
+    }
+    
+    if (typeof code !== "string" || typeof name !== "string") {
+      return jsonError(
+        'Invalid field types',
+        400,
         {
           ok: false,
-          error: "Missing or invalid required fields",
-          detail: "code and name must be non-empty strings",
-        },
-        { status: 400 }
+          detail: 'code and name must be strings'
+        }
       )
     }
 
@@ -62,13 +75,13 @@ export async function PUT(req: NextRequest) {
     const trimmedName = name.trim()
 
     if (!normalizedCode || !trimmedName) {
-      return NextResponse.json(
+      return jsonError(
+        'Invalid input after normalization',
+        400,
         {
           ok: false,
-          error: "Invalid input after normalization",
-          detail: "code and name cannot be empty after normalization",
-        },
-        { status: 400 }
+          detail: 'code and name cannot be empty after normalization'
+        }
       )
     }
 
@@ -80,31 +93,20 @@ export async function PUT(req: NextRequest) {
       .select("id, code, name")
 
     if (error) {
-      console.error("[care-receivers/update-name] Supabase update failed:", {
+      return supabaseErrorResponse('care-receivers/update-display-name PUT', error, {
         code: normalizedCode,
-        name: trimmedName,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
+        name: trimmedName
       })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Failed to update care_receiver",
-          detail: error.message || "Unknown database error",
-        },
-        { status: 400 }
-      )
     }
 
     if (!updatedRows || updatedRows.length === 0) {
-      return NextResponse.json(
+      return jsonError(
+        'care_receiver not found',
+        404,
         {
           ok: false,
-          error: "care_receiver not found",
-          detail: `No care_receiver found with code='${normalizedCode}'`,
-        },
-        { status: 404 }
+          detail: `No care_receiver found with code='${normalizedCode}'`
+        }
       )
     }
 

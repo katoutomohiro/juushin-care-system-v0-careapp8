@@ -6,7 +6,8 @@ import {
   unauthorizedResponse,
   unexpectedErrorResponse,
   validateRequiredFields,
-  missingFieldsResponse
+  missingFieldsResponse,
+  jsonError
 } from '@/lib/api/route-helpers'
 
 export const runtime = 'nodejs'
@@ -37,12 +38,12 @@ export async function POST(req: NextRequest) {
 
     // Validate text format
     if (typeof text !== 'string' || text.trim().length === 0) {
-      return NextResponse.json({ error: 'text must be a non-empty string' }, { status: 400 })
+      return jsonError('text must be a non-empty string', 400, { ok: false })
     }
 
     // Validate durationMs
     if (typeof durationMs !== 'number' || durationMs < 0) {
-      return NextResponse.json({ error: 'durationMs must be a non-negative number' }, { status: 400 })
+      return jsonError('durationMs must be a non-negative number', 400, { ok: false })
     }
 
     const supabaseUrl = SUPABASE_URL
@@ -76,10 +77,14 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return NextResponse.json(
-        { error: error.message || 'Database insert failed', hint: 'Check Supabase schema and permissions' },
-        { status: 500 }
+      console.error('[voice/save POST] Supabase insert error:', error)
+      return jsonError(
+        error.message || 'Database insert failed',
+        500,
+        {
+          ok: false,
+          detail: 'Check Supabase schema and permissions'
+        }
       )
     }
 
