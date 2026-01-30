@@ -4,7 +4,9 @@ import {
   requireApiUser, 
   unauthorizedResponse,
   ensureSupabaseAdmin,
-  unexpectedErrorResponse
+  unexpectedErrorResponse,
+  supabaseErrorResponse,
+  jsonError
 } from "@/lib/api/route-helpers"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
@@ -37,18 +39,12 @@ export async function GET(req: NextRequest) {
 
     // No required parameters provided
     if (!id && !codeInput && !serviceId) {
-      return NextResponse.json(
-        { ok: false, error: "id or code or serviceId is required" },
-        { status: 200 }, // Use 200 to avoid console 400 spam
-      )
+      return jsonError("id or code or serviceId is required", 200, { ok: false })
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 200 },
-      )
+      return jsonError("Database connection not available", 200, { ok: false })
     }
 
     // LIST MODE: Get all care receivers for a service
@@ -62,15 +58,7 @@ export async function GET(req: NextRequest) {
       const { data, error } = await query
 
       if (error) {
-        console.error("[GET /api/care-receivers] List query error:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-        })
-        return NextResponse.json(
-          { ok: false, error: "Failed to fetch care receivers", detail: error.message },
-          { status: 200 },
-        )
+        return supabaseErrorResponse('care-receivers GET (list)', error)
       }
 
       return NextResponse.json({
@@ -100,31 +88,17 @@ export async function GET(req: NextRequest) {
     } else if (normalizedCode) {
       query = query.eq("code", normalizedCode)
     } else {
-      return NextResponse.json(
-        { ok: false, error: "Invalid code" },
-        { status: 200 },
-      )
+      return jsonError("Invalid code", 200, { ok: false })
     }
 
     const { data, error } = await query.maybeSingle()
 
     if (error) {
-      console.error("[GET /api/care-receivers] Supabase query error:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      })
-      return NextResponse.json(
-        { ok: false, error: "Failed to fetch care receiver", detail: error.message },
-        { status: 200 },
-      )
+      return supabaseErrorResponse('care-receivers GET (single)', error)
     }
 
     if (!data) {
-      return NextResponse.json(
-        { ok: false, error: "care_receiver not found" },
-        { status: 200 },
-      )
+      return jsonError("care_receiver not found", 200, { ok: false })
     }
 
     return NextResponse.json({

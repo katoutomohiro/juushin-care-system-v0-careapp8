@@ -4,7 +4,10 @@ import {
   requireApiUser, 
   unauthorizedResponse,
   unexpectedErrorResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  validateRequiredFields,
+  missingFieldsResponse,
+  supabaseErrorResponse
 } from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
@@ -30,21 +33,19 @@ export async function GET(req: NextRequest) {
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return NextResponse.json(
-        { error: "Database not available" },
-        { status: 503 }
-      )
+      return clientError
     }
 
     const { searchParams } = new URL(req.url)
     const serviceId = searchParams.get("serviceId")
     const activeOnly = searchParams.get("activeOnly") !== "false"
 
-    if (!serviceId) {
-      return NextResponse.json(
-        { error: "serviceId is required" },
-        { status: 400 }
-      )
+    const validation = validateRequiredFields(
+      { serviceId },
+      ['serviceId']
+    )
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
     }
 
     // Build query
@@ -62,11 +63,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error("[GET /api/staff] Supabase error:", error)
-      return NextResponse.json(
-        { error: "Failed to fetch staff", detail: error.message },
-        { status: 500 }
-      )
+      return supabaseErrorResponse('staff GET', error)
     }
 
     const staffList = (data || []).map((row: any) => ({

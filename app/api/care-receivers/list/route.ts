@@ -6,7 +6,9 @@ import {
   requireApiUser, 
   unauthorizedResponse,
   unexpectedErrorResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  supabaseErrorResponse,
+  jsonError
 } from "@/lib/api/route-helpers"
 
 export const dynamic = 'force-dynamic'
@@ -35,16 +37,11 @@ export async function GET(req: NextRequest) {
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          serviceCode,
-          users: [],
-          count: 0,
-          error: 'Database not available'
-        },
-        { status: 503 }
-      )
+      return jsonError('Database not available', 503, {
+        ok: false,
+        detail: 'Supabase admin client not initialized',
+        extra: { serviceCode, users: [], count: 0 }
+      })
     }
 
     // 診断用：絞り込みなしで全件取得してservice_codeを確認
@@ -68,17 +65,11 @@ export async function GET(req: NextRequest) {
       .order('name')
 
     if (error) {
-      console.error('[API] Supabase query error:', error)
-      return NextResponse.json(
-        {
-          ok: false,
-          serviceCode,
-          users: [],
-          count: 0,
-          error: error.message
-        },
-        { status: 500 }
-      )
+      return supabaseErrorResponse('care-receivers/list GET', error, {
+        serviceCode,
+        users: [],
+        count: 0
+      })
     }
 
     console.log('[API] Query success - count:', count, 'dataLength:', data?.length)
