@@ -29,6 +29,15 @@ export const runtime = "nodejs"
  * 設計判断：
  * - createRouteHandlerClient(cookies) でセッション自動バインド
  * - RLS で service_id フィルタリング自動適用
+ * 
+ * 📋 FUTURE ENHANCEMENT (cf. docs/RECORDS_API_DESIGN_EVOLUTION.md):
+ *   - Add event_type filter to extract only seizures/excretions
+ *   - Add min_severity, max_severity for seizure filtering
+ *   - Add metric=summary to return daily aggregates instead of raw records
+ *   - Add ?expand=details to include unnested event arrays
+ *   Examples:
+ *     ?eventType=seizure&dateFrom=2026-01-01
+ *     ?metric=daily_summary (returns: seizure_count, meals_completed, sleep_mins)
  */
 export async function GET(req: NextRequest) {
   try {
