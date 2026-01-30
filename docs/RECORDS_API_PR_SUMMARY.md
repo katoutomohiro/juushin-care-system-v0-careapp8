@@ -103,6 +103,92 @@
 
 ---
 
+### GET /api/case-records/analytics - レスポンス例
+
+#### クエリ例
+```
+GET /api/case-records/analytics?dateFrom=2026-01-23&dateTo=2026-01-30
+```
+
+#### レスポンス例（成功）
+```json
+{
+  "ok": true,
+  "data": {
+    "range": {
+      "dateFrom": "2026-01-23",
+      "dateTo": "2026-01-30"
+    },
+    "daily": [
+      {
+        "date": "2026-01-23",
+        "seizureCount": 2,
+        "sleepMins": 420,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-24",
+        "seizureCount": 1,
+        "sleepMins": 480,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-25",
+        "seizureCount": 0,
+        "sleepMins": 360,
+        "mealsCompleted": 2
+      },
+      {
+        "date": "2026-01-26",
+        "seizureCount": 3,
+        "sleepMins": 400,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-27",
+        "seizureCount": 1,
+        "sleepMins": 450,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-28",
+        "seizureCount": 2,
+        "sleepMins": 420,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-29",
+        "seizureCount": 0,
+        "sleepMins": 480,
+        "mealsCompleted": 3
+      },
+      {
+        "date": "2026-01-30",
+        "seizureCount": 1,
+        "sleepMins": 420,
+        "mealsCompleted": 3
+      }
+    ],
+    "summary": {
+      "seizureCountTotal": 10,
+      "sleepMinsAvg": 429,
+      "mealsCompletedTotal": 23
+    }
+  }
+}
+```
+
+#### レスポンス例（エラー）
+```json
+{
+  "ok": false,
+  "error": "Failed to retrieve analytics",
+  "detail": "Unauthorized"
+}
+```
+
+---
+
 ## 設計上の改善点（提案済み、実装予定なし）
 
 ### 1. 時系列イベント化

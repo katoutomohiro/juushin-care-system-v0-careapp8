@@ -6,6 +6,7 @@ import {
   ensureSupabaseAdmin,
 } from "@/lib/api/route-helpers"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
 
 export const runtime = "nodejs"
 
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
         sleepMinsAvg,
         mealsCompletedTotal,
       },
-    }
+    } satisfies RecordsAnalyticsResponse
 
     return NextResponse.json(
       {
