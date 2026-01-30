@@ -67,3 +67,13 @@ vercel --prod
 - Production readiness summary: [PRODUCTION_READY.md](PRODUCTION_READY.md)
 - Production checklist: [docs/PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md)
 - RLS details: [docs/SUPABASE_RLS_GUIDE.md](docs/SUPABASE_RLS_GUIDE.md)
+- Records Analytics API: [docs/RECORDS_API_PR_SUMMARY.md](docs/RECORDS_API_PR_SUMMARY.md)
+
+## Key Features
+
+### Records Analytics (`/analytics`)
+- **URL**: `/analytics` (accessible only when logged in)
+- **Purpose**: ケア記録の期間別集計と分析
+- **UI**: Summary cards (発作数, 睡眠時間, 食事完了数) + Daily data table
+- **Access**: ダッシュボードの「試験機能 / AI支援セクション」から「Records Analytics」カードをクリック、またはURL直接入力
+- **Authentication**: 未ログイン時は自動的に `/login` へリダイレクト

@@ -2,6 +2,18 @@
 
 import { useState } from "react"
 import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
 
 type AnalyticsViewerProps = {
   data: RecordsAnalyticsResponse | null
@@ -40,12 +52,20 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
   // Sort daily data by date (ascending)
   const sortedDaily = [...data.daily].sort((a, b) => a.date.localeCompare(b.date))
 
+  // Prepare graph data
+  const chartData = sortedDaily.map((day) => ({
+    date: day.date,
+    seizureCount: day.seizureCount ?? 0,
+    sleepMins: day.sleepMins ?? 0,
+    mealsCompleted: day.mealsCompleted ?? 0,
+  }))
+
   return (
     <div className="space-y-6">
       {/* Period Header */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
         <h2 className="text-lg font-semibold text-gray-800">
-          Analysis Period: {data.range.dateFrom} ～ {data.range.dateTo}
+          分析期間: {data.range.dateFrom} ～ {data.range.dateTo}
         </h2>
       </div>
 
@@ -88,7 +108,8 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
                 {data.summary.sleepMinsAvg}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                minutes ({Math.floor(data.summary.sleepMinsAvg / 60)}h {data.summary.sleepMinsAvg % 60}m)
+                minutes ({Math.floor(data.summary.sleepMinsAvg / 60)}h{" "}
+                {data.summary.sleepMinsAvg % 60}m)
               </p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
@@ -138,6 +159,60 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
         </div>
       </div>
 
+      {/* Charts Section */}
+      <div className="space-y-6">
+        {/* Seizure Count Line Chart */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">発作回数の推移</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="seizureCount"
+                stroke="#e11d48"
+                name="発作回数"
+                dot={{ fill: "#e11d48", r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Sleep Minutes Bar Chart */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">睡眠時間の推移</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="sleepMins" fill="#3b82f6" name="睡眠（分）" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Meals Completed Bar Chart */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">食事完了数の推移</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="mealsCompleted" fill="#10b981" name="食事完了数" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Daily Table */}
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
         <h2 className="text-lg font-semibold mb-4">日別データ</h2>
@@ -170,7 +245,7 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {day.sleepMins ?? 0}
-                    {day.sleepMins > 0 && (
+                    {day.sleepMins && day.sleepMins > 0 && (
                       <span className="text-xs text-gray-400 ml-1">
                         ({Math.floor(day.sleepMins / 60)}h {day.sleepMins % 60}m)
                       </span>

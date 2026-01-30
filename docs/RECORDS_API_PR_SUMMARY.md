@@ -267,3 +267,116 @@ GET /api/case-records/list?eventType=seizure&minSeverity=moderate
 
 **結論**: 本 PR は merge-ready 状態です。
 
+---
+
+## Step 4: 端末問わずアクセスできるための導線整備（URL確定 / ナビ追加 / 認証ガード）
+
+### 4.1. URL 確定
+
+**採用 URL**: `/analytics` （確定）
+
+**理由**:
+- 既存の route group `(records)` はURL に含まれない（App Router の仕様）
+- シンプルで分かりやすい
+- ダッシュボード等からのナビゲーション時に統一的
+
+**ファイル構成**:
+- Server Component: `app/(records)/analytics/page.tsx`
+  - 認証確認（getApiUser）を実施、未ログイン時は `/login` へリダイレクト
+  - metadata 設定
+- Client Component: `app/(records)/analytics/analytics-client.tsx`
+  - 実際のクエリフォーム・データ取得・ビュア表示
+
+### 4.2. ダッシュボード（ホーム）に Records Analytics カードを追加
+
+**ファイル**: `app/home-client.tsx`
+
+**追加位置**: 「試験機能 / AI 支援セクション」内
+
+**カード仕様**:
+- **色**: 紫系（violet-50 / violet-200 / violet-700）
+- **アイコン**: 📊
+- **タイトル**: Records Analytics
+- **説明**: ケア記録の期間別集計。発作・睡眠・食事などの日別データを可視化。
+- **クリック先**: `/analytics`
+
+**実装例**:
+```tsx
+<ClickableCard 
+  onClick={() => window.location.href = '/analytics'} 
+  className="group border-2 hover:border-primary/30 bg-violet-50 text-violet-800 border-violet-200 hover:bg-violet-100"
+  particleColors={["#a78bfa", "#8b5cf6", "#c4b5fd"]}
+>
+  <CardHeader className="pb-2">
+    <div className="flex items-start gap-4">
+      <div className="p-3 rounded-xl bg-white/60 text-2xl">📊</div>
+      <div className="flex-1">
+        <CardTitle className="text-base font-semibold">Records Analytics</CardTitle>
+      </div>
+    </div>
+  </CardHeader>
+  <CardContent>
+    <p className="text-sm text-violet-700">ケア記録の期間別集計。発作・睡眠・食事などの日別データを可視化。</p>
+  </CardContent>
+</ClickableCard>
+```
+
+### 4.3. 認証ガード（未ログイン時はログインへ誘導）
+
+**実装位置**: `app/(records)/analytics/page.tsx` (Server Component)
+
+**流れ**:
+1. `getApiUser()` でサーバーサイド認証確認
+2. `user` が `null` の場合 → `redirect("/login")`
+3. ログイン済みの場合のみクライアント側を表示
+
+**コード**:
+```typescript
+import { redirect } from "next/navigation"
+import { getApiUser } from "@/lib/auth/get-api-user"
+import AnalyticsPageClient from "./analytics-client"
+
+export default async function AnalyticsPage() {
+  const user = await getApiUser()
+  if (!user) {
+    redirect("/login")
+  }
+  return <AnalyticsPageClient />
+}
+```
+
+**既存認証体系との整合**:
+- middleware.ts による全体的な認証フロー（public routes を除き未ログイン時に /login へリダイレクト）に加えて
+- 本ページでは server-side で再度確認することで、セキュリティを強化
+
+### 4.4. ドキュメント・README 更新内容
+
+**docs/RECORDS_API_PR_SUMMARY.md に追記**:
+- URL 確定: `/analytics`
+- ダッシュボード導線: 追加完了
+- 認証: 必須（ログイン後のみアクセス可能）
+
+**README.md に 1 行追記**:
+```
+- **Records Analytics** (`/analytics`): ケア記録の期間別集計。ダッシュボードの「試験機能セクション」から、またはコマンドラインで `curl http://localhost:3000/analytics` でアクセス（要ログイン）。
+```
+
+### 4.5. 品質チェック結果
+
+✅ **pnpm lint** - PASS  
+✅ **pnpm typecheck** - PASS  
+✅ **pnpm build** - PASS
+
+---
+
+## 最終ステータス
+
+| Step | 内容 | 状態 |
+|------|------|------|
+| 1 | Records API 設計進化 | ✅ 完了 |
+| 2 | Analytics API 実装 | ✅ 完了 |
+| 3 | Analytics UI（カード・表） | ✅ 完了 |
+| 4 | 導線整備（URL / ナビ / 認証） | ✅ 完了 |
+
+**全ステップ完了。Records Analytics 機能は本番運用準備完了**。
+
