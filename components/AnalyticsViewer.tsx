@@ -2,6 +2,7 @@
 
 import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
 import { MetricChart } from "@/components/MetricChart"
+import { SummaryCard } from "@/components/analytics/SummaryCard"
 
 type AnalyticsViewerProps = {
   data: RecordsAnalyticsResponse | null
@@ -60,57 +61,69 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
     mealsCompleted: day.mealsCompleted ?? 0,
   }))
 
+  // Summary cards configuration
+  const summaryCards = [
+    {
+      title: "発作合計",
+      value: data.summary.seizureCountTotal,
+      description: "期間内の発作回数",
+      color: "rose" as const,
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "平均睡眠",
+      value: data.summary.sleepMinsAvg,
+      description: data.summary.sleepMinsAvg
+        ? `${Math.floor(data.summary.sleepMinsAvg / 60)}時間${data.summary.sleepMinsAvg % 60}分 / 日平均`
+        : "—",
+      color: "blue" as const,
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "食事完了",
+      value: data.summary.mealsCompletedTotal,
+      description: "期間内の食事完了回数",
+      color: "green" as const,
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-4">集計結果</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Seizure Count Card */}
-          <div className="bg-gradient-to-br from-rose-50 to-rose-100/30 p-6 rounded-lg border border-rose-200/50 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-rose-700 uppercase tracking-wider">発作合計</p>
-              <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold text-rose-700">
-              {data.summary.seizureCountTotal ?? "—"}
-            </p>
-            <p className="text-xs text-rose-600 mt-2">期間内の発作回数</p>
-          </div>
-
-          {/* Sleep Average Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 p-6 rounded-lg border border-blue-200/50 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">平均睡眠</p>
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold text-blue-700">
-              {data.summary.sleepMinsAvg ?? "—"}
-            </p>
-            <p className="text-xs text-blue-600 mt-2">
-              {data.summary.sleepMinsAvg 
-                ? `${Math.floor(data.summary.sleepMinsAvg / 60)}時間${data.summary.sleepMinsAvg % 60}分 / 日平均`
-                : "—"}
-            </p>
-          </div>
-
-          {/* Meals Completed Card */}
-          <div className="bg-gradient-to-br from-green-50 to-green-100/30 p-6 rounded-lg border border-green-200/50 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-green-700 uppercase tracking-wider">食事完了</p>
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold text-green-700">
-              {data.summary.mealsCompletedTotal ?? "—"}
-            </p>
-            <p className="text-xs text-green-600 mt-2">期間内の食事完了回数</p>
-          </div>
+          {summaryCards.map((card) => (
+            <SummaryCard key={card.title} {...card} />
+          ))}
         </div>
       </div>
       <div className="space-y-6">
