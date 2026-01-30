@@ -5,12 +5,13 @@ import {
   requireApiUser, 
   unauthorizedResponse,
   unexpectedErrorResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  isValidUUID,
+  supabaseErrorResponse,
+  missingFieldsResponse
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
-
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function getSupabaseProjectInfo(url: string) {
   if (!url) return { host: "", projectRef: "" }
@@ -129,37 +130,28 @@ export async function POST(req: NextRequest) {
     if (!mainStaffId) missingFields.push("mainStaffId")
 
     if (missingFields.length > 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `Missing required fields: ${missingFields.join(", ")}`,
-          where: "case-records/save POST",
-          payloadKeys: bodyKeys,
-          fieldErrors: missingFields,
-        },
-        { status: 400 },
-      )
+      return missingFieldsResponse(missingFields)
     }
 
     // Ensure mainStaffId and subStaffId are UUID or null (never other formats like "staff-1")
     let normalizedMainStaffId: string | null = null
     let normalizedSubStaffId: string | null = null
 
-    if (mainStaffId && uuidRegex.test(String(mainStaffId))) {
+    if (mainStaffId && isValidUUID(String(mainStaffId))) {
       normalizedMainStaffId = String(mainStaffId)
     }
 
-    if (subStaffId && uuidRegex.test(String(subStaffId))) {
+    if (subStaffId && isValidUUID(String(subStaffId))) {
       normalizedSubStaffId = String(subStaffId)
     }
 
     let careReceiverId: string | null = null
-    if (careReceiverIdInput && uuidRegex.test(String(careReceiverIdInput))) {
+    if (careReceiverIdInput && isValidUUID(String(careReceiverIdInput))) {
       careReceiverId = String(careReceiverIdInput)
     }
 
     let serviceId: string | null = null
-    if (uuidRegex.test(serviceInput)) {
+    if (isValidUUID(serviceInput)) {
       serviceId = serviceInput
     } else {
       console.info("[case-records/save POST] service lookup", { serviceSlug: serviceInput })
@@ -170,23 +162,10 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       if (serviceError) {
-        console.error("[case-records/save POST] service lookup failed", {
+        return supabaseErrorResponse('case-records/save POST (service lookup)', serviceError, {
           serviceSlug: serviceInput,
-          message: serviceError.message,
-          code: serviceError.code,
-          details: serviceError.details,
-          hint: serviceError.hint,
+          payloadKeys: bodyKeys,
         })
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "Service lookup failed",
-            detail: serviceError.message || "Unknown error",
-            where: "case-records/save POST",
-            payloadKeys: bodyKeys,
-          },
-          { status: 400 },
-        )
       }
 
       if (!serviceData?.id) {
@@ -226,22 +205,10 @@ export async function POST(req: NextRequest) {
         .eq("id", careReceiverId)
         .maybeSingle()
       if (careReceiverIdError) {
-        console.error("[case-records/save POST] care receiver lookup by id failed", {
+        return supabaseErrorResponse('case-records/save POST (care receiver lookup by id)', careReceiverIdError, {
           id: careReceiverId,
-          message: careReceiverIdError.message,
-          details: careReceiverIdError.details,
-          hint: careReceiverIdError.hint,
+          payloadKeys: bodyKeys,
         })
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "care_receiver lookup failed",
-            detail: careReceiverIdError.message || "Unknown error",
-            where: "case-records/save POST",
-            payloadKeys: bodyKeys,
-          },
-          { status: 400 },
-        )
       }
       careReceiver = data
     } else {
@@ -252,22 +219,10 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       if (careReceiverError) {
-        console.error("[case-records/save POST] care receiver lookup failed", {
+        return supabaseErrorResponse('case-records/save POST (care receiver lookup by code)', careReceiverError, {
           code: careReceiverCode,
-          message: careReceiverError.message,
-          details: careReceiverError.details,
-          hint: careReceiverError.hint,
+          payloadKeys: bodyKeys,
         })
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "care_receiver lookup failed",
-            detail: careReceiverError.message || "Unknown error",
-            where: "case-records/save POST",
-            payloadKeys: bodyKeys,
-          },
-          { status: 400 },
-        )
       }
 
       careReceiver = data
@@ -309,7 +264,7 @@ export async function POST(req: NextRequest) {
     let data: any = null
     let error: any = null
 
-    if (recordId && uuidRegex.test(String(recordId))) {
+    if (recordId && isValidUUID(String(recordId))) {
       // 既存レコードの更新
       let updateQuery = supabaseAdmin!
         .from("case_records")
@@ -352,24 +307,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (error) {
-      console.error("[case-records/save POST] failed", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
+      return supabaseErrorResponse('case-records/save POST (final save)', error, {
         payload: recordRow,
         recordId,
+        payloadKeys: Object.keys(recordRow),
       })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: error.message || "Supabase save failed",
-          detail: error.details ?? error.hint ?? `Supabase save failed: ${error.code ?? "unknown"}`,
-          where: "case-records/save POST",
-          payloadKeys: Object.keys(recordRow),
-        },
-        { status: 400 },
-      )
     }
 
     if (!data) {

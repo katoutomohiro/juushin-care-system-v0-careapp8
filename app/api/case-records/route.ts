@@ -7,12 +7,12 @@ import {
   getPaginationParams,
   validateRequiredFields,
   missingFieldsResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  validateUUIDs,
+  supabaseErrorResponse
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
-
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,17 +61,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Validate UUIDs
-    if (!uuidRegex.test(serviceId!)) {
-      return NextResponse.json(
-        { ok: false, error: "serviceId must be UUID", where: "case-records GET" },
-        { status: 400 },
-      )
-    }
-    if (!uuidRegex.test(careReceiverId!)) {
-      return NextResponse.json(
-        { ok: false, error: "careReceiverId must be UUID", where: "case-records GET" },
-        { status: 400 },
-      )
+    const uuidValidation = validateUUIDs(
+      { serviceId, careReceiverId },
+      ['serviceId', 'careReceiverId']
+    )
+    if (!uuidValidation.valid && uuidValidation.response) {
+      return uuidValidation.response
     }
 
     // Build query
@@ -94,20 +89,7 @@ export async function GET(req: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
-      console.error("[case-records GET] fetch failed", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: error.message || "Supabase query failed",
-          detail: error.details ?? error.hint ?? `Query failed: ${error.code ?? "unknown"}`,
-          where: "case-records GET",
-        },
-        { status: 500 },
-      )
+      return supabaseErrorResponse('case-records GET', error)
     }
 
     return NextResponse.json(
