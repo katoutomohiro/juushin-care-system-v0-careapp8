@@ -8,7 +8,8 @@ import {
   ensureSupabaseAdmin,
   isValidUUID,
   supabaseErrorResponse,
-  missingFieldsResponse
+  missingFieldsResponse,
+  jsonError
 } from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
@@ -169,32 +170,28 @@ export async function POST(req: NextRequest) {
       }
 
       if (!serviceData?.id) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "Service slug not found",
-            detail: `No rows for services.slug='${serviceInput}'. Check Supabase project ref or seed data.`,
+        return jsonError("Service slug not found", 404, {
+          ok: false,
+          detail: `No rows for services.slug='${serviceInput}'. Check Supabase project ref or seed data.`,
+          extra: {
             where: "case-records/save POST",
             payloadKeys: bodyKeys,
           },
-          { status: 404 },
-        )
+        })
       }
 
       serviceId = serviceData.id
     }
 
     if (!careReceiverId && !careReceiverCode) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Invalid care receiver",
-          detail: "Could not resolve care receiver id or code.",
+      return jsonError("Invalid care receiver", 400, {
+        ok: false,
+        detail: "Could not resolve care receiver id or code.",
+        extra: {
           where: "case-records/save POST",
           payloadKeys: bodyKeys,
         },
-        { status: 400 },
-      )
+      })
     }
 
     let careReceiver = null
@@ -229,16 +226,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!careReceiver?.id) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "care_receiver not found",
-          detail: `No rows for care_receivers.code='${careReceiverCode}'.`,
+      return jsonError("care_receiver not found", 404, {
+        ok: false,
+        detail: `No rows for care_receivers.code='${careReceiverCode}'.`,
+        extra: {
           where: "case-records/save POST",
           payloadKeys: bodyKeys,
         },
-        { status: 404 },
-      )
+      })
     }
 
     // Ensure recordData.sections.staff is synchronized with DB UUIDs
@@ -285,16 +280,14 @@ export async function POST(req: NextRequest) {
       
       // 🔐 競合検知: version 指定時に 0 件更新なら 409 Conflict
       if (version !== null && version !== undefined && !data && !error) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "conflict",
+        return jsonError("conflict", 409, {
+          ok: false,
+          detail: `Expected version ${version} but record was modified by another user.`,
+          extra: {
             message: "他の端末でこのケース記録が更新されています。最新の内容を確認してから、再度編集してください。",
-            detail: `Expected version ${version} but record was modified by another user.`,
             where: "case-records/save POST",
           },
-          { status: 409 }  // 409 Conflict
-        )
+        })
       }
     } else {
       const insertResult = await supabaseAdmin!
@@ -315,14 +308,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "No data returned from database",
-          where: "case-records/save POST",
-        },
-        { status: 500 },
-      )
+      return jsonError("No data returned from database", 500, {
+        ok: false,
+        extra: { where: "case-records/save POST" },
+      })
     }
 
     return NextResponse.json(
