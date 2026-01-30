@@ -13,6 +13,7 @@ type PiiFields = {
 type ErrorBodyOptions = {
   ok?: boolean
   detail?: string
+  where?: string
   extra?: Record<string, unknown>
 }
 
@@ -42,7 +43,11 @@ export function withPii<T extends Record<string, unknown>>(
   return allow ? { ...base, ...pii } : base
 }
 
-export function jsonError(message: string, status: number, options: ErrorBodyOptions = {}) {
+export function jsonError(
+  message: string,
+  status: number,
+  options: ErrorBodyOptions = {}
+): NextResponse {
   const body = {
     ...(options.ok !== undefined ? { ok: options.ok } : {}),
     error: message,
@@ -53,17 +58,18 @@ export function jsonError(message: string, status: number, options: ErrorBodyOpt
   return NextResponse.json(body, { status })
 }
 
-export function unauthorizedResponse(withOk: boolean) {
+export function unauthorizedResponse(withOk: boolean): NextResponse {
   return jsonError("Unauthorized", 401, { ok: withOk })
 }
 
-export function piiDisabledResponse() {
+export function piiDisabledResponse(): NextResponse {
   return jsonError("PII is disabled", 400, { ok: false })
 }
 /**
  * Supabase admin client availability check
+ * @returns NextResponse on error, null if client is valid
  */
-export function ensureSupabaseAdmin(client: any, detail?: string) {
+export function ensureSupabaseAdmin(client: any, detail?: string): NextResponse | null {
   if (!client) {
     return jsonError("Database not available", 503, { 
       ok: false,
@@ -76,7 +82,10 @@ export function ensureSupabaseAdmin(client: any, detail?: string) {
 /**
  * Handle Supabase database errors
  */
-export function handleSupabaseError(error: any, defaultMessage: string = "Database query failed") {
+export function handleSupabaseError(
+  error: any,
+  defaultMessage: string = "Database query failed"
+): NextResponse {
   const message = error?.message || defaultMessage
   return jsonError(message, 500, { ok: false })
 }
@@ -84,7 +93,10 @@ export function handleSupabaseError(error: any, defaultMessage: string = "Databa
 /**
  * Validate required query parameters
  */
-export function validateQueryParams(params: Record<string, string | null>, required: string[]) {
+export function validateQueryParams(
+  params: Record<string, string | null>,
+  required: string[]
+): { valid: boolean; response: NextResponse | null } {
   const missing = required.filter(p => !params[p])
   if (missing.length > 0) {
     return {
@@ -112,7 +124,7 @@ export function validateRequiredFields<T extends Record<string, unknown>>(
 /**
  * Build error response for missing fields
  */
-export function missingFieldsResponse(missingFields: string[]) {
+export function missingFieldsResponse(missingFields: string[]): NextResponse {
   return jsonError(
     `Missing required fields: ${missingFields.join(", ")}`,
     400,
@@ -172,10 +184,65 @@ export async function handleAsyncError<T>(
 /**
  * Generic error response for unexpected exceptions
  */
-export function unexpectedErrorResponse(context: string, error: any) {
+export function unexpectedErrorResponse(context: string, error: any): NextResponse {
   const message = error instanceof Error ? error.message : String(error)
   return jsonError(`Internal server error (${context})`, 500, {
     ok: false,
     detail: message,
   })
+}
+
+/**
+ * Validate UUID format
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export function isValidUUID(value: string | null | undefined): boolean {
+  if (!value) return false
+  return UUID_REGEX.test(value)
+}
+
+export function validateUUIDs(params: Record<string, string | null>, fields: string[]): {
+  valid: boolean
+  response: NextResponse | null
+} {
+  const invalidFields = fields.filter(field => params[field] && !isValidUUID(params[field]))
+  if (invalidFields.length > 0) {
+    return {
+      valid: false,
+      response: jsonError(
+        `Invalid UUID format: ${invalidFields.join(", ")}`,
+        400,
+        { ok: false }
+      )
+    }
+  }
+  return { valid: true, response: null }
+}
+
+/**
+ * Handle Supabase query errors with consistent format
+ */
+export function supabaseErrorResponse(
+  context: string,
+  error: any,
+  extra?: Record<string, unknown>
+): NextResponse {
+  console.error(`[${context}] Supabase error:`, {
+    message: error?.message,
+    code: error?.code,
+    details: error?.details,
+    hint: error?.hint,
+  })
+  
+  return jsonError(
+    error?.message || "Database query failed",
+    500,
+    {
+      ok: false,
+      detail: error?.details || error?.hint || `Query failed: ${error?.code || "unknown"}`,
+      where: context,
+      ...extra,
+    }
+  )
 }

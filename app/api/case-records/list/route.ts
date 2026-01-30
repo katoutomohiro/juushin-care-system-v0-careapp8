@@ -5,7 +5,10 @@ import {
   unauthorizedResponse,
   unexpectedErrorResponse,
   ensureSupabaseAdmin,
-  getPaginationParams
+  getPaginationParams,
+  validateRequiredFields,
+  missingFieldsResponse,
+  supabaseErrorResponse
 } from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
@@ -36,10 +39,7 @@ export async function GET(req: NextRequest) {
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return NextResponse.json(
-        { error: "Database not available" },
-        { status: 503 }
-      )
+      return clientError
     }
 
     const { searchParams } = new URL(req.url)
@@ -57,13 +57,12 @@ export async function GET(req: NextRequest) {
     )
 
     // Validation
-    if (!serviceId || !careReceiverId) {
-      return NextResponse.json(
-        {
-          error: "serviceId and careReceiverId are required",
-        },
-        { status: 400 }
-      )
+    const validation = validateRequiredFields(
+      { serviceId, careReceiverId },
+      ['serviceId', 'careReceiverId']
+    )
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
     }
 
     // Build query
@@ -114,14 +113,7 @@ export async function GET(req: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
-      console.error("[GET /api/case-records/list] Supabase error:", error)
-      return NextResponse.json(
-        {
-          error: "Failed to fetch case records",
-          detail: error.message,
-        },
-        { status: 500 }
-      )
+      return supabaseErrorResponse('case-records/list GET', error)
     }
 
     // Transform response to include staff names
