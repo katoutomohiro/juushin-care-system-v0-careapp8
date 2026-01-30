@@ -1,5 +1,35 @@
 ﻿import { z } from "zod";
 
+/**
+ * 📋 TIME-SERIES DESIGN NOTE (cf. docs/RECORDS_API_DESIGN_EVOLUTION.md):
+ * 
+ * Current unified schema supports basic observation categories but is not optimized
+ * for time-series analytics or AI-driven analysis.
+ * 
+ * Key limitations in current structure:
+ *   ❌ Seizures: Single entry per record_date. Multiple seizures on same day not captured.
+ *      Fix: Change UnifiedSeizureInfo to array of timestamped events
+ *      
+ *   ❌ Excretion: Boolean flags only (pee/poo). No detail on time, amount, quality.
+ *      Fix: Add excretion_events[] with { occurred_at, type, amount, consistency }
+ *      
+ *   ❌ Sleep: Currently in custom_fields. No standardized start/end time or quality metric.
+ *      Fix: Add sleep_events[] with { started_at, ended_at, quality, disturbances[] }
+ *      
+ *   ❌ Nutrition/Hydration: Classified by category but lack quantity & time granularity.
+ *      Fix: Add nutrition_events[] with { occurred_at, meal_type, intake_rate, items[] }
+ *      
+ *   ❌ Vitals: Only single time per record. Clinically, multiple measurements per day needed.
+ *      Fix: Add vitals_events[] with { measured_at, heart_rate, temperature, ... }
+ * 
+ * MIGRATION STRATEGY (future):
+ *   Phase 1: Dual format in record_data (legacy custom_fields + new events[] arrays)
+ *   Phase 2: API aggregation endpoint for analytics
+ *   Phase 3: AI analysis endpoint using structured time-series data
+ * 
+ * See docs/RECORDS_API_DESIGN_EVOLUTION.md Section 3 for full normalized schema proposal.
+ */
+
 export const UnifiedCategoryEnum = z.enum([
   "vitals", "care", "medical", "communication", "observation",
   "seizure", "nutrition", "hydration", "excretion", "positioning",

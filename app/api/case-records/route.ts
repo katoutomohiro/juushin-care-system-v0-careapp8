@@ -15,6 +15,19 @@ import {
 export const runtime = "nodejs"
 
 export async function GET(req: NextRequest) {
+  // 📋 DESIGN NOTE: This endpoint returns raw record_data objects.
+  //
+  // CURRENT LIMITATIONS for analytics/AI:
+  //   - No filtering by seizure type, excretion detail, sleep quality
+  //   - No aggregation (e.g., seizure count, meal completion %)
+  //   - No time-series extraction (events are nested in unstructured JSON)
+  //   - No relationship tracing (e.g., medication → seizure reduction)
+  //
+  // FUTURE ENDPOINTS (proposal, cf. docs/RECORDS_API_DESIGN_EVOLUTION.md):
+  //   GET /api/case-records/analytics?careReceiverId=xxx&metric=seizure_frequency
+  //   GET /api/case-records/events?careReceiverId=xxx&event_type=seizure&dateFrom=2026-01-01
+  //   GET /api/case-records/summary?careReceiverId=xxx&date=2026-01-30
+  //
   try {
     const user = await requireApiUser()
     if (!user) {

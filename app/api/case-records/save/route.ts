@@ -100,6 +100,22 @@ export async function POST(req: NextRequest) {
     const recordTime = recordTimeRaw == null ? null : String(recordTimeRaw)
     
     // Handle record_data: convert from string if needed, preserve structured format
+    // 
+    // 📋 FUTURE DESIGN NOTE (cf. docs/RECORDS_API_DESIGN_EVOLUTION.md):
+    // Currently record_data is freeform JSON (any shape).
+    // For future analytics/AI integration, consider:
+    //   - Add event_type + occurred_at to all events (seizure, excretion, vitals, nutrition, sleep)
+    //   - Use ISO 8601 timestamps for all time fields
+    //   - Nest time-series events in record_data.events[] array
+    //   - Add recorded_by_staff_id + recorded_at for audit trail
+    //   - Validate with Zod schema (RecordDataV2) in migration phase
+    //
+    // Current validation is minimal; consider adding:
+    //   if (record_data.events) {
+    //     validateEventTimestamps(record_data.events)  // All in ISO 8601?
+    //     validateEventOrdering(record_data.events)    // Sorted by occurred_at?
+    //   }
+    //
     let recordData: any
     if (typeof recordDataInput === "string") {
       try {
