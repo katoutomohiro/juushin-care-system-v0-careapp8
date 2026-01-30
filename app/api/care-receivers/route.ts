@@ -39,12 +39,12 @@ export async function GET(req: NextRequest) {
 
     // No required parameters provided
     if (!id && !codeInput && !serviceId) {
-      return jsonError("id or code or serviceId is required", 200, { ok: false })
+      return jsonError("id or code or serviceId is required", 400, { ok: false })
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return jsonError("Database connection not available", 200, { ok: false })
+      return jsonError("Database connection not available", 503, { ok: false })
     }
 
     // LIST MODE: Get all care receivers for a service
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
     } else if (normalizedCode) {
       query = query.eq("code", normalizedCode)
     } else {
-      return jsonError("Invalid code", 200, { ok: false })
+      return jsonError("Invalid code", 400, { ok: false })
     }
 
     const { data, error } = await query.maybeSingle()
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!data) {
-      return jsonError("care_receiver not found", 200, { ok: false })
+      return jsonError("care_receiver not found", 404, { ok: false })
     }
 
     return NextResponse.json({
