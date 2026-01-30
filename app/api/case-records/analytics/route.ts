@@ -35,6 +35,11 @@ export async function GET(req: NextRequest) {
       return clientError
     }
 
+    // TypeScript assertion after validation
+    if (!supabaseAdmin) {
+      return jsonError("Supabase admin client not initialized", 500)
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(req.url)
     const dateFromParam = searchParams.get("dateFrom")
@@ -77,28 +82,98 @@ export async function GET(req: NextRequest) {
     //     * mealsCompleted from events where event_type = 'nutrition' with high intake_rate
     // - Compute summary stats from daily arrays
 
-    // Mock data structure (placeholder until DB integration)
-    const daily: Array<{
-      date: string
-      seizureCount: number
-      sleepMins: number
-      mealsCompleted: number
-    }> = []
+    // Query case_records from Supabase
+    let query = supabaseAdmin
+      .from("case_records")
+      .select("record_date, record_data")
+      .gte("record_date", dateFrom)
+      .lte("record_date", dateTo)
 
-    // Generate daily entries for date range
+    if (careReceiverId) {
+      query = query.eq("care_receiver_id", careReceiverId)
+    }
+
+    if (serviceId) {
+      query = query.eq("service_id", serviceId)
+    }
+
+    const { data: records, error: dbError } = await query
+
+    if (dbError) {
+      console.error("[case-records/analytics GET] DB error:", dbError)
+      return jsonError(
+        "Failed to query records from database",
+        500,
+        {
+          ok: false,
+          detail: dbError.message,
+        }
+      )
+    }
+
+    // Initialize daily map (ensure all dates have entries)
+    const dailyMap = new Map<
+      string,
+      { seizureCount: number; sleepMins: number; mealsCompleted: number }
+    >()
+
     const currentDate = new Date(dateFrom)
     const endDate = new Date(dateTo)
-    endDate.setDate(endDate.getDate() + 1) // Inclusive of dateTo
+    endDate.setDate(endDate.getDate() + 1)
 
     while (currentDate < endDate) {
-      daily.push({
-        date: formatDate(currentDate),
+      const dateStr = formatDate(currentDate)
+      dailyMap.set(dateStr, {
         seizureCount: 0,
         sleepMins: 0,
         mealsCompleted: 0,
       })
       currentDate.setDate(currentDate.getDate() + 1)
     }
+
+    // Aggregate data from records
+    if (records && records.length > 0) {
+      for (const record of records) {
+        const dateStr = record.record_date
+
+        if (!dailyMap.has(dateStr)) {
+          dailyMap.set(dateStr, {
+            seizureCount: 0,
+            sleepMins: 0,
+            mealsCompleted: 0,
+          })
+        }
+
+        const dayData = dailyMap.get(dateStr)!
+
+        // Extract events from record_data
+        const recordData = record.record_data as Record<string, unknown>
+        if (recordData && typeof recordData === "object") {
+          // Count seizure events
+          if (recordData.seizure_count && typeof recordData.seizure_count === "number") {
+            dayData.seizureCount += recordData.seizure_count
+          }
+
+          // Sum sleep minutes
+          if (recordData.sleep_minutes && typeof recordData.sleep_minutes === "number") {
+            dayData.sleepMins += recordData.sleep_minutes
+          }
+
+          // Count meal completions
+          if (recordData.meals_completed && typeof recordData.meals_completed === "number") {
+            dayData.mealsCompleted += recordData.meals_completed
+          }
+        }
+      }
+    }
+
+    // Convert map to sorted daily array
+    const daily = Array.from(dailyMap.entries())
+      .map(([date, data]) => ({
+        date,
+        ...data,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     // Calculate summary statistics from daily data
     const seizureCountTotal = daily.reduce((sum, d) => sum + d.seizureCount, 0)
