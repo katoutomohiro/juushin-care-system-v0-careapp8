@@ -7,7 +7,8 @@ import {
   unauthorizedResponse, 
   withPii,
   unexpectedErrorResponse,
-  ensureSupabaseAdmin
+  ensureSupabaseAdmin,
+  jsonError
 } from "@/lib/api/route-helpers"
 
 export const dynamic = "force-dynamic"
@@ -36,18 +37,12 @@ export async function GET(
     const { id } = await context.params
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "ID parameter is required" },
-        { status: 400 }
-      )
+      return jsonError("ID parameter is required", 400, { ok: false })
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
-      return NextResponse.json(
-        { ok: false, error: "Database connection not available" },
-        { status: 500 }
-      )
+      return clientError
     }
 
     const { data, error } = await supabaseAdmin!
@@ -58,10 +53,7 @@ export async function GET(
 
     if (error || !data) {
       console.error("[GET /api/care-receivers/[id]] Query error:", error)
-      return NextResponse.json(
-        { ok: false, error: "Care receiver not found" },
-        { status: 404 }
-      )
+      return jsonError("Care receiver not found", 404, { ok: false })
     }
 
     // ⚠️ 個人情報を含むレスポンス（職員UIでは必要、ただしログには出力しない）
@@ -133,10 +125,7 @@ export async function PUT(
     const { id } = await context.params
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "ID parameter is required" },
-        { status: 400 }
-      )
+      return jsonError("ID parameter is required", 400, { ok: false })
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
@@ -160,10 +149,7 @@ export async function PUT(
 
     // Validate age if provided
     if (typeof body.age !== "undefined" && body.age < 0) {
-      return NextResponse.json(
-        { ok: false, error: "age must be >= 0" },
-        { status: 400 }
-      )
+      return jsonError("age must be >= 0", 400, { ok: false })
     }
 
     // Remove system fields that shouldn't be updated
@@ -191,26 +177,17 @@ export async function PUT(
 
     // 🔐 409 Conflict: 更新件数が 0 件 = 他のユーザーが先に更新済み
     if (!data && !error) {
-      return NextResponse.json(
-        { ok: false, error: "Record has been updated by another user" },
-        { status: 409 }
-      )
+      return jsonError("Record has been updated by another user", 409, { ok: false })
     }
 
     if (error) {
       // PostgrestError code 406 は .single() でレコードが見つからない場合
       if (error.code === "PGRST116") {
-        return NextResponse.json(
-          { ok: false, error: "Record has been updated by another user" },
-          { status: 409 }
-        )
+        return jsonError("Record has been updated by another user", 409, { ok: false })
       }
 
       console.error("[PUT /api/care-receivers/[id]] Update error:", error)
-      return NextResponse.json(
-        { ok: false, error: "Failed to update care receiver" },
-        { status: 500 }
-      )
+      return jsonError("Failed to update care receiver", 500, { ok: false })
     }
 
     // ⚠️ 個人情報のログ出力禁止: full_name, address, phone などは除外
@@ -241,10 +218,7 @@ export async function PUT(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[PUT /api/care-receivers/[id]] Unexpected error:", error)
-    return NextResponse.json(
-      { ok: false, error: "Internal server error", detail: message },
-      { status: 500 }
-    )
+    return jsonError("Internal server error", 500, { ok: false, detail: message })
   }
 }
 
@@ -270,10 +244,7 @@ export async function DELETE(
     const { id } = await context.params
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "ID parameter is required" },
-        { status: 400 }
-      )
+      return jsonError("ID parameter is required", 400, { ok: false })
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
@@ -288,19 +259,13 @@ export async function DELETE(
 
     if (error) {
       console.error("[DELETE /api/care-receivers/[id]] Delete error:", error)
-      return NextResponse.json(
-        { ok: false, error: "Failed to delete care receiver" },
-        { status: 500 }
-      )
+      return jsonError("Failed to delete care receiver", 500, { ok: false })
     }
 
     return NextResponse.json({ ok: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[DELETE /api/care-receivers/[id]] Unexpected error:", error)
-    return NextResponse.json(
-      { ok: false, error: "Internal server error", detail: message },
-      { status: 500 }
-    )
+    return jsonError("Internal server error", 500, { ok: false, detail: message })
   }
 }
