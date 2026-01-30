@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
 import {
   LineChart,
@@ -22,29 +21,41 @@ type AnalyticsViewerProps = {
 }
 
 export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps) {
-  const [showJson, setShowJson] = useState(false)
-
   if (isLoading) {
     return (
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <p className="text-blue-800">Loading analytics data...</p>
+      <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-center space-x-3">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600"></div>
+          <p className="text-gray-700 font-medium">データを読み込み中...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-        <p className="text-red-800 font-semibold">Error:</p>
-        <p className="text-red-700 mt-1">{error}</p>
+      <div className="bg-red-50 border border-red-300 rounded-lg p-6 shadow-sm">
+        <div className="flex items-start space-x-3">
+          <svg className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h3 className="text-red-800 font-semibold text-lg">エラーが発生しました</h3>
+            <p className="text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
       </div>
     )
   }
 
-  if (!data) {
+  if (!data || data.daily.length === 0) {
     return (
-      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
-        <p className="text-gray-600">Click "Fetch Analytics" to load data</p>
+      <div className="bg-white p-12 rounded-lg border border-gray-200 shadow-sm text-center">
+        <svg className="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <p className="text-gray-600 text-lg font-medium">該当するデータがありません</p>
+        <p className="text-gray-500 mt-2">条件を変更して集計を実行してください</p>
       </div>
     )
   }
@@ -61,115 +72,86 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
   }))
 
   return (
-    <div className="space-y-6">
-      {/* Period Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-        <h2 className="text-lg font-semibold text-gray-800">
-          分析期間: {data.range.dateFrom} ～ {data.range.dateTo}
-        </h2>
-      </div>
-
+    <div className="space-y-8">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Seizure Count Card */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">発作合計</p>
-              <p className="text-3xl font-bold text-rose-600 mt-2">
-                {data.summary.seizureCountTotal}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">total seizures</p>
-            </div>
-            <div className="bg-rose-100 p-3 rounded-full">
-              <svg
-                className="w-8 h-8 text-rose-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">集計結果</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Seizure Count Card */}
+          <div className="bg-gradient-to-br from-rose-50 to-rose-100/30 p-6 rounded-lg border border-rose-200/50 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-rose-700 uppercase tracking-wider">発作合計</p>
+              <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
+            <p className="text-4xl font-bold text-rose-700">
+              {data.summary.seizureCountTotal ?? "—"}
+            </p>
+            <p className="text-xs text-rose-600 mt-2">期間内の発作回数</p>
           </div>
-        </div>
 
-        {/* Sleep Average Card */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">平均睡眠</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                {data.summary.sleepMinsAvg}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                minutes ({Math.floor(data.summary.sleepMinsAvg / 60)}h{" "}
-                {data.summary.sleepMinsAvg % 60}m)
-              </p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <svg
-                className="w-8 h-8 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
+          {/* Sleep Average Card */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 p-6 rounded-lg border border-blue-200/50 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">平均睡眠</p>
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
             </div>
+            <p className="text-4xl font-bold text-blue-700">
+              {data.summary.sleepMinsAvg ?? "—"}
+            </p>
+            <p className="text-xs text-blue-600 mt-2">
+              {data.summary.sleepMinsAvg 
+                ? `${Math.floor(data.summary.sleepMinsAvg / 60)}時間${data.summary.sleepMinsAvg % 60}分 / 日平均`
+                : "—"}
+            </p>
           </div>
-        </div>
 
-        {/* Meals Completed Card */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">食事完了合計</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {data.summary.mealsCompletedTotal}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">completed meals</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+          {/* Meals Completed Card */}
+          <div className="bg-gradient-to-br from-green-50 to-green-100/30 p-6 rounded-lg border border-green-200/50 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-green-700 uppercase tracking-wider">食事完了</p>
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
+            <p className="text-4xl font-bold text-green-700">
+              {data.summary.mealsCompletedTotal ?? "—"}
+            </p>
+            <p className="text-xs text-green-600 mt-2">期間内の食事完了回数</p>
           </div>
         </div>
       </div>
-
-      {/* Charts Section */}
       <div className="space-y-6">
+        <div className="border-b-2 border-gray-200 pb-4">
+          <h2 className="text-xl font-bold text-gray-900">推移グラフ</h2>
+          <p className="text-sm text-gray-600 mt-1">期間内の日次データの推移を視覚化</p>
+        </div>
+
         {/* Seizure Count Line Chart */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">発作回数の推移</h2>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">発作回数の推移</h3>
+            <p className="text-sm text-gray-500 mt-1">期間内の日別発作発生回数</p>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fontSize: 12 }}
+                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
+                labelStyle={{ color: "#000000" }}
+              />
               <Legend />
               <Line
                 type="monotone"
@@ -177,6 +159,7 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
                 stroke="#e11d48"
                 name="発作回数"
                 dot={{ fill: "#e11d48", r: 4 }}
+                strokeWidth={2}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -184,13 +167,26 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
 
         {/* Sleep Minutes Bar Chart */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">睡眠時間の推移</h2>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">睡眠時間の推移</h3>
+            <p className="text-sm text-gray-500 mt-1">期間内の日別睡眠時間（分）</p>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis 
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
+                labelStyle={{ color: "#000000" }}
+              />
               <Legend />
               <Bar dataKey="sleepMins" fill="#3b82f6" name="睡眠（分）" />
             </BarChart>
@@ -199,13 +195,26 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
 
         {/* Meals Completed Bar Chart */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">食事完了数の推移</h2>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">食事完了数の推移</h3>
+            <p className="text-sm text-gray-500 mt-1">期間内の日別食事完了回数</p>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis 
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
+                labelStyle={{ color: "#000000" }}
+              />
               <Legend />
               <Bar dataKey="mealsCompleted" fill="#10b981" name="食事完了数" />
             </BarChart>
@@ -261,23 +270,17 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
         </div>
       </div>
 
-      {/* JSON Toggle Section */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Raw JSON Data</h2>
-          <button
-            onClick={() => setShowJson(!showJson)}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors text-sm font-medium"
-          >
-            {showJson ? "非表示" : "表示"}
-          </button>
-        </div>
-        {showJson && (
-          <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs leading-relaxed border border-gray-300">
+      {/* JSON Debug Section */}
+      <details className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <summary className="cursor-pointer px-6 py-4 font-semibold text-gray-900 hover:bg-gray-50">
+          📋 Raw JSON Data（デバッグ用）
+        </summary>
+        <div className="px-6 pb-6 pt-2 border-t border-gray-200">
+          <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs leading-relaxed border border-gray-300 max-h-96">
             {JSON.stringify(data, null, 2)}
           </pre>
-        )}
-      </div>
+        </div>
+      </details>
     </div>
   )
 }
