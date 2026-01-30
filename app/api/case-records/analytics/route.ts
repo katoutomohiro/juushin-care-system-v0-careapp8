@@ -10,6 +10,215 @@ import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
 
 export const runtime = "nodejs"
 
+type ParsedParams = {
+  dateFrom: string
+  dateTo: string
+  careReceiverId: string | null
+  serviceId: string | null
+}
+
+type DailyData = {
+  seizureCount: number
+  sleepMins: number
+  mealsCompleted: number
+}
+
+type DailyEntry = DailyData & { date: string }
+
+type CaseRecordRow = {
+  record_date: string
+  record_data: Record<string, unknown> | null
+}
+
+type SupabaseAdminClient = NonNullable<typeof supabaseAdmin>
+
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const resolveDateRange = (
+  dateFromParam: string | null,
+  dateToParam: string | null
+): { dateFrom: string; dateTo: string } => {
+  const today = new Date()
+  const sevenDaysAgo = new Date(today)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  return {
+    dateFrom: dateFromParam || formatDate(sevenDaysAgo),
+    dateTo: dateToParam || formatDate(today),
+  }
+}
+
+const parseParams = (req: NextRequest): ParsedParams => {
+  const { searchParams } = new URL(req.url)
+  const dateFromParam = searchParams.get("dateFrom")
+  const dateToParam = searchParams.get("dateTo")
+  const careReceiverId = searchParams.get("careReceiverId")
+  const serviceId = searchParams.get("serviceId")
+
+  const { dateFrom, dateTo } = resolveDateRange(dateFromParam, dateToParam)
+
+  return {
+    dateFrom,
+    dateTo,
+    careReceiverId,
+    serviceId,
+  }
+}
+
+const logParamsIfDev = (params: ParsedParams) => {
+  if (process.env.NODE_ENV === "development") {
+    console.info("[case-records/analytics GET]", {
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+      careReceiverId: params.careReceiverId,
+      serviceId: params.serviceId,
+    })
+  }
+}
+
+const buildQuery = (client: SupabaseAdminClient, params: ParsedParams) => {
+  let query = client
+    .from("case_records")
+    .select("record_date, record_data")
+    .gte("record_date", params.dateFrom)
+    .lte("record_date", params.dateTo)
+
+  if (params.careReceiverId) {
+    query = query.eq("care_receiver_id", params.careReceiverId)
+  }
+
+  if (params.serviceId) {
+    query = query.eq("service_id", params.serviceId)
+  }
+
+  return query
+}
+
+const fetchRecords = async (query: ReturnType<typeof buildQuery>) => {
+  const { data, error } = await query
+
+  if (error) {
+    console.error("[case-records/analytics GET] DB error:", error)
+    return {
+      records: null as CaseRecordRow[] | null,
+      errorResponse: jsonError("Failed to query records from database", 500, {
+        ok: false,
+        detail: error.message,
+      }),
+    }
+  }
+
+  return {
+    records: (data ?? null) as CaseRecordRow[] | null,
+    errorResponse: null as Response | null,
+  }
+}
+
+const initDailyMap = (dateFrom: string, dateTo: string) => {
+  const dailyMap = new Map<string, DailyData>()
+  const currentDate = new Date(dateFrom)
+  const endDate = new Date(dateTo)
+  endDate.setDate(endDate.getDate() + 1)
+
+  while (currentDate < endDate) {
+    const dateStr = formatDate(currentDate)
+    dailyMap.set(dateStr, {
+      seizureCount: 0,
+      sleepMins: 0,
+      mealsCompleted: 0,
+    })
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+
+  return dailyMap
+}
+
+const addDailyDefaults = (dailyMap: Map<string, DailyData>, dateStr: string) => {
+  if (!dailyMap.has(dateStr)) {
+    dailyMap.set(dateStr, {
+      seizureCount: 0,
+      sleepMins: 0,
+      mealsCompleted: 0,
+    })
+  }
+}
+
+const aggregateRecords = (
+  records: CaseRecordRow[] | null,
+  dailyMap: Map<string, DailyData>
+) => {
+  if (!records || records.length === 0) {
+    return
+  }
+
+  for (const record of records) {
+    const dateStr = record.record_date
+    addDailyDefaults(dailyMap, dateStr)
+
+    const dayData = dailyMap.get(dateStr)
+    if (!dayData) {
+      continue
+    }
+
+    const recordData = record.record_data
+    if (!recordData || typeof recordData !== "object") {
+      continue
+    }
+
+    if (typeof recordData.seizure_count === "number") {
+      dayData.seizureCount += recordData.seizure_count
+    }
+
+    if (typeof recordData.sleep_minutes === "number") {
+      dayData.sleepMins += recordData.sleep_minutes
+    }
+
+    if (typeof recordData.meals_completed === "number") {
+      dayData.mealsCompleted += recordData.meals_completed
+    }
+  }
+}
+
+const buildDailyArray = (dailyMap: Map<string, DailyData>): DailyEntry[] =>
+  Array.from(dailyMap.entries())
+    .map(([date, data]) => ({
+      date,
+      ...data,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+const buildSummary = (daily: DailyEntry[]) => {
+  const seizureCountTotal = daily.reduce((sum, d) => sum + d.seizureCount, 0)
+  const sleepMinsList = daily.map(d => d.sleepMins).filter(m => m > 0)
+  const sleepMinsAvg =
+    sleepMinsList.length > 0
+      ? Math.round(
+          sleepMinsList.reduce((sum, m) => sum + m, 0) / sleepMinsList.length
+        )
+      : 0
+  const mealsCompletedTotal = daily.reduce((sum, d) => sum + d.mealsCompleted, 0)
+
+  return {
+    seizureCountTotal,
+    sleepMinsAvg,
+    mealsCompletedTotal,
+  }
+}
+
+const okJson = <T,>(data: T) =>
+  NextResponse.json(
+    {
+      ok: true,
+      data,
+    },
+    { status: 200 }
+  )
+
 /**
  * GET /api/case-records/analytics
  *
@@ -40,37 +249,8 @@ export async function GET(req: NextRequest) {
       return jsonError("Supabase admin client not initialized", 500)
     }
 
-    // Parse query parameters
-    const { searchParams } = new URL(req.url)
-    const dateFromParam = searchParams.get("dateFrom")
-    const dateToParam = searchParams.get("dateTo")
-    const careReceiverId = searchParams.get("careReceiverId")
-    const serviceId = searchParams.get("serviceId")
-
-    // Calculate default dates (today - 7 days to today)
-    const today = new Date()
-    const sevenDaysAgo = new Date(today)
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-    // Helper to format date as YYYY-MM-DD
-    const formatDate = (date: Date): string => {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, "0")
-      const day = String(date.getDate()).padStart(2, "0")
-      return `${year}-${month}-${day}`
-    }
-
-    const dateFrom = dateFromParam || formatDate(sevenDaysAgo)
-    const dateTo = dateToParam || formatDate(today)
-
-    if (process.env.NODE_ENV === "development") {
-      console.info("[case-records/analytics GET]", {
-        dateFrom,
-        dateTo,
-        careReceiverId,
-        serviceId,
-      })
-    }
+    const params = parseParams(req)
+    logParamsIfDev(params)
 
     // TODO: Database query to aggregated case_records
     // - Query case_records for given date range
@@ -83,126 +263,28 @@ export async function GET(req: NextRequest) {
     // - Compute summary stats from daily arrays
 
     // Query case_records from Supabase
-    let query = supabaseAdmin
-      .from("case_records")
-      .select("record_date, record_data")
-      .gte("record_date", dateFrom)
-      .lte("record_date", dateTo)
-
-    if (careReceiverId) {
-      query = query.eq("care_receiver_id", careReceiverId)
+    const query = buildQuery(supabaseAdmin, params)
+    const { records, errorResponse } = await fetchRecords(query)
+    if (errorResponse) {
+      return errorResponse
     }
 
-    if (serviceId) {
-      query = query.eq("service_id", serviceId)
-    }
+    const dailyMap = initDailyMap(params.dateFrom, params.dateTo)
+    aggregateRecords(records, dailyMap)
 
-    const { data: records, error: dbError } = await query
-
-    if (dbError) {
-      console.error("[case-records/analytics GET] DB error:", dbError)
-      return jsonError(
-        "Failed to query records from database",
-        500,
-        {
-          ok: false,
-          detail: dbError.message,
-        }
-      )
-    }
-
-    // Initialize daily map (ensure all dates have entries)
-    const dailyMap = new Map<
-      string,
-      { seizureCount: number; sleepMins: number; mealsCompleted: number }
-    >()
-
-    const currentDate = new Date(dateFrom)
-    const endDate = new Date(dateTo)
-    endDate.setDate(endDate.getDate() + 1)
-
-    while (currentDate < endDate) {
-      const dateStr = formatDate(currentDate)
-      dailyMap.set(dateStr, {
-        seizureCount: 0,
-        sleepMins: 0,
-        mealsCompleted: 0,
-      })
-      currentDate.setDate(currentDate.getDate() + 1)
-    }
-
-    // Aggregate data from records
-    if (records && records.length > 0) {
-      for (const record of records) {
-        const dateStr = record.record_date
-
-        if (!dailyMap.has(dateStr)) {
-          dailyMap.set(dateStr, {
-            seizureCount: 0,
-            sleepMins: 0,
-            mealsCompleted: 0,
-          })
-        }
-
-        const dayData = dailyMap.get(dateStr)!
-
-        // Extract events from record_data
-        const recordData = record.record_data as Record<string, unknown>
-        if (recordData && typeof recordData === "object") {
-          // Count seizure events
-          if (recordData.seizure_count && typeof recordData.seizure_count === "number") {
-            dayData.seizureCount += recordData.seizure_count
-          }
-
-          // Sum sleep minutes
-          if (recordData.sleep_minutes && typeof recordData.sleep_minutes === "number") {
-            dayData.sleepMins += recordData.sleep_minutes
-          }
-
-          // Count meal completions
-          if (recordData.meals_completed && typeof recordData.meals_completed === "number") {
-            dayData.mealsCompleted += recordData.meals_completed
-          }
-        }
-      }
-    }
-
-    // Convert map to sorted daily array
-    const daily = Array.from(dailyMap.entries())
-      .map(([date, data]) => ({
-        date,
-        ...data,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-
-    // Calculate summary statistics from daily data
-    const seizureCountTotal = daily.reduce((sum, d) => sum + d.seizureCount, 0)
-    const sleepMinsList = daily.map(d => d.sleepMins).filter(m => m > 0)
-    const sleepMinsAvg = sleepMinsList.length > 0
-      ? Math.round(sleepMinsList.reduce((sum, m) => sum + m, 0) / sleepMinsList.length)
-      : 0
-    const mealsCompletedTotal = daily.reduce((sum, d) => sum + d.mealsCompleted, 0)
+    const daily = buildDailyArray(dailyMap)
+    const summary = buildSummary(daily)
 
     const responseData = {
       range: {
-        dateFrom,
-        dateTo,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
       },
       daily,
-      summary: {
-        seizureCountTotal,
-        sleepMinsAvg,
-        mealsCompletedTotal,
-      },
+      summary,
     } satisfies RecordsAnalyticsResponse
 
-    return NextResponse.json(
-      {
-        ok: true,
-        data: responseData,
-      },
-      { status: 200 }
-    )
+    return okJson(responseData)
   } catch (error) {
     console.error("[case-records/analytics GET] error:", error)
     return jsonError(
