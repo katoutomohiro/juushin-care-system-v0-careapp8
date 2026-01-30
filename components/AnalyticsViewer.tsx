@@ -1,18 +1,7 @@
 "use client"
 
 import type { RecordsAnalyticsResponse } from "@/src/types/recordsAnalytics"
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts"
+import { MetricChart } from "@/components/MetricChart"
 
 type AnalyticsViewerProps = {
   data: RecordsAnalyticsResponse | null
@@ -131,95 +120,43 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
         </div>
 
         {/* Seizure Count Line Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">発作回数の推移</h3>
-            <p className="text-sm text-gray-500 mt-1">期間内の日別発作発生回数</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 12 }}
-                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
-                labelStyle={{ color: "#000000" }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="seizureCount"
-                stroke="#e11d48"
-                name="発作回数"
-                dot={{ fill: "#e11d48", r: 4 }}
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart
+          title="発作回数（推移）"
+          description="日別の発作回数"
+          data={chartData}
+          xKey="date"
+          yKey="seizureCount"
+          chartType="line"
+          yLabel="回"
+          height={300}
+          formatTooltipValue={(v) => `${v} 回`}
+        />
 
         {/* Sleep Minutes Bar Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">睡眠時間の推移</h3>
-            <p className="text-sm text-gray-500 mt-1">期間内の日別睡眠時間（分）</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date"
-                tick={{ fontSize: 12 }}
-                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
-                labelStyle={{ color: "#000000" }}
-              />
-              <Legend />
-              <Bar dataKey="sleepMins" fill="#3b82f6" name="睡眠（分）" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart
+          title="睡眠（分）"
+          description="日別の睡眠時間（分）"
+          data={chartData}
+          xKey="date"
+          yKey="sleepMins"
+          chartType="bar"
+          yLabel="分"
+          height={300}
+          formatTooltipValue={(v) => `${v} 分`}
+        />
 
         {/* Meals Completed Bar Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">食事完了数の推移</h3>
-            <p className="text-sm text-gray-500 mt-1">期間内の日別食事完了回数</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date"
-                tick={{ fontSize: 12 }}
-                interval={Math.max(0, Math.floor(chartData.length / 7) - 1)}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
-                labelStyle={{ color: "#000000" }}
-              />
-              <Legend />
-              <Bar dataKey="mealsCompleted" fill="#10b981" name="食事完了数" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricChart
+          title="食事回数"
+          description="日別の食事完了回数"
+          data={chartData}
+          xKey="date"
+          yKey="mealsCompleted"
+          chartType="bar"
+          yLabel="回"
+          height={300}
+          formatTooltipValue={(v) => `${v} 回`}
+        />
       </div>
 
       {/* Daily Table */}
