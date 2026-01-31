@@ -366,6 +366,16 @@ HEAD
               </CardHeader>
               <CardContent><p className="text-sm text-sky-700">AI要約を含む月次PDFを生成・ダウンロード。対象月やIDはページ内で指定。</p></CardContent>
             </ClickableCard>
+
+            <ClickableCard onClick={() => window.location.href = '/analytics'} className="group border-2 hover:border-primary/30 bg-violet-50 text-violet-800 border-violet-200 hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-primary" particleColors={["#a78bfa", "#8b5cf6", "#c4b5fd"]}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-white/60 text-2xl">📊</div>
+                  <div className="flex-1"><CardTitle className="text-base font-semibold">Records Analytics</CardTitle></div>
+                </div>
+              </CardHeader>
+              <CardContent><p className="text-sm text-violet-700">ケア記録の期間別集計。発作・睡眠・食事などの日別データを可視化。</p></CardContent>
+            </ClickableCard>
           </div>
         </section>
 
