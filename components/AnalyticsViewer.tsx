@@ -204,11 +204,11 @@ export function AnalyticsViewer({ data, isLoading, error }: AnalyticsViewerProps
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {day.sleepMins ?? 0}
-                    {day.sleepMins && day.sleepMins > 0 && (
+                    {day.sleepMins > 0 ? (
                       <span className="text-xs text-gray-400 ml-1">
                         ({Math.floor(day.sleepMins / 60)}h {day.sleepMins % 60}m)
                       </span>
-                    )}
+                    ) : null}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {day.mealsCompleted ?? 0}
