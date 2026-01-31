@@ -219,18 +219,6 @@ const okJson = <T,>(data: T) =>
     { status: 200 }
   )
 
-/**
- * GET /api/case-records/analytics
- *
- * Query params:
- *   - dateFrom: YYYY-MM-DD (optional, default: 7 days ago)
- *   - dateTo: YYYY-MM-DD (optional, default: today)
- *   - careReceiverId: uuid (optional, filter by care receiver)
- *   - serviceId: uuid (optional, filter by service)
- *
- * Returns daily aggregates and summary statistics for records analysis.
- * Currently returns mock data structure; database integration planned.
- */
 export async function GET(req: NextRequest) {
   try {
     const user = await requireApiUser()
@@ -238,13 +226,11 @@ export async function GET(req: NextRequest) {
       return unauthorizedResponse(true)
     }
 
-    // Validate Supabase admin client
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
     if (clientError) {
       return clientError
     }
 
-    // TypeScript assertion after validation
     if (!supabaseAdmin) {
       return jsonError("Supabase admin client not initialized", 500)
     }
@@ -252,17 +238,6 @@ export async function GET(req: NextRequest) {
     const params = parseParams(req)
     logParamsIfDev(params)
 
-    // TODO: Database query to aggregated case_records
-    // - Query case_records for given date range
-    // - Filter by careReceiverId and/or serviceId if provided
-    // - Extract time-series events from record_data.events[] (when implemented)
-    // - Calculate daily aggregates:
-    //     * seizureCount from events where event_type = 'seizure'
-    //     * sleepMins from events where event_type = 'sleep' (sum of duration_min)
-    //     * mealsCompleted from events where event_type = 'nutrition' with high intake_rate
-    // - Compute summary stats from daily arrays
-
-    // Query case_records from Supabase
     const query = buildQuery(supabaseAdmin, params)
     const { records, errorResponse } = await fetchRecords(query)
     if (errorResponse) {
@@ -287,13 +262,9 @@ export async function GET(req: NextRequest) {
     return okJson(responseData)
   } catch (error) {
     console.error("[case-records/analytics GET] error:", error)
-    return jsonError(
-      "Failed to retrieve analytics",
-      500,
-      {
-        ok: false,
-        detail: error instanceof Error ? error.message : "Unknown error",
-      }
-    )
+    return jsonError("Failed to retrieve analytics", 500, {
+      ok: false,
+      detail: error instanceof Error ? error.message : "Unknown error",
+    })
   }
 }
