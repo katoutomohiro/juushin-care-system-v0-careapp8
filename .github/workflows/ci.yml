@@ -1,4 +1,4 @@
-﻿concurrency:
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -123,7 +123,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report/
@@ -172,7 +172,7 @@ jobs:
 
       - name: Upload AI review artifacts
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ai-review
           path: |
@@ -280,7 +280,7 @@ jobs:
 
       - name: Upload agent-runner artifacts
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: agent-runner
           path: |
@@ -342,7 +342,7 @@ jobs:
           fi
 
       - name: Upload agent result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: agent-i18n-review
           path: artifacts/agent_reports/i18n_review.json
