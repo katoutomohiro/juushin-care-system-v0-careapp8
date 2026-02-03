@@ -8,8 +8,12 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]'
     steps:
+      - name: Skip for dependabot (no secrets)
+        if: github.actor == 'dependabot[bot]'
+        run: |
+          echo "Dependabot PR: secrets unavailable, skipping OpenAI smoketest."
+          exit 0
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with: { python-version: "3.11" }
