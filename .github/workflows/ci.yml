@@ -29,6 +29,9 @@ jobs:
   build-test:
     name: build-test
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
     steps:
       - name: Skip build-test for dependabot (no secrets)
         if: github.actor == 'dependabot[bot]'
