@@ -81,7 +81,7 @@ export default function AlertsPage() {
           >
             通知を有効化
           </button>
-          <PushSubscriptionButton className="flex flex-col gap-1 text-sm text-gray-600" />
+          <PushSubscriptionButton />
         </div>
       </div>
 

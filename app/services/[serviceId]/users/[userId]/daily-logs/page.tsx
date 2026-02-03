@@ -1,11 +1,12 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { formUrl } from "@/lib/url"
+import { formUrl, buildSeizureUrl, buildVitalsUrl } from "@/lib/url"
+import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 
 const welfareServices: { [key: string]: { name: string; icon: string } } = {
   "life-care": { name: "生活介護", icon: "🏥" },
@@ -165,6 +166,7 @@ const dailyLogCategories = [
 export default function DailyLogsPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const serviceId = params.serviceId as string
   const userId = decodeURIComponent(params.userId as string)
   const service = welfareServices[serviceId]
@@ -181,7 +183,11 @@ export default function DailyLogsPage() {
     if (categoryId === "expression") {
       router.push(`/daily-log/expression?serviceId=${serviceId}&userId=${encodeURIComponent(userId)}`)
     } else if (categoryId === "seizure") {
-      router.push(`/daily-log/seizure?serviceId=${serviceId}&userId=${encodeURIComponent(userId)}`)
+      const careReceiverId = searchParams.get("careReceiverId")
+      router.push(buildSeizureUrl(serviceId, userId, careReceiverId))
+    } else if (categoryId === "vitals") {
+      const careReceiverId = searchParams.get("careReceiverId")
+      router.push(buildVitalsUrl(serviceId, userId, careReceiverId))
     } else {
       router.push(formUrl(categoryId, serviceId, userId))
     }
@@ -195,7 +201,10 @@ export default function DailyLogsPage() {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={() => router.push(`/services/${serviceId}/users/${encodeURIComponent(userId)}`)}
+                onClick={() => {
+                  const internalId = normalizeUserId(userId as string)
+                  router.push(`/services/${serviceId}/users/${encodeURIComponent(internalId)}`)
+                }}
               >
                 ← 利用者詳細に戻る
               </Button>

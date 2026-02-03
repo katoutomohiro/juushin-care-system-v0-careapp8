@@ -33,7 +33,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache .next
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .next
           key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report

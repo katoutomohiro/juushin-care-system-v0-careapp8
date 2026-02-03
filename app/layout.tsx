@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { ServiceWorkerRegistration, PushSubscriptionButton } from "./service-worker-registration"
 import { UserProvider } from "@/contexts/user-context"
+import { ServiceWorkerUnregister } from "./sw-unregister-client"
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -14,16 +14,16 @@ export const metadata: Metadata = {
   title: "重心ケアアプリ - PROJECT",
   description: "日誌とAI連携でケア記録を最適化します。",
   generator: "v0.app",
+  other: {
+    "build-id": "main-2026-01-07-no-sw-1",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
       <body>
-        <ServiceWorkerRegistration />
-        <div className="fixed bottom-4 right-4 z-50 flex max-w-xs flex-col items-end gap-2 rounded bg-white/90 p-3 shadow">
-          <PushSubscriptionButton />
-        </div>
+        <ServiceWorkerUnregister />
         <UserProvider>
           {children}
         </UserProvider>

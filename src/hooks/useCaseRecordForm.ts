@@ -12,12 +12,10 @@ export type UseCaseRecordFormOptions = {
 
 export function useCaseRecordForm(options: UseCaseRecordFormOptions = {}) {
   const defaultValues = useMemo<CaseRecordFormValues>(() => ({
-    userId: "",
     serviceId: "",
     date: "",
-    time: "",
-    mainStaffId: null,
-    subStaffIds: [],
+    mainStaffId: "",
+    subStaffId: null,
     specialNotes: "",
     familyNotes: "",
     ...options.defaultValues,

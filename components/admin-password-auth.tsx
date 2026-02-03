@@ -24,6 +24,20 @@ export function AdminPasswordAuth({ onUserNamesUpdate, onAppTitleUpdate }: Admin
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [currentPassword, setCurrentPassword] = useState("")
+  const managementDisabled = true
+
+  if (managementDisabled) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Management Disabled</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Management features are temporarily disabled.
+        </CardContent>
+      </Card>
+    )
+  }
   // デフォルトパスワード: 1122
   const getStoredPassword = () => {
     return localStorage.getItem("admin-password") || "1122"

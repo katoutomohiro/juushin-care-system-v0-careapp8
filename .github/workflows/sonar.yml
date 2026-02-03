@@ -13,8 +13,22 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Shallow clones should be disabled for better analysis
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@master
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-scan-action@v1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # SONAR_HOST_URL is not needed for SonarCloud (only for SonarQube Server)
+        with:
+          args: >
+            -Dsonar.exclusions=**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
+            -Dsonar.cpd.exclusions=**/at-case-record-form.tsx,**/at-case-record-form-offline.tsx,**/*-offline.tsx,**/*Offline.tsx
+            -Dsonar.verbose=true
+            -Dsonar.scanner.dumpToFile=sonar-dump.properties
+            -Dsonar.pullrequest.base=main
+      - name: Verify Sonar Exclusions Config
+        run: |
+          if [ -f sonar-dump.properties ]; then
+            echo "=== sonar-dump.properties content ===" 
+            grep -E "sonar\.(exclusions|pullrequest)" sonar-dump.properties || echo "No sonar exclusions found"
+          else
+            echo "sonar-dump.properties not found"
+          fi

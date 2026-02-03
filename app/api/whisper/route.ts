@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OPENAI_API_KEY } from '@/lib/env'
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse
+} from '@/lib/api/route-helpers'
 
 export const runtime = 'nodejs'
 
@@ -10,6 +15,11 @@ export const runtime = 'nodejs'
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(false)
+    }
+
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File | null
     if (!audioFile) {
@@ -61,10 +71,7 @@ export async function POST(req: NextRequest) {
       durationMs,
     })
   } catch (e: any) {
-    return NextResponse.json(
-      { error: e.message || 'Internal error', hint: 'Server-side exception during Whisper call' },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('whisper POST', e)
   }
 }
 
@@ -103,3 +110,4 @@ async function fetchWithBackoff(
   }
   throw new Error('Unexpected retry loop exit')
 }
+
