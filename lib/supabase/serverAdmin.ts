@@ -2,15 +2,49 @@ import "server-only"
 
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable")
+export type SupabaseAdminEnv = {
+  url: string
+  key: string
+  urlSource: string
+  keySource: string
+  branch: "server" | "missing"
+  missingKeys: string[]
 }
 
-if (!supabaseServiceRoleKey) {
-  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable")
+function resolveSupabaseAdminEnv(): SupabaseAdminEnv {
+  const serverUrl = process.env.SUPABASE_URL || ""
+  const serverKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+
+  const hasServer = !!serverUrl && !!serverKey
+
+  if (hasServer) {
+    return {
+      url: serverUrl,
+      key: serverKey,
+      urlSource: "SUPABASE_URL",
+      keySource: "SUPABASE_SERVICE_ROLE_KEY",
+      branch: "server",
+      missingKeys: [],
+    }
+  }
+
+  const missingKeys: string[] = []
+  if (!serverUrl) missingKeys.push("SUPABASE_URL")
+  if (!serverKey) missingKeys.push("SUPABASE_SERVICE_ROLE_KEY")
+
+  return {
+    url: serverUrl || "",
+    key: serverKey || "",
+    urlSource: serverUrl ? "SUPABASE_URL" : "",
+    keySource: serverKey ? "SUPABASE_SERVICE_ROLE_KEY" : "",
+    branch: "missing",
+    missingKeys,
+  }
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
+export const supabaseAdminEnv = resolveSupabaseAdminEnv()
+export const supabaseAdmin =
+  supabaseAdminEnv.url && supabaseAdminEnv.key
+    ? createClient(supabaseAdminEnv.url, supabaseAdminEnv.key)
+    : null
+

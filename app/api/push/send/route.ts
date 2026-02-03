@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import webpush from "web-push"
 import { VAPID_CONTACT, VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY } from "@/lib/env"
+import { 
+  requireApiUser, 
+  unauthorizedResponse
+} from "@/lib/api/route-helpers"
 
 export const runtime = "nodejs"
 
@@ -11,32 +15,37 @@ if (hasVapidConfig) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!hasVapidConfig) {
-    return NextResponse.json(
-      { error: "VAPID keys are not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY." },
-      { status: 500 },
-    )
-  }
-
-  let body: any
   try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
-  }
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(false)
+    }
 
-  const { subscription, payload } = body ?? {}
-  if (!subscription || !subscription.endpoint) {
-    return NextResponse.json({ error: "Missing push subscription" }, { status: 400 })
-  }
+    if (!hasVapidConfig) {
+      return NextResponse.json(
+        { error: "VAPID keys are not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY." },
+        { status: 500 },
+      )
+    }
 
-  const notificationPayload = payload ?? {
-    title: "Care App テスト通知",
-    body: "push/send からのテスト通知です",
-    data: { url: "/alerts" },
-  }
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
+    }
 
-  try {
+    const { subscription, payload } = body ?? {}
+    if (!subscription || !subscription.endpoint) {
+      return NextResponse.json({ error: "Missing push subscription" }, { status: 400 })
+    }
+
+    const notificationPayload = payload ?? {
+      title: "Care App テスト通知",
+      body: "push/send からのテスト通知です",
+      data: { url: "/alerts" },
+    }
+
     await webpush.sendNotification(subscription, JSON.stringify(notificationPayload))
     return NextResponse.json({ ok: true })
   } catch (error: any) {
@@ -47,3 +56,5 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+

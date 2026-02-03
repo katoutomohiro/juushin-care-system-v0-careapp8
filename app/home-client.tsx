@@ -1,28 +1,37 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n-client"
 import { PdfPreviewModal } from "@/components/pdf/pdf-preview-modal"
-import { DataBackupPanel } from "@/components/data-backup-panel"
+import dynamic from "next/dynamic"
 import { StatisticsDashboard } from "@/components/statistics-dashboard"
+import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 import { SettingsPanel } from "@/components/settings-panel"
 import { A4RecordSheet } from "@/components/a4-record-sheet"
 import { DailyLogExportService } from "@/services/daily-log-export-service"
 import { DataStorageService } from "@/services/data-storage-service"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { AdminPasswordAuth } from "@/components/admin-password-auth"
 import { ClickableCard } from "@/components/ui/clickable-card"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense } from "react"
+import Link from "next/link"
 import { composeA4Record } from "@/services/a4-mapping"
 import type { CareEvent } from "@/types/care-event"
 import { lifeCareReceivers } from "@/lib/mock/careReceivers"
 
-type Props = { initialCareReceiverId?: string }
+const DataBackupPanel = dynamic(
+  () => import("@/components/data-backup-panel").then((mod) => mod.DataBackupPanel),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-[240px] w-full rounded-lg border border-border bg-card/50" />,
+  },
+)
+
+type Props = { initialCareReceiverId?: string | undefined }
 
 const users = [
   "利用者A","利用者B","利用者C","利用者D","利用者E","利用者F","利用者G","利用者H","利用者I","利用者J","利用者K","利用者L","利用者M","利用者N","利用者O","利用者P","利用者Q","利用者R","利用者S","利用者T","利用者U","利用者V","利用者W","利用者X",
@@ -78,6 +87,7 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
     setA4RecordDate(new Date().toLocaleDateString("ja-JP"))
   }, [])
 
+  // 初期ロード時は URL から値があれば state のみ反映（URL は変更しない）
   useEffect(() => {
     const defaultId = lifeCareReceivers[0]?.id
     const isValid = typeof initialCareReceiverId === "string" && lifeCareReceivers.some(r => r.id === initialCareReceiverId)
@@ -89,18 +99,17 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
       return
     }
 
-    if (defaultId) {
+    // URL パラメータがないなら state のみセット（URL 書き換えしない）
+    // これにより、/ へのアクセスで勝手に ?careReceiverId=AT が付かなくなる
+    if (defaultId && !initialCareReceiverId) {
       setSelectedCareReceiverId(defaultId)
       setSelectedUser(lifeCareReceivers[0].label)
-      _router.replace(`${window.location.pathname}?careReceiverId=${encodeURIComponent(defaultId)}`, { scroll: false })
     }
-  }, [])
+  }, [initialCareReceiverId])
 
   const pushWithCareReceiverId = (path: string) => {
-    const url = selectedCareReceiverId
-      ? `${path}${path.includes("?") ? "&" : "?"}careReceiverId=${encodeURIComponent(selectedCareReceiverId)}`
-      : path
-    _router.push(url)
+    // URL に careReceiverId を付与しない
+    _router.push(path)
   }
 
   useEffect(() => {
@@ -249,6 +258,25 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
               </select>
 
               <label htmlFor="userSelect" className="sr-only">対象利用者</label>
+HEAD
+              <select
+                id="userSelect"
+                value={selectedCareReceiverId ?? ""}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const found = lifeCareReceivers.find(r => r.id === id)
+                  setSelectedCareReceiverId(id)
+                  if (found) setSelectedUser(found.label)
+                }}
+                className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
+                aria-label="利用者を選択"
+              >
+                <option value="" disabled>利用者を選択</option>
+                {lifeCareReceivers.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
+
               <Suspense fallback={<div className="px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground min-w-[120px]">読み込み中…</div>}>
                 <CareReceiverSelect
                   selectedCareReceiverId={selectedCareReceiverId}
@@ -257,6 +285,9 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                   setSelectedUser={setSelectedUser}
                 />
               </Suspense>
+
+              {/* // TODO: debug only */}
+              <p className="text-xs text-muted-foreground">現在の利用者ID: {selectedCareReceiverId ?? "—"}</p>
               <Badge variant="secondary" className="text-sm font-medium px-3 py-1">{displayDate}</Badge>
             </div>
           </div>
@@ -335,6 +366,16 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
               </CardHeader>
               <CardContent><p className="text-sm text-sky-700">AI要約を含む月次PDFを生成・ダウンロード。対象月やIDはページ内で指定。</p></CardContent>
             </ClickableCard>
+
+            <ClickableCard onClick={() => window.location.href = '/analytics'} className="group border-2 hover:border-primary/30 bg-violet-50 text-violet-800 border-violet-200 hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-primary" particleColors={["#a78bfa", "#8b5cf6", "#c4b5fd"]}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-white/60 text-2xl">📊</div>
+                  <div className="flex-1"><CardTitle className="text-base font-semibold">Records Analytics</CardTitle></div>
+                </div>
+              </CardHeader>
+              <CardContent><p className="text-sm text-violet-700">ケア記録の期間別集計。発作・睡眠・食事などの日別データを可視化。</p></CardContent>
+            </ClickableCard>
           </div>
         </section>
 
@@ -351,11 +392,6 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
                     <Button key={r.id} variant={selectedCareReceiverId === r.id ? "default" : "outline"} size="sm" className="justify-center" onClick={() => {
                       setSelectedCareReceiverId(r.id)
                       setSelectedUser(r.label)
-                      // Replace only the careReceiverId in the current URL
-                      const params = new URLSearchParams(window.location.search)
-                      params.set('careReceiverId', r.id)
-                      const base = window.location.pathname + '?' + params.toString()
-                      _router.replace(base, { scroll: false })
                     }}>{r.label}</Button>
                   ))}
                 </div>
@@ -415,6 +451,95 @@ export default function HomeClient({ initialCareReceiverId }: Props) {
           </div>
         )}
 
+        {/* 管理者マスタセクション */}
+        <div className="mt-12 pt-8 border-t border-border/50">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">管理者マスタ</h2>
+            <p className="text-muted-foreground text-sm mt-1">管理・編集・追加・削除を一元管理</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* A. 利用者管理 */}
+            <Link href="/services/life-care/users" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-blue-100 rounded-xl text-2xl group-hover:bg-blue-200 transition-colors">👥</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">利用者管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者の追加・編集・削除</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* B. スタッフ管理 */}
+            <Link href="/services/life-care/staff" className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-green-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-green-100 rounded-xl text-2xl group-hover:bg-green-200 transition-colors">👔</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-green-600 transition-colors">スタッフ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">スタッフ情報の編集・追加</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* C. ケース記録（管理用） */}
+            <Link href={getCaseRecordsHref('life-care', selectedCareReceiverId)} className="group">
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-purple-300 cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-purple-100 rounded-xl text-2xl group-hover:bg-purple-200 transition-colors">📋</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-purple-600 transition-colors">ケース記録</h3>
+                      <p className="text-sm text-muted-foreground mt-1">利用者毎のケース記録確認</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* D. テンプレ管理（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">📝</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">テンプレ管理</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* E. データ整合性チェック（準備中） */}
+            <div className="opacity-50 cursor-not-allowed">
+              <Card className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl text-2xl">🔍</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">データ整合性</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">準備中</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
         <PdfPreviewModal isOpen={isPdfPreviewOpen} onClose={() => setIsPdfPreviewOpen(false)} dailyLog={dailyLog} careEvents={careEvents} />
 
         {isA4RecordSheetOpen && (
@@ -469,35 +594,13 @@ function CareReceiverSelect({
   selectedUser: string
   setSelectedUser: (v: string) => void
 }) {
-  const router = useRouter()
-  const params = useSearchParams()
-
   const value = selectedCareReceiverId ?? (lifeCareReceivers.find(r => r.label === selectedUser)?.id ?? "")
-
-  // Guard: if URL has an invalid careReceiverId, replace with default and sync state
-  useEffect(() => {
-    const id = params.get('careReceiverId')
-    if (!id) return
-    const isValid = lifeCareReceivers.some(r => r.id === id)
-    if (!isValid) {
-      const defaultId = lifeCareReceivers[0]?.id
-      if (!defaultId) return
-      const next = new URLSearchParams(params.toString())
-      next.set('careReceiverId', defaultId)
-      router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
-      setSelectedCareReceiverId(defaultId)
-      setSelectedUser(lifeCareReceivers[0].label)
-    }
-  }, [params, router, setSelectedCareReceiverId, setSelectedUser])
 
   const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value
     const found = lifeCareReceivers.find(r => r.id === id)
     setSelectedCareReceiverId(id)
     if (found) setSelectedUser(found.label)
-    const next = new URLSearchParams(params.toString())
-    next.set('careReceiverId', id)
-    router.replace(`${window.location.pathname}?${next.toString()}`, { scroll: false })
   }
 
   return (

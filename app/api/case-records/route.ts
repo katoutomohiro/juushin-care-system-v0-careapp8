@@ -1,90 +1,123 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import { 
+  requireApiUser, 
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  getPaginationParams,
+  validateRequiredFields,
+  missingFieldsResponse,
+  ensureSupabaseAdmin,
+  validateUUIDs,
+  supabaseErrorResponse
+} from "@/lib/api/route-helpers"
 
-export async function POST(req: NextRequest) {
+export const runtime = "nodejs"
+
+export async function GET(req: NextRequest) {
+  // 📋 DESIGN NOTE: This endpoint returns raw record_data objects.
+  //
+  // CURRENT LIMITATIONS for analytics/AI:
+  //   - No filtering by seizure type, excretion detail, sleep quality
+  //   - No aggregation (e.g., seizure count, meal completion %)
+  //   - No time-series extraction (events are nested in unstructured JSON)
+  //   - No relationship tracing (e.g., medication → seizure reduction)
+  //
+  // FUTURE ENDPOINTS (proposal, cf. docs/RECORDS_API_DESIGN_EVOLUTION.md):
+  //   GET /api/case-records/analytics?careReceiverId=xxx&metric=seizure_frequency
+  //   GET /api/case-records/events?careReceiverId=xxx&event_type=seizure&dateFrom=2026-01-01
+  //   GET /api/case-records/summary?careReceiverId=xxx&date=2026-01-30
+  //
   try {
-    const body = await req.json()
-    const { userId, serviceId, recordDate, recordTime, mainStaffId, subStaffIds, payload } = body
-
-    // Validate required fields
-    if (!userId || !serviceId || !recordDate) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing required fields: userId, serviceId, recordDate",
-        },
-        { status: 400 }
-      )
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(true)
     }
 
-    // Validate environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("[case-records API] Missing Supabase environment variables")
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Server configuration error",
-        },
-        { status: 500 }
-      )
+    // Validate Supabase admin client
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
+      return clientError
     }
 
-    // Prepare record data
-    const recordData = {
-      user_id: userId,
-      service_id: serviceId,
-      record_date: recordDate,
-      record_time: recordTime || null,
-      payload: {
-        ...payload,
-        mainStaffId,
-        subStaffIds,
-      },
-    }
+    // Parse query parameters
+    const { searchParams } = new URL(req.url)
+    const serviceId = searchParams.get("serviceId") || null
+    const careReceiverId = searchParams.get("careReceiverId") || null
+    const dateFrom = searchParams.get("dateFrom")
+    const dateTo = searchParams.get("dateTo")
 
-    console.log("[case-records API] Upserting record:", {
-      user_id: userId,
-      service_id: serviceId,
-      record_date: recordDate,
-    })
+    const { limit, offset } = getPaginationParams(
+      searchParams.get("limit"),
+      searchParams.get("offset"),
+      { limit: 20, minLimit: 1, maxLimit: 100, defaultOffset: 0 }
+    )
 
-    // Upsert to Supabase (unique constraint: service_id, user_id, record_date)
-    const { data, error } = await supabaseAdmin
-      .from("case_records")
-      .upsert(recordData, {
-        onConflict: "service_id,user_id,record_date",
+    if (process.env.NODE_ENV === "development") {
+      console.info("[case-records GET] Query params", {
+        serviceId,
+        careReceiverId,
+        dateFrom,
+        dateTo,
+        limit,
+        offset,
       })
-      .select()
-      .single()
+    }
+
+    // Validate required parameters
+    const validation = validateRequiredFields(
+      { serviceId, careReceiverId },
+      ['serviceId', 'careReceiverId']
+    )
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
+    }
+
+    // Validate UUIDs
+    const uuidValidation = validateUUIDs(
+      { serviceId, careReceiverId },
+      ['serviceId', 'careReceiverId']
+    )
+    if (!uuidValidation.valid && uuidValidation.response) {
+      return uuidValidation.response
+    }
+
+    // Build query
+    let query = supabaseAdmin!
+      .from("case_records")
+      .select("id, service_id, care_receiver_id, record_date, record_time, record_data, created_at", { count: "exact" })
+      .eq("service_id", serviceId!)
+      .eq("care_receiver_id", careReceiverId!)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    // Optional date filters
+    if (dateFrom) {
+      query = query.gte("record_date", dateFrom)
+    }
+    if (dateTo) {
+      query = query.lte("record_date", dateTo)
+    }
+
+    const { data, error, count } = await query
 
     if (error) {
-      console.error("[case-records API] Supabase error:", error)
-      return NextResponse.json(
-        {
-          ok: false,
-          error: error.message,
-        },
-        { status: 500 }
-      )
+      return supabaseErrorResponse('case-records GET', error)
     }
-
-    console.log("[case-records API] Success:", data)
 
     return NextResponse.json(
       {
         ok: true,
-        record: data,
+        records: data || [],
+        pagination: {
+          limit,
+          offset,
+          count: count ?? (data?.length ?? 0),
+        },
       },
-      { status: 200 }
+      { status: 200 },
     )
   } catch (error) {
-    console.error("[case-records API] Unexpected error:", error)
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    )
+    return unexpectedErrorResponse('case-records GET', error)
   }
 }

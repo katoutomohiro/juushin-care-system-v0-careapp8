@@ -1,7 +1,57 @@
 {
-    "markdown.validate.enabled": true,
+    "markdown.validate.enabled": false,
     "sonarlint.connectedMode.project": {
         "connectionId": "katoutomohiro",
         "projectKey": "katoutomohiro_juushin-care-system-v0-careapp8"
+    },
+    // Reduce noise from docs and migrations in Problems view
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/coverage": true,
+        "**/.next": true,
+        "docs/**": true,
+        "supabase/migrations/**": true
+    },
+    // Disable validation for SQL files in migrations (avoid T-SQL parser errors)
+    "files.associations": {
+        "supabase/migrations/*.sql": "sql",
+        "**/supabase/migrations/**/*.sql": "sql"
+    },
+    // Explicitly disable SQL validation for migrations folder
+    "mssql.enableSqlFileValidation": false,
+    // Markdown linting: disabled to reduce noise
+    "markdownlint.config": {
+        "default": true,
+        "MD013": false,
+        "MD033": false,
+        "MD041": false
+    },
+    // HTML/JSX validation: reduce accessibility warnings to info level
+    "html.validate.styles": false,
+    "html.validate.scripts": false,
+    // Suppress TypeScript/ESLint from processing docs
+    "typescript.validate.enable": true,
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "eslint.workingDirectories": [
+        { "mode": "auto" }
+    ],
+    "eslint.options": {
+        "ignorePatterns": ["docs/**", "supabase/migrations/**"]
+    },
+    // Exclude specific file patterns from VSCode problem matchers
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/.next/**": true,
+        "docs/**": true,
+        "supabase/migrations/**": true
     }
 }

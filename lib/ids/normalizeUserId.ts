@@ -20,7 +20,6 @@
  */
 export function normalizeUserId(raw: string | null | undefined): string {
   if (!raw) return ""
-
   let decoded = raw
   try {
     decoded = decodeURIComponent(raw)

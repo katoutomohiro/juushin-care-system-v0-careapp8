@@ -27,6 +27,27 @@ export interface UserProfile {
   updatedAt: string
 }
 
+export type CaseRecordCategory = "vitals" | "excretion" | "hydration" | "meal" | "other"
+
+export interface CaseRecordEntry {
+  category: CaseRecordCategory
+  items: Array<Record<string, unknown>>
+}
+
+export interface CaseRecord {
+  userId: string
+  date: string
+  entries: CaseRecordEntry[]
+  meta?: {
+    recordTime?: string
+    mainStaffId?: string | null
+    subStaffId?: string | null
+    subStaffIds?: string[]
+    specialNotes?: string
+    familyNotes?: string
+  }
+}
+
 export class DataStorageService {
   private static readonly CARE_EVENTS_KEY = "careEvents"
   private static readonly USER_PROFILES_KEY = "userProfiles"
@@ -329,7 +350,7 @@ export class DataStorageService {
             theme: "light",
             language: "ja",
             autoSave: true,
-            notifications: true,
+            notifications: false,
           }
     } catch (error) {
       console.error("Failed to load app settings:", error)
@@ -349,6 +370,23 @@ export class DataStorageService {
   // Utility Methods
   private static generateId(): string {
     return generateSecureUUID()
+  }
+
+  private static stripNullish<T>(value: T): T {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => this.stripNullish(item))
+        .filter((item) => item !== null && item !== undefined) as T
+    }
+    if (value && typeof value === "object") {
+      const cleaned: Record<string, unknown> = {}
+      for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+        if (entry === null || entry === undefined) continue
+        cleaned[key] = this.stripNullish(entry)
+      }
+      return cleaned as T
+    }
+    return value
   }
 
   static clearAllData(): void {
