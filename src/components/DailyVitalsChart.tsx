@@ -80,15 +80,16 @@ export default function DailyVitalsChart({ log }: Props) {
             }}
           />
           <Tooltip
-            formatter={(value: string | number | (string | number)[], name: string) => {
+            formatter={(value: string | number | (string | number)[] | undefined, name?: string) => {
+              const label = name ?? "";
               const numValue = typeof value === 'number' ? value : null;
-              if (numValue === null) return ["--", name];
-              if (name === "HR") return [`${numValue} bpm`, "心拍"];
-              if (name === "SpO2") return [`${numValue}%`, "SpO2"];
-              if (name === "RR") return [`${numValue} 回/分`, "呼吸数"];
-              if (name === "Temp")
+              if (numValue === null) return ["--", label];
+              if (label === "HR") return [`${numValue} bpm`, "心拍"];
+              if (label === "SpO2") return [`${numValue}%`, "SpO2"];
+              if (label === "RR") return [`${numValue} 回/分`, "呼吸数"];
+              if (label === "Temp")
                 return [`${numValue.toFixed(1)} ℃`, "体温"];
-              return [numValue, name];
+              return [numValue, label];
             }}
             contentStyle={{ fontSize: 12 }}
           />

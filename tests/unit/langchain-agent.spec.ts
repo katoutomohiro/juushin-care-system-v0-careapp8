@@ -6,21 +6,52 @@ vi.mock("@langchain/openai", () => {
   class MockChatOpenAI {
     public model = "mock-model";
     private impl: (input: string) => Promise<any>;
+    
     constructor() {
       this.impl = async () => ({ content: '{"summary":"ok","highlights":["h1","h2"]}' });
     }
+    
     setMock(fn: (input: string) => Promise<any>) {
       this.impl = fn;
     }
+    
     async invoke(input: string) {
       return this.impl(input);
     }
   }
-  // expose a singleton-like access to tweak behavior per test
-  const instance = new MockChatOpenAI();
-  const ChatOpenAIProxy = vi.fn(() => instance);
-  (ChatOpenAIProxy as any).__instance = instance;
-  return { ChatOpenAI: ChatOpenAIProxy };
+  
+  // Create singleton instance that persists across all test invocations
+  let singletonInstance: MockChatOpenAI | null = null;
+  
+  const ChatOpenAI = class ChatOpenAIProxy {
+    public model = "mock-model";
+    private impl: MockChatOpenAI;
+    
+    constructor() {
+      // Always return the singleton
+      if (!singletonInstance) {
+        singletonInstance = new MockChatOpenAI();
+      }
+      this.impl = singletonInstance;
+    }
+    
+    setMock(fn: (input: string) => Promise<any>) {
+      this.impl.setMock(fn);
+    }
+    
+    async invoke(input: string) {
+      return this.impl.invoke(input);
+    }
+    
+    static __getInstance() {
+      if (!singletonInstance) {
+        singletonInstance = new MockChatOpenAI();
+      }
+      return singletonInstance;
+    }
+  };
+  
+  return { ChatOpenAI };
 });
 
 import { summarizeMonthlyReport, summarizeTodosLocally, summarizeMedications } from "../../services/langchain/agent";
@@ -57,7 +88,8 @@ describe("summarizeMonthlyReport (LLM)", () => {
 
   it("falls back to plain text summary when LLM returns non-JSON", async () => {
     // Override mock to return plain text
-    const inst: any = (ChatOpenAIMock as any).__instance;
+    const ChatOpenAIClass = ChatOpenAIMock as any;
+    const inst = ChatOpenAIClass.__getInstance();
     inst.setMock(async () => ({ content: "プレーンテキストの要約" }));
 
     const res = await summarizeMonthlyReport(sample);
@@ -67,7 +99,8 @@ describe("summarizeMonthlyReport (LLM)", () => {
   });
 
   it("returns rule-based fallback when model.invoke throws", async () => {
-    const inst: any = (ChatOpenAIMock as any).__instance;
+    const ChatOpenAIClass = ChatOpenAIMock as any;
+    const inst = ChatOpenAIClass.__getInstance();
     inst.setMock(async () => {
       throw new Error("network error");
     });
@@ -88,7 +121,8 @@ describe("summarizeMonthlyReport (LLM)", () => {
     const sampleWithTodos: MonthlyReportData = { ...sample, todos };
 
     // Mock returns JSON with todos mention
-    const inst: any = (ChatOpenAIMock as any).__instance;
+    const ChatOpenAIClass = ChatOpenAIMock as any;
+    const inst = ChatOpenAIClass.__getInstance();
     inst.setMock(async (input: string) => {
       // Verify todos data is in prompt
       expect(input).toContain("todos");
@@ -159,7 +193,8 @@ describe("LLM prompt integration: medications", () => {
       medicationSummary: { total: 10, taken: 8, missed: 2, rate: 80 },
     } as any;
 
-    const inst: any = (ChatOpenAIMock as any).__instance;
+    const ChatOpenAIClass = ChatOpenAIMock as any;
+    const inst = ChatOpenAIClass.__getInstance();
     inst.setMock(async (input: string) => {
       expect(input).toContain("medications");
       expect(input).toContain("taken");
@@ -186,7 +221,8 @@ describe("LLM prompt integration: alerts", () => {
       },
     } as any;
 
-    const inst: any = (ChatOpenAIMock as any).__instance;
+    const ChatOpenAIClass = ChatOpenAIMock as any;
+    const inst = ChatOpenAIClass.__getInstance();
     inst.setMock(async (input: string) => {
       expect(input).toContain("alerts");
       expect(input).toContain("warnDays");
