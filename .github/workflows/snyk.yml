@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true  # Allow PR merge even if critical vulnerabilities found in dependencies
     steps:
+      - name: Skip for dependabot (no secrets)
+        if: github.actor == 'dependabot[bot]'
+        run: |
+          echo "Dependabot PR: secrets unavailable, skipping Snyk test."
+          exit 0
       - uses: actions/checkout@v5
       - uses: snyk/actions/setup@master
       - uses: actions/setup-node@v4
