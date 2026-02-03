@@ -3,11 +3,10 @@ import { z } from "zod"
 // ヘッダ部（共通）
 export const CaseRecordHeaderSchema = z.object({
   date: z.string().min(1, "必須です"),
-  time: z.string().min(1, "必須です"),
-  userId: z.string().min(1, "必須です"),
   serviceId: z.string().min(1, "必須です"),
-  mainStaffId: z.string().nullable().optional(),
-  subStaffIds: z.array(z.string()).nullable().optional(),
+  // 方針1: 主担当は必須
+  mainStaffId: z.string().min(1, "主担当は必須です"),
+  subStaffId: z.string().nullable().optional(),
 })
 
 // メモ/備考（共通）

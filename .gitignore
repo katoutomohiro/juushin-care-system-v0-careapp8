@@ -34,6 +34,12 @@ ai_review.md
 # Agent runner artifacts
 artifacts/agent_reports/
 
+# Build and test artifacts
+build_output.txt
+lint_output.txt
+sonar_check.log
+*.log
+
 # Python
 __pycache__/
 *.py[cod]

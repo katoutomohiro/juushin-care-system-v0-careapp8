@@ -1,10 +1,10 @@
 "use client"
 
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import ClickableCard from "@/components/clickable-card"
 import { formUrl, buildUserDiaryUrl } from "@/lib/url"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -12,8 +12,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DataStorageService } from "@/services/data-storage-service"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
+import { EditCareReceiverDialog } from "@/components/edit-care-receiver-dialog"
+import { useToast } from "@/components/ui/use-toast"
+import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -276,41 +279,183 @@ const userDetails: Record<string, UserDetail> = {
 }
 
 export default function UserDetailPage() {
+  // Extract params and router FIRST (always safe to call hooks at top level)
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const serviceId = params.serviceId as string
-  const userId = decodeURIComponent(params.userId as string)
-  const normalizedUserId = normalizeUserId(userId)
-  const service = welfareServices[serviceId]
+  const { toast } = useToast()
 
+  // Compute values from params (safe even if params is undefined, we check below)
+  const serviceId = params?.serviceId as string | undefined
+  const rawUserId = params?.userId as string | undefined
+  const userId = rawUserId ? decodeURIComponent(rawUserId) : ""
+  const normalizedUserId = userId ? normalizeUserId(userId) : ""
+
+  // All hooks MUST be called before any early returns
   const [currentView, setCurrentView] = useState<"overview" | "case-records" | "daily-logs">("overview")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editedUser, setEditedUser] = useState<UserDetail>(() => {
+  const [isNewEditDialogOpen, setIsNewEditDialogOpen] = useState(false)
+  const [careReceiverData, setCareReceiverData] = useState<any>(null)
+  const [editedUser, setEditedUser] = useState<UserDetail>({
+    age: 0,
+    gender: "不明",
+    careLevel: "不明",
+    condition: "情報なし",
+    medicalCare: "情報なし",
+    service: [],
+    name: "",
+  })
+  const [displayName, setDisplayName] = useState("")
+  const [currentDate, setCurrentDate] = useState<string>("")
+  const fetchWarnedRef = useRef(false)
+
+  // useCallback MUST be declared before any early returns
+  const fetchFullCareReceiverData = useCallback(async () => {
+    if (!normalizedUserId) return null
+    try {
+      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        console.warn("[UserDetailPage] Failed to fetch full care receiver data", response.status)
+        return null
+      }
+
+      const result = await response.json()
+
+      if (!result?.ok || !result?.careReceiver) {
+        console.warn("[UserDetailPage] Care receiver API returned ok:false", result?.error)
+        return null
+      }
+
+      return result.careReceiver
+    } catch (error) {
+      console.warn("[UserDetailPage] Unexpected error fetching full care receiver data", error)
+      return null
+    }
+  }, [normalizedUserId])
+
+  // Initialize state values when userId/serviceId change
+  useEffect(() => {
+    if (!userId || !serviceId) return
     const details = userDetails[userId]
     if (details) {
-      return { ...details }
+      setEditedUser({ ...details })
+      setDisplayName(details.name ?? userId)
+    } else {
+      setEditedUser({
+        age: 0,
+        gender: "不明",
+        careLevel: "不明",
+        condition: "情報なし",
+        medicalCare: "情報なし",
+        service: [serviceId],
+        name: userId,
+      })
+      setDisplayName(userId)
     }
+  }, [userId, serviceId])
+  
+  // Params validation - NOW we can do early returns
+  if (!serviceId || !userId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">パラメータが不正です</h2>
+          <p className="text-muted-foreground mb-4">URLを確認してください</p>
+          <Button onClick={() => router.push('/')}>トップに戻る</Button>
+        </div>
+      </div>
+    )
+  }
 
-    return {
-      age: 0,
-      gender: "不明",
-      careLevel: "不明",
-      condition: "情報なし",
-      medicalCare: "情報なし",
-      service: [serviceId],
-      name: userId,
+  /**
+   * 🆕 新しい編集ダイアログを開く（完全データを取得）
+   */
+  const handleOpenEditDialog = async () => {
+    const fullData = await fetchFullCareReceiverData()
+    if (fullData) {
+      setCareReceiverData(fullData)
+      setIsNewEditDialogOpen(true)
+    } else {
+      toast({
+        variant: "destructive",
+        title: "❌ データ取得エラー",
+        description: "利用者情報を取得できませんでした",
+      })
     }
-  })
-  const [displayName, setDisplayName] = useState(() => userDetails[userId]?.name ?? userId)
-  const [currentDate, setCurrentDate] = useState<string>("")
+  }
+
+  /**
+   * 🆕 編集成功後のリフレッシュ
+   */
+  const handleEditSuccess = async () => {
+    const latestName = await fetchCareReceiverName()
+    setDisplayName(latestName)
+    setEditedUser((prev) => ({ ...prev, name: latestName }))
+  }
+
+  /**
+   * Fetch care receiver name from API
+   * Returns fallback name if API fails (ok:false, network error, etc.)
+   * Never throws - always returns a string
+   */
+  const fetchCareReceiverName = useCallback(async (): Promise<string> => {
+    try {
+      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
+        cache: "no-store",
+      })
+
+      // If HTTP response is not ok, treat as failure
+      if (!response.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] HTTP error fetching care receiver name", {
+            status: response.status,
+            statusText: response.statusText,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
+      }
+
+      const result = await response.json().catch(() => null)
+
+      // If API returned ok:false, treat as failure (not an exception)
+      if (!result?.ok) {
+        if (!fetchWarnedRef.current) {
+          console.warn("[UserDetailPage] Care receiver API returned ok:false", {
+            error: result?.error,
+            detail: result?.detail,
+          })
+          fetchWarnedRef.current = true
+        }
+        return userId // Return fallback name
+      }
+
+      // Success: extract and return the name
+      const latestName = result?.careReceiver?.name
+      if (latestName && typeof latestName === "string") {
+        return latestName
+      }
+
+      return userId // Return fallback if name is missing
+    } catch (error) {
+      // Only log actual exceptions (network errors, JSON parse errors, etc.)
+      if (!fetchWarnedRef.current) {
+        console.warn("[UserDetailPage] Unexpected error fetching care receiver name", error)
+        fetchWarnedRef.current = true
+      }
+      return userId // Return fallback name
+    }
+  }, [normalizedUserId, userId])
 
   useEffect(() => {
-    const profile = DataStorageService.getUserProfile(userId)
-    if (profile?.name) {
-      setDisplayName(profile.name)
-    }
-  }, [userId])
+    ;(async () => {
+      const latestName = await fetchCareReceiverName()
+      setDisplayName(latestName)
+      setEditedUser((prev) => ({ ...prev, name: latestName }))
+    })()
+  }, [fetchCareReceiverName])
 
   useEffect(() => {
     setCurrentDate(
@@ -335,34 +480,34 @@ export default function UserDetailPage() {
         name: displayName,
       }
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     const oldName = displayName
     const newName = editedUser.name.trim() || userId
 
-    if (newName !== oldName) {
-      try {
-        DataStorageService.updateUserNameInProfiles(oldName, newName)
-        DataStorageService.updateUserNameInEvents(oldName, newName)
+    try {
+      // Update Supabase first
+      if (newName !== oldName) {
+        const result = await updateCareReceiverName(normalizedUserId, newName)
 
-        const customNames = DataStorageService.getCustomUserNames()
-        const updatedNames = new Set(customNames)
-        if (updatedNames.has(oldName)) {
-          updatedNames.delete(oldName)
+        if (!result.ok) {
+          console.error("Failed to update care receiver in Supabase:", result.error)
+          alert("保存に失敗しました。入力内容を確認してください。")
+          return
         }
-        updatedNames.add(newName)
-        DataStorageService.saveCustomUserNames(Array.from(updatedNames))
 
-        alert(`氏名を「${oldName}」から「${newName}」に変更しました。`)
-      } catch (error) {
-        console.error("Failed to update user name:", error)
-        alert("氏名の変更に失敗しました。もう一度お試しください。")
-        return
+        console.log("[handleSaveUser] Successfully updated Supabase care_receivers.name")
       }
-    }
 
-    userDetails[userId] = { ...editedUser, name: newName }
-    setDisplayName(newName)
-    setIsEditDialogOpen(false)
+      userDetails[userId] = { ...editedUser, name: newName }
+      setDisplayName(newName)
+      setIsEditDialogOpen(false)
+      // ケース記録ページなど他の関連ページをリロード
+      router.refresh()
+      await fetchCareReceiverName()
+    } catch (error) {
+      console.error("Failed to save user information:", error)
+      alert("保存に失敗しました。もう一度お試しください。")
+    }
   }
 
   return (
@@ -384,7 +529,7 @@ export default function UserDetailPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{displayName}</h1>
-                  <p className="text-sm text-muted-foreground">{service.name}</p>
+                  <p className="text-sm text-muted-foreground">{welfareServices[serviceId]?.name}</p>
                 </div>
               </div>
             </div>
@@ -406,16 +551,27 @@ export default function UserDetailPage() {
                   <div className="p-2 bg-primary/10 rounded-lg">👤</div>
                   利用者情報
                 </CardTitle>
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
-                    >
-                      ✏️ 編集
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  {/* 🆕 新しい編集ダイアログ（個人情報を含む） */}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleOpenEditDialog}
+                  >
+                    🔒 詳細情報を編集
+                  </Button>
+                  
+                  {/* 既存の編集ダイアログ（互換性のため残す） */}
+                  <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditedUser({ ...currentUserDetails, name: displayName })}
+                      >
+                        ✏️ 簡易編集
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
                     <DialogHeader>
                       <DialogTitle>利用者情報を編集</DialogTitle>
@@ -534,6 +690,7 @@ export default function UserDetailPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -547,7 +704,7 @@ export default function UserDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">サービス</p>
-                    <p className="text-lg font-semibold">{service.name}</p>
+                    <p className="text-lg font-semibold">{welfareServices[serviceId]?.name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">年齢</p>
@@ -578,7 +735,7 @@ export default function UserDetailPage() {
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
                   // Navigate to case-records page
-                  router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
+                  router.push(getCaseRecordsHref(serviceId, normalizedUserId))
                 }}
               >
                 <CardHeader>
@@ -597,8 +754,8 @@ export default function UserDetailPage() {
               <Card
                 className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-primary/30"
                 onClick={() => {
-                  const careReceiverId = searchParams.get("careReceiverId")
-                  router.push(buildUserDiaryUrl(serviceId, userId, careReceiverId))
+                  // Navigate to diary without careReceiverId query param
+                  router.push(buildUserDiaryUrl(serviceId, userId))
                 }}
               >
                 <CardHeader>
@@ -657,6 +814,16 @@ export default function UserDetailPage() {
           </div>
         )}
       </main>
+
+      {/* 🆕 新しい編集ダイアログ（個人情報を含む、楽観ロック対応） */}
+      {careReceiverData && (
+        <EditCareReceiverDialog
+          careReceiver={careReceiverData}
+          isOpen={isNewEditDialogOpen}
+          onClose={() => setIsNewEditDialogOpen(false)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   )
 }
