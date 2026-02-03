@@ -30,27 +30,38 @@ jobs:
     name: build-test
     runs-on: ubuntu-latest
     steps:
+      - name: Skip build-test for dependabot (no secrets)
+        if: github.actor == 'dependabot[bot]'
+        run: |
+          echo "Dependabot PR: skipping build-test because secrets are unavailable."
+          exit 0
       - uses: actions/checkout@v4
+        if: github.actor != 'dependabot[bot]'
 
       - name: Setup pnpm
+        if: github.actor != 'dependabot[bot]'
         uses: pnpm/action-setup@v3
         with:
           version: 9
           run_install: false
 
       - name: Use Node
+        if: github.actor != 'dependabot[bot]'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
       - name: Install deps
+        if: github.actor != 'dependabot[bot]'
         run: pnpm install --frozen-lockfile
 
       - name: Lint
+        if: github.actor != 'dependabot[bot]'
         run: pnpm lint
 
       - name: Build
+        if: github.actor != 'dependabot[bot]'
         run: pnpm build
 
   tests:
