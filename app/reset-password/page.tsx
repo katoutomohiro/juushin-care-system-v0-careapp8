@@ -30,9 +30,10 @@ export default function ResetPasswordPage() {
     const initializeRecovery = async () => {
       try {
         const hash = window.location.hash ?? "";
-        const params = new URLSearchParams(hash.replace(/^#/, ""));
+        const params = new URLSearchParams(hash.substring(1));
         const type = params.get("type");
         const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
 
         if (type !== "recovery") {
           setError("This link is not a password recovery link.");
@@ -43,7 +44,15 @@ export default function ResetPasswordPage() {
         }
 
         if (!accessToken) {
-          setError("Recovery token not found in URL.");
+          setError("Access token not found in recovery link.");
+          setTimeout(() => {
+            router.replace("/login");
+          }, 2000);
+          return;
+        }
+
+        if (!refreshToken) {
+          setError("Refresh token not found in recovery link.");
           setTimeout(() => {
             router.replace("/login");
           }, 2000);
@@ -53,7 +62,7 @@ export default function ResetPasswordPage() {
         // recovery token を使ってセッションを確立
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: "", // recovery はアクセストークンのみ
+          refresh_token: refreshToken,
         });
 
         if (sessionError) {
