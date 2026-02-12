@@ -2,21 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase/browser";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-
-  const [supabase] = useState(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      throw new Error("Supabase credentials are missing");
-    }
-
-    return createClient(url, key);
-  });
 
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -33,17 +22,18 @@ export default function ResetPasswordPage() {
         const params = new URLSearchParams(hash.replace(/^#/, ""));
         const type = params.get("type");
         const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
 
         if (type !== "recovery") {
-          setError("This link is not a password recovery link.");
+          setError("このリンクはパスワード再設定用ではありません。");
           setTimeout(() => {
             router.replace("/login");
           }, 2000);
           return;
         }
 
-        if (!accessToken) {
-          setError("Recovery token not found in URL.");
+        if (!accessToken || !refreshToken) {
+          setError("再設定トークンが見つかりませんでした。");
           setTimeout(() => {
             router.replace("/login");
           }, 2000);
@@ -53,11 +43,11 @@ export default function ResetPasswordPage() {
         // recovery token を使ってセッションを確立
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: "", // recovery はアクセストークンのみ
+          refresh_token: refreshToken,
         });
 
         if (sessionError) {
-          setError(`Session error: ${sessionError.message}`);
+          setError(`セッション確立に失敗しました: ${sessionError.message}`);
           setTimeout(() => {
             router.replace("/login");
           }, 2000);
@@ -76,7 +66,7 @@ export default function ResetPasswordPage() {
     };
 
     initializeRecovery();
-  }, [supabase, router]);
+  }, [router]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,8 +97,8 @@ export default function ResetPasswordPage() {
       setSuccess(true);
       setError(null);
       setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+        router.replace("/login");
+      }, 1500);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "パスワード更新に失敗しました"
@@ -134,7 +124,7 @@ export default function ResetPasswordPage() {
     return (
       <div style={{ padding: "24px", maxWidth: "420px", margin: "0 auto" }}>
         <p style={{ color: "#388e3c" }}>
-          パスワード更新完了！ログイン画面へ移動します...
+          パスワードを更新しました。ログイン画面へ移動します...
         </p>
       </div>
     );
