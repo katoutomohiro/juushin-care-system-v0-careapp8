@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseMiddlewareClient } from "./lib/supabase/middleware"
 
 // Routes that never require authentication
-const publicRoutes = ["/login", "/auth", "/api/auth", "/_next", "/favicon.ico"]
+const publicRoutes = ["/login", "/auth", "/api", "/forgot-password", "/reset-password"]
 
 function isPublic(pathname: string) {
   return publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}`))
