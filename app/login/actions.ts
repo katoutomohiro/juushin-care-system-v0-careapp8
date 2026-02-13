@@ -8,10 +8,13 @@ export async function login(formData: FormData) {
   const password = String(formData.get("password") ?? "")
   const redirectTo = String(formData.get("redirect") ?? "/")
 
+  const buildLoginRedirect = (message: string) => {
+    const params = new URLSearchParams({ error: message })
+    return redirect(`/login?${params.toString()}`)
+  }
+
   if (!email) {
-    const url = new URL("/login", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost")
-    url.searchParams.set("error", "メールアドレスを入力してください")
-    return redirect(url.toString())
+    return buildLoginRedirect("メールアドレスを入力してください")
   }
 
   const supabase = await createSupabaseServerClient()
@@ -24,17 +27,13 @@ export async function login(formData: FormData) {
 
     if (error || !data.session) {
       const msg = error?.message ?? "ログインに失敗しました"
-      const url = new URL("/login", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost")
-      url.searchParams.set("error", msg)
-      return redirect(url.toString())
+      return buildLoginRedirect(msg)
     }
 
     // Successful sign-in: the server client attaches cookies; redirect to target
     return redirect(redirectTo || "/")
   } catch (err) {
     const msg = err instanceof Error ? err.message : "エラーが発生しました"
-    const url = new URL("/login", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost")
-    url.searchParams.set("error", msg)
-    return redirect(url.toString())
+    return buildLoginRedirect(msg)
   }
 }
