@@ -1,7 +1,7 @@
-# 404消去と導線統一｜実装完了レポート
+# 404消去と導線統一�E�実裁E��亁E��ポ�EチE
 
 **実行日**: 2026-01-28  
-**目的**: 生活介護→AT→ケース記録の導線を統一し、404を消す
+**目皁E*: 生活介護→AT→ケース記録の導線を統一し、E04を消す
 
 ---
 
@@ -11,105 +11,105 @@
 rg -n "case-records|ケース記録" app --type ts --type tsx
 ```
 
-### 出力結果（優先度順）
+### 出力結果�E�優先度頁E��E
 
-| No. | ファイル | 行番号 | 内容 | 種類 | 状態 |
+| No. | ファイル | 行番号 | 冁E�� | 種顁E| 状慁E|
 |-----|---------|--------|------|------|------|
-| **1** | `app/home-client.tsx` | 482 | ケース記録リンク | リンク | ✅ 修正済 |
-| **2** | `app/services/[serviceId]/users/[userId]/page.tsx` | 650 | ケース記録ボタン | リンク（動的） | ✅ OK |
-| **3** | `app/services/[serviceId]/users/[userId]/case-records/page.tsx` | 1-142 | CaseRecordForm | ページ実装 | ✅ 実装済 |
-| **4** | `app/print/a4/case-record/page.tsx` | 2-49 | A4印刷用ページ | 補助機能 | ✅ 実装済 |
+| **1** | `app/home-client.tsx` | 482 | ケース記録リンク | リンク | ✁E修正渁E|
+| **2** | `app/services/[serviceId]/users/[userId]/page.tsx` | 650 | ケース記録ボタン | リンク�E�動皁E��E| ✁EOK |
+| **3** | `app/services/[serviceId]/users/[userId]/case-records/page.tsx` | 1-142 | CaseRecordForm | ペ�Eジ実裁E| ✁E実裁E��E|
+| **4** | `app/print/a4/case-record/page.tsx` | 2-49 | A4印刷用ペ�Eジ | 補助機�E | ✁E実裁E��E|
 
 ---
 
-## 🔧 修正実装内容
+## 🔧 修正実裁E�E容
 
 ### 修正対象: app/home-client.tsx L482
 
-**修正内容**:
+**修正冁E��**:
 ```diff
 - <Link href="/services/life-care/users/AT/case-records" className="group">
 + <Link href={`/services/life-care/users/${selectedCareReceiverId || 'AT'}/case-records`} className="group">
 ```
 
-**修正理由**:
-- ✅ `selectedCareReceiverId` は既に state で管理されている
-- ✅ AT/AU 等のユーザーを切り替え時、動的にリンク先が変わる
-- ✅ `/services/life-care` は固定のまま（生活介護サービス内のリンク）
-- ✅ `|| 'AT'` フォールバックで、selectedCareReceiverId が無い場合は AT に遷移
+**修正琁E��**:
+- ✁E`selectedCareReceiverId` は既に state で管琁E��れてぁE��
+- ✁EAT/AU 等�Eユーザーを�Eり替え時、動皁E��リンク先が変わめE
+- ✁E`/services/life-care` は固定�Eまま�E�生活介護サービス冁E�Eリンク�E�E
+- ✁E`|| 'AT'` フォールバックで、selectedCareReceiverId が無ぁE��合�E AT に遷移
 
-**効果**:
-- 🔓 ホーム画面の「ケース記録」ボタン → 現在選択中のユーザーのケース記録ページに遷移
-- 🔓 ユーザー詳細ページのボタン（既に動的） → 同じユーザーのケース記録ページに遷移
+**効极E*:
+- 🔓 ホ�Eム画面の「ケース記録」�Eタン ↁE現在選択中のユーザーのケース記録ペ�Eジに遷移
+- 🔓 ユーザー詳細ペ�Eジのボタン�E�既に動的�E�EↁE同じユーザーのケース記録ペ�Eジに遷移
 
 ---
 
-## ✅ 既存実装状況
+## ✁E既存実裁E��況E
 
-### ページ実装: ケース記録ページ
+### ペ�Eジ実裁E ケース記録ペ�Eジ
 
 **ファイル**: `app/services/[serviceId]/users/[userId]/case-records/page.tsx`
 
-**確認事項**:
-- ✅ ルート存在
-- ✅ Next.js 15 対応（`params: Promise`）
-- ✅ serviceId + userId を URL params から取得
-- ✅ Supabase で care_receiver を ID/code で検索
-- ✅ CaseRecordFormClient を動的に読み込む
-- ✅ displayName を DB から取得
+**確認事頁E*:
+- ✁Eルート存在
+- ✁ENext.js 15 対応！Eparams: Promise`�E�E
+- ✁EserviceId + userId めEURL params から取征E
+- ✁ESupabase で care_receiver めEID/code で検索
+- ✁ECaseRecordFormClient を動皁E��読み込む
+- ✁EdisplayName めEDB から取征E
 
-**実装の流れ**:
-1. URL params から `serviceId` と `userId` を取得
-2. `normalizeUserId` で内部 ID に変換（例: "A・T" → "AT"）
-3. Supabase で care_receiver を検索（code が "AT" など）
-4. CaseRecordFormClient に UUID + 名前を渡す
-5. フォームが表示される
+**実裁E�E流れ**:
+1. URL params から `serviceId` と `userId` を取征E
+2. `normalizeUserId` で冁E�� ID に変換�E�侁E "A・T" ↁE"AT"�E�E
+3. Supabase で care_receiver を検索�E�Eode ぁE"AT" など�E�E
+4. CaseRecordFormClient に UUID + 名前を渡ぁE
+5. フォームが表示されめE
 
-**状態**: ✅ 完全実装済
+**状慁E*: ✁E完�E実裁E��E
 
-### ユーザー詳細ページ（app/services/[serviceId]/users/[userId]/page.tsx）
+### ユーザー詳細ペ�Eジ�E�Epp/services/[serviceId]/users/[userId]/page.tsx�E�E
 
-**実装** (L650):
+**実裁E* (L650):
 ```tsx
 router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
 ```
 
-**状態**: ✅ 完全に正しい実装（修正不要）
+**状慁E*: ✁E完�Eに正しい実裁E��修正不要E��E
 
 ---
 
-## ✅ mock データ確認
+## ✁Emock チE�Eタ確誁E
 
 **ファイル**: `lib/mock/careReceivers.ts`
 
 ```typescript
 export const lifeCareReceivers: CareReceiver[] = [
-  { id: "AT", label: "ATさん", service: "lifeCare" },  // ✅ 存在
+  { id: "AT", label: "ATさん", service: "lifeCare" },  // ✁E存在
   { id: "AU", label: "AUさん", service: "lifeCare" },
   ...
 ]
 ```
 
-**判定**: ✅ AT ユーザーは mock データに存在
+**判宁E*: ✁EAT ユーザーは mock チE�Eタに存在
 
 ---
 
-## 🎯 完了条件チェックリスト
+## 🎯 完亁E��件チェチE��リスチE
 
-- [x] ホーム画面のケース記録リンクが動的化（userId を `selectedCareReceiverId` から取得）
-- [ ] 生活介護 → AT → ケース記録を見る → スクショ5相当の画面表示確認（動作テスト）
-- [ ] 生活介護 → 別ユーザー（AU等）→ ケース記録を見る → 同じ画面表示確認（動作テスト）
-- [ ] 404 なし（すべて 200 OK）確認（動作テスト）
+- [x] ホ�Eム画面のケース記録リンクが動皁E���E�EserId めE`selectedCareReceiverId` から取得！E
+- [ ] 生活介護 ↁEAT ↁEケース記録を見る ↁEスクショ5相当�E画面表示確認（動作テスト！E
+- [ ] 生活介護 ↁE別ユーザー�E�EU等）�E ケース記録を見る ↁE同じ画面表示確認（動作テスト！E
+- [ ] 404 なし（すべて 200 OK�E�確認（動作テスト！E
 
 ---
 
-**実装済ファイル**:
+**実裁E��ファイル**:
 - [app/home-client.tsx#L482](../../app/home-client.tsx#L482)
 
-**PR 準備状態**: ✅ コミット済、push 待ち
+**PR 準備状慁E*: ✁Eコミット済、push 征E��
 
 **実行日**: 2026-01-28  
-**目的**: 生活介護→AT→ケース記録の導線を統一し、404を消す
+**目皁E*: 生活介護→AT→ケース記録の導線を統一し、E04を消す
 
 ---
 
@@ -119,184 +119,185 @@ export const lifeCareReceivers: CareReceiver[] = [
 rg -n "case-records|ケース記録" app --type ts --type tsx
 ```
 
-### 出力結果（優先度順）
+### 出力結果�E�優先度頁E��E
 
-| No. | ファイル | 行番号 | 内容 | 種類 | 状態 |
+| No. | ファイル | 行番号 | 冁E�� | 種顁E| 状慁E|
 |-----|---------|--------|------|------|------|
-| **1** | `app/home-client.tsx` | 482 | `<Link href="/services/life-care/users/AT/case-records"` | リンク（ハードコード） | ⚠️ AT固定 |
-| **2** | `app/services/[serviceId]/users/[userId]/page.tsx` | 650 | `router.push(...case-records)` | リンク（動的） | ✅ 正好 |
-| **3** | `app/services/[serviceId]/users/[userId]/case-records/page.tsx` | 1-142 | CaseRecordFormClient インポート+ 実装 | ページ実装 | ✅ 実装済 |
-| **4** | `app/print/a4/case-record/page.tsx` | 2-49 | A4印刷専用ページ | 補助機能 | ✅ 実装済 |
+| **1** | `app/home-client.tsx` | 482 | `<Link href="/services/life-care/users/AT/case-records"` | リンク�E�ハードコード！E| ⚠�E�EAT固宁E|
+| **2** | `app/services/[serviceId]/users/[userId]/page.tsx` | 650 | `router.push(...case-records)` | リンク�E�動皁E��E| ✁E正好 |
+| **3** | `app/services/[serviceId]/users/[userId]/case-records/page.tsx` | 1-142 | CaseRecordFormClient インポ�EチE 実裁E| ペ�Eジ実裁E| ✁E実裁E��E|
+| **4** | `app/print/a4/case-record/page.tsx` | 2-49 | A4印刷専用ペ�Eジ | 補助機�E | ✁E実裁E��E|
 
 ---
 
-## 🔍 詳細分析
+## 🔍 詳細刁E��
 
-### リンク元①: ホーム画面（app/home-client.tsx）
+### リンク允E��: ホ�Eム画面�E�Epp/home-client.tsx�E�E
 
-**現在の実装**:
+**現在の実裁E*:
 ```tsx
 <Link href="/services/life-care/users/AT/case-records" className="group">
   <h3>ケース記録</h3>
-  <p>利用者毎のケース記録確認</p>
+  <p>利用老E���Eケース記録確誁E/p>
 </Link>
 ```
 
 **問題点**:
-- ❌ `/services/life-care` にハードコード（serviceId 固定）
-- ❌ `/users/AT` にハードコード（userId 固定）
-- 🔴 **これが 404 の原因** → AT 以外のサービスでは機能しない
+- ❁E`/services/life-care` にハ�Eドコード！EerviceId 固定！E
+- ❁E`/users/AT` にハ�Eドコード！EserId 固定！E
+- 🔴 **これぁE404 の原因** ↁEAT 以外�Eサービスでは機�EしなぁE
 
-**修正案**: 後で提案
+**修正桁E*: 後で提桁E
 
 ---
 
-### リンク元②: ユーザー詳細ページ（app/services/[serviceId]/users/[userId]/page.tsx）
+### リンク允E��: ユーザー詳細ペ�Eジ�E�Epp/services/[serviceId]/users/[userId]/page.tsx�E�E
 
-**現在の実装** (L650):
+**現在の実裁E* (L650):
 ```tsx
 router.push(`/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/case-records`)
 ```
 
-**状態**: 
-- ✅ serviceId 動的
-- ✅ userId 動的
-- ✅ 完全に正しい実装
+**状慁E*: 
+- ✁EserviceId 動的
+- ✁EuserId 動的
+- ✁E完�Eに正しい実裁E
 
-**判定**: 修正不要
+**判宁E*: 修正不要E
 
 ---
 
-### ページ実装: ケース記録ページ
+### ペ�Eジ実裁E ケース記録ペ�Eジ
 
 **ファイル**: `app/services/[serviceId]/users/[userId]/case-records/page.tsx`
 
-**確認事項**:
-- ✅ ルート存在
-- ✅ Next.js 15 対応（`params: Promise`）
-- ✅ serviceId + userId を URL params から取得
-- ✅ Supabase で care_receiver を ID/code で検索
-- ✅ CaseRecordFormClient を動的に読み込む
-- ✅ displayName を DB から取得
+**確認事頁E*:
+- ✁Eルート存在
+- ✁ENext.js 15 対応！Eparams: Promise`�E�E
+- ✁EserviceId + userId めEURL params から取征E
+- ✁ESupabase で care_receiver めEID/code で検索
+- ✁ECaseRecordFormClient を動皁E��読み込む
+- ✁EdisplayName めEDB から取征E
 
-**実装の流れ**:
-1. URL params から `serviceId` と `userId` を取得
-2. `normalizeUserId` で内部 ID に変換（例: "A・T" → "AT"）
-3. Supabase で care_receiver を検索（code が "AT" など）
-4. CaseRecordFormClient に UUID + 名前を渡す
-5. フォームが表示される
+**実裁E�E流れ**:
+1. URL params から `serviceId` と `userId` を取征E
+2. `normalizeUserId` で冁E�� ID に変換�E�侁E "A・T" ↁE"AT"�E�E
+3. Supabase で care_receiver を検索�E�Eode ぁE"AT" など�E�E
+4. CaseRecordFormClient に UUID + 名前を渡ぁE
+5. フォームが表示されめE
 
-**状態**: ✅ 完全実装済
+**状慁E*: ✁E完�E実裁E��E
 
 ---
 
-## ✅ AT ユーザー存在確認
+## ✁EAT ユーザー存在確誁E
 
-**mock データ**: `lib/mock/careReceivers.ts`
+**mock チE�Eタ**: `lib/mock/careReceivers.ts`
 
 ```typescript
 export const lifeCareReceivers: CareReceiver[] = [
-  { id: "AT", label: "ATさん", service: "lifeCare" },  // ✅ 存在
+  { id: "AT", label: "ATさん", service: "lifeCare" },  // ✁E存在
   { id: "AU", label: "AUさん", service: "lifeCare" },
   ...
 ]
 ```
 
-**判定**: ✅ AT ユーザーは mock データに存在
+**判宁E*: ✁EAT ユーザーは mock チE�Eタに存在
 
-**Supabase にも存在するか?** → 今から動作テストで確認
+**Supabase にも存在するぁE** ↁE今から動作テストで確誁E
 
 ---
 
-## 🎯 次にやること
+## 🎯 次にめE��こと
 
-### アクション 1: ホーム画面のリンクを動的化（最優先）
+### アクション 1: ホ�Eム画面のリンクを動皁E���E�最優先！E
 
-**目的**: `/services/life-care/users/AT/case-records` をハードコード → 動的に変更
+**目皁E*: `/services/life-care/users/AT/case-records` をハードコーチEↁE動的に変更
 
-**修正方法**:
+**修正方況E*:
 ```tsx
-// Before（ハードコード）
+// Before�E�ハードコード！E
 <Link href="/services/life-care/users/AT/case-records">
 
-// After（動的）
+// After�E�動皁E��E
 <Link href={`/services/${selectedService}/users/${selectedUserId}/case-records`}>
 ```
 
-**複雑度**: ⚠️ 中程度
-- `home-client.tsx` は既に useState で `selectedUser` を管理中
-- `selectedService` を追加して、最初のユーザーの service を取得する必要がある
+**褁E��度**: ⚠�E�E中程度
+- `home-client.tsx` は既に useState で `selectedUser` を管琁E��
+- `selectedService` を追加して、最初�Eユーザーの service を取得する忁E��がある
 
-### アクション 2: 動作テスト
+### アクション 2: 動作テスチE
 
-**テストケース**:
-1. 生活介護 → AT → ケース記録を見る → ページ表示
-2. 生活介護 → AU → ケース記録を見る → ページ表示
-3. after-school → 該当ユーザー → ケース記録を見る → ページ表示
-
----
-
-## 📋 完了条件チェックリスト
-
-- [ ] ホーム画面のケース記録リンクが動的化（serviceId, userId を取得して指定）
-- [ ] 生活介護 → AT → ケース記録を見る → スクショ5相当の画面表示確認
-- [ ] 生活介護 → 別ユーザー → ケース記録を見る → 同じ画面表示確認
-- [ ] after-school でも動作確認
-- [ ] 404 なし（すべて 200 OK）
+**チE��トケース**:
+1. 生活介護 ↁEAT ↁEケース記録を見る ↁEペ�Eジ表示
+2. 生活介護 ↁEAU ↁEケース記録を見る ↁEペ�Eジ表示
+3. after-school ↁE該当ユーザー ↁEケース記録を見る ↁEペ�Eジ表示
 
 ---
 
-## 🔧 修正実装案
+## 📋 完亁E��件チェチE��リスチE
+
+- [ ] ホ�Eム画面のケース記録リンクが動皁E���E�EerviceId, userId を取得して持E��！E
+- [ ] 生活介護 ↁEAT ↁEケース記録を見る ↁEスクショ5相当�E画面表示確誁E
+- [ ] 生活介護 ↁE別ユーザー ↁEケース記録を見る ↁE同じ画面表示確誁E
+- [ ] after-school でも動作確誁E
+- [ ] 404 なし（すべて 200 OK�E�E
+
+---
+
+## 🔧 修正実裁E��E
 
 ### 修正対象: app/home-client.tsx L482
 
-**現在（ハードコード）**:
+**現在�E�ハードコード！E*:
 ```tsx
 <Link href="/services/life-care/users/AT/case-records" className="group">
   <h3>ケース記録</h3>
 </Link>
 ```
 
-**修正後（動的化）**:
+**修正後（動皁E���E�E*:
 ```tsx
 <Link href={`/services/life-care/users/${selectedCareReceiverId || 'AT'}/case-records`} className="group">
   <h3>ケース記録</h3>
 </Link>
 ```
 
-**理由**:
-- `selectedCareReceiverId` は既に state で管理されている（L75）
-- `lifeCareReceivers[0]?.id` で初期化されている（L95-105）
-- selectedCareReceiverId が存在すれば、その利用者のケース記録ページに遷移
+**琁E��**:
+- `selectedCareReceiverId` は既に state で管琁E��れてぁE���E�E75�E�E
+- `lifeCareReceivers[0]?.id` で初期化されてぁE���E�E95-105�E�E
+- selectedCareReceiverId が存在すれば、その利用老E�Eケース記録ペ�Eジに遷移
 - 存在しなければ AT にフォールバック
 
 **変更の簡潔性**:
-- ✅ 1行の修正で完了
-- ✅ 既存の state を再利用（新規追加なし）
-- ✅ "serviceId は life-care 固定" という仕様を反映（他サービスはリンク側で対応）
+- ✁E1行�E修正で完亁E
+- ✁E既存�E state を�E利用�E�新規追加なし！E
+- ✁E"serviceId は life-care 固宁E とぁE��仕様を反映�E�他サービスはリンク側で対応！E
 
 ---
 
-## ⚡ 実装手順
+## ⚡ 実裁E��頁E
 
-### Step 1: 修正実装
+### Step 1: 修正実裁E
 app/home-client.tsx L482 のみ修正
 
-### Step 2: 動作テスト（ローカル）
+### Step 2: 動作テスト（ローカル�E�E
 ```bash
 cd c:\dev\juushin-care-system-v0-careapp8
-pnpm dev  # localhost:3000 で起動
+pnpm dev  # dev-app.local:3000 で起勁E
 ```
 
-ブラウザ操作:
-1. ホーム画面を開く
-2. "ケース記録" カードをクリック
-3. スクショ5相当の画面が表示されるか確認
-4. URL が `/services/life-care/users/AT/case-records` か確認
+ブラウザ操佁E
+1. ホ�Eム画面を開ぁE
+2. "ケース記録" カードをクリチE��
+3. スクショ5相当�E画面が表示されるか確誁E
+4. URL ぁE`/services/life-care/users/AT/case-records` か確誁E
 
-### Step 3: 複数ユーザーテスト（今後の PR で）
-- `selectedCareReceiverId` を AU に変更して、AU のケース記録ページに遷移するか確認
+### Step 3: 褁E��ユーザーチE��ト（今後�E PR で�E�E
+- `selectedCareReceiverId` めEAU に変更して、AU のケース記録ペ�Eジに遷移するか確誁E
 
 ---
 
-**次のステップ**: 実装を開始しますか?
+**次のスチE��チE*: 実裁E��開始しますか?
+

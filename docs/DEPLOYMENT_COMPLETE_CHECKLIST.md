@@ -1,261 +1,195 @@
-# Vercel デプロイメント完全チェックリスト
+# Vercel チE�Eロイメント完�EチェチE��リスチE
+## 📋 チE�Eロイ前チェチE��
 
-## 📋 デプロイ前チェック
-
-### 1. リポジトリ確認
-- [ ] 正しいリポジトリ: katoutomohiro/juushin-care-system-v0-careapp8
-- [ ] 正しいブランチ: main or feat/at-case-records-render
+### 1. リポジトリ確誁E- [ ] 正しいリポジトリ: katoutomohiro/juushin-care-system-v0-careapp8
+- [ ] 正しいブランチE main or feat/at-case-records-render
 - [ ] GitHub に push 済み: `git log --oneline -1`
 
-### 2. ローカルビルド確認
-```bash
+### 2. ローカルビルド確誁E```bash
 pnpm install
-pnpm typecheck   # ✅ エラーなし
-pnpm lint        # ✅ エラーなし
-pnpm build       # ✅ Build success
-pnpm dev         # ✅ http://localhost:3000 で / を開く
-# 期待: ?careReceiverId=AT が付かない
-```
+pnpm typecheck   # ✁EエラーなぁEpnpm lint        # ✁EエラーなぁEpnpm build       # ✁EBuild success
+pnpm dev         # ✁Ehttp://dev-app.local:3000 で / を開ぁE# 期征E ?careReceiverId=AT が付かなぁE```
 
-### 3. Vercel Dashboard 確認
-- [ ] Project: juushin-care-system-v0-careapp8
-- [ ] Settings → Git → Connected Repository = katoutomohiro/juushin-care-system-v0-careapp8
-- [ ] Settings → Branches → Production = main
-- [ ] Settings → Environment Variables を確認:
+### 3. Vercel Dashboard 確誁E- [ ] Project: juushin-care-system-v0-careapp8
+- [ ] Settings ↁEGit ↁEConnected Repository = katoutomohiro/juushin-care-system-v0-careapp8
+- [ ] Settings ↁEBranches ↁEProduction = main
+- [ ] Settings ↁEEnvironment Variables を確誁E
   - [ ] NEXT_PUBLIC_SUPABASE_URL = https://xxxxx.supabase.co
   - [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY = sb_publishable_...
   - [ ] SUPABASE_SERVICE_ROLE_KEY = sb_secret_... (Secret として)
 
-### 4. Vercel デプロイ実行
-- [ ] git push origin main
-- [ ] Vercel ダッシュボードで自動デプロイ開始確認
-- [ ] Deployments → [最新] → Logs で Build Success 確認
+### 4. Vercel チE�Eロイ実衁E- [ ] git push origin main
+- [ ] Vercel ダチE��ュボ�Eドで自動デプロイ開始確誁E- [ ] Deployments ↁE[最新] ↁELogs で Build Success 確誁E
+### 5. 本番環墁E��の動作確誁E- [ ] https://juushin-care-system-v0-careapp8.vercel.app/ へアクセス
+- [ ] シークレチE��ウィンドウで確認（キャチE��ュなし！E- [ ] DevTools ↁENetwork で、E へのリクエストが 200 OK で返る
+- [ ] URL バ�Eに ?careReceiverId=AT が付いてぁE��ぁE- [ ] ホ�Eム画面が表示されめE- [ ] 利用老E��択ドロチE�Eダウンが機�Eする
 
-### 5. 本番環境での動作確認
-- [ ] https://juushin-care-system-v0-careapp8.vercel.app/ へアクセス
-- [ ] シークレットウィンドウで確認（キャッシュなし）
-- [ ] DevTools → Network で、/ へのリクエストが 200 OK で返る
-- [ ] URL バーに ?careReceiverId=AT が付いていない
-- [ ] ホーム画面が表示される
-- [ ] 利用者選択ドロップダウンが機能する
+### 6. キャチE��ュクリア�E�忁E��に応じて�E�E```bash
+# Vercel Dashboard ↁEDeployments ↁE[最新] ↁEMore ↁERedeploy
+# ↁE"Redeploy without cache" を選抁E```
 
-### 6. キャッシュクリア（必要に応じて）
-```bash
-# Vercel Dashboard → Deployments → [最新] → More → Redeploy
-# → "Redeploy without cache" を選択
-```
-
-### 7. HTTP ヘッダ確認（問題時のデバッグ）
-```bash
+### 7. HTTP ヘッダ確認（問題時のチE��チE���E�E```bash
 curl -I https://juushin-care-system-v0-careapp8.vercel.app/
-# 確認項目:
-# - x-vercel-id: [id] (デプロイID)
-# - x-vercel-cache: HIT / MISS (キャッシュ状態)
-# - cache-control: (キャッシュ制御)
+# 確認頁E��:
+# - x-vercel-id: [id] (チE�EロイID)
+# - x-vercel-cache: HIT / MISS (キャチE��ュ状慁E
+# - cache-control: (キャチE��ュ制御)
 ```
 
 ---
 
-## 🔧 問題が発生した場合のトラブルシュート
+## 🔧 問題が発生した場合�EトラブルシューチE
+### 問顁E それでめE?careReceiverId=AT が付く
 
-### 問題: それでも ?careReceiverId=AT が付く
-
-**確認項目:**
+**確認頁E��:**
 
 ```bash
-# 1. キャッシュをクリア
-#    Vercel Dashboard → Deployments → [最新] → More → "Redeploy (no cache)"
+# 1. キャチE��ュをクリア
+#    Vercel Dashboard ↁEDeployments ↁE[最新] ↁEMore ↁE"Redeploy (no cache)"
 
-# 2. ローカルビルドで確認
-pnpm clean  # キャッシュ削除
+# 2. ローカルビルドで確誁Epnpm clean  # キャチE��ュ削除
 pnpm build
 pnpm start
 
 # 3. browser cache をクリア
-#    DevTools → Application → Storage → Clear site data
+#    DevTools ↁEApplication ↁEStorage ↁEClear site data
 
-# 4. 別ブラウザまたはシークレットで確認
-```
+# 4. 別ブラウザまた�EシークレチE��で確誁E```
 
-### 問題: ログイン画面でエラー
+### 問顁E ログイン画面でエラー
 
-**確認項目:**
+**確認頁E��:**
 
 ```bash
-# 1. Supabase 認証情報を確認
-#    .env.local が正しいか
-#    Vercel Environment Variables が設定されているか
-
+# 1. Supabase 認証惁E��を確誁E#    .env.local が正しいぁE#    Vercel Environment Variables が設定されてぁE��ぁE
 cat .env.local | grep SUPABASE
 
-# 2. Supabase seed データを確認
-#    Supabase Dashboard → SQL Editor
-SELECT COUNT(*) FROM auth.users;  -- 0 なら seed 実行が必要
-
-# 3. ログを確認
-#    Vercel Dashboard → Deployments → [最新] → Logs
+# 2. Supabase seed チE�Eタを確誁E#    Supabase Dashboard ↁESQL Editor
+SELECT COUNT(*) FROM auth.users;  -- 0 なめEseed 実行が忁E��E
+# 3. ログを確誁E#    Vercel Dashboard ↁEDeployments ↁE[最新] ↁELogs
 #    "error" で検索
 ```
 
-### 問題: 利用者選択ドロップダウンが動作しない
-
-**確認項目:**
+### 問顁E 利用老E��択ドロチE�Eダウンが動作しなぁE
+**確認頁E��:**
 
 ```bash
-# 1. lifeCareReceivers が定義されているか確認
-grep -n "lifeCareReceivers" app/home-client.tsx
+# 1. lifeCareReceivers が定義されてぁE��か確誁Egrep -n "lifeCareReceivers" app/home-client.tsx
 
-# 2. CareReceiverSelect コンポーネントを確認
-grep -rn "CareReceiverSelect" app/
+# 2. CareReceiverSelect コンポ�Eネントを確誁Egrep -rn "CareReceiverSelect" app/
 
-# 3. DevTools Console でエラーを確認
-#    F12 → Console タブで JavaScript エラーを見る
+# 3. DevTools Console でエラーを確誁E#    F12 ↁEConsole タブで JavaScript エラーを見る
 ```
 
 ---
 
 ## 🔐 ログイン エラー診断
 
-### A. Supabase 接続確認
-
-- [ ] NEXT_PUBLIC_SUPABASE_URL が有効なSupabase URLか
-  ```bash
+### A. Supabase 接続確誁E
+- [ ] NEXT_PUBLIC_SUPABASE_URL が有効なSupabase URLぁE  ```bash
   echo $NEXT_PUBLIC_SUPABASE_URL
-  # 期待: https://xxxxx.supabase.co (xxxx は16文字の英数字)
+  # 期征E https://xxxxx.supabase.co (xxxx は16斁E���E英数孁E
   ```
 
-- [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY が有効か
-  ```bash
-  # Supabase Dashboard → Settings → API → anon public key
-  # Vercel Environment Variables と一致するか
-  ```
+- [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY が有効ぁE  ```bash
+  # Supabase Dashboard ↁESettings ↁEAPI ↁEanon public key
+  # Vercel Environment Variables と一致するぁE  ```
 
-### B. Seed データ確認
-
-- [ ] auth.users にテストユーザーがいるか
+### B. Seed チE�Eタ確誁E
+- [ ] auth.users にチE��トユーザーがいるか
   ```sql
-  -- Supabase Dashboard → SQL Editor
+  -- Supabase Dashboard ↁESQL Editor
   SELECT COUNT(*) FROM auth.users;
-  -- 結果が 0 なら: supabase/seed.sql を実行
-  ```
+  -- 結果ぁE0 なめE supabase/seed.sql を実衁E  ```
 
-- [ ] staff_profiles にレコードがあるか
-  ```sql
+- [ ] staff_profiles にレコードがあるぁE  ```sql
   SELECT * FROM public.staff_profiles LIMIT 5;
-  -- role が 'admin' または 'user' であること
+  -- role ぁE'admin' また�E 'user' であること
   ```
 
-### C. RLS ポリシー確認
-
-- [ ] RLS が enabled か
-  ```sql
+### C. RLS ポリシー確誁E
+- [ ] RLS ぁEenabled ぁE  ```sql
   SELECT tablename FROM pg_tables 
   WHERE schemaname = 'public' AND tablename IN ('auth.users', 'staff_profiles');
   ```
 
-- [ ] RLS ポリシーがエラーを返していないか
+- [ ] RLS ポリシーがエラーを返してぁE��ぁE��
   ```sql
-  -- Supabase Dashboard → SQL Editor
-  -- テストユーザーで検索可能か
-  SET ROLE authenticated;
+  -- Supabase Dashboard ↁESQL Editor
+  -- チE��トユーザーで検索可能ぁE  SET ROLE authenticated;
   SET auth.uid = '[test-user-id-uuid]';
   SELECT * FROM public.staff_profiles LIMIT 1;
   ```
 
-### D. ログインフロー確認
-
-- [ ] app/login/page.tsx で signInWithPassword が呼ばれているか
-- [ ] 正しい email/password でログインテスト
-  ```
-  Email: [seed.sql に記載のメール]
-  Password: [seed.sql に記載のパスワード]
+### D. ログインフロー確誁E
+- [ ] app/login/page.tsx で signInWithPassword が呼ばれてぁE��ぁE- [ ] 正しい email/password でログインチE��チE  ```
+  Email: [seed.sql に記載�Eメール]
+  Password: [seed.sql に記載�Eパスワード]
   ```
 
-- [ ] エラーが出る場合、DevTools Console で詳細を確認
-  ```
-  F12 → Console → Error メッセージをコピー
+- [ ] エラーが�Eる場合、DevTools Console で詳細を確誁E  ```
+  F12 ↁEConsole ↁEError メチE��ージをコピ�E
   Vercel Logs と対照
   ```
 
-### E. 環境変数の final 確認
+### E. 環墁E��数の final 確誁E
+- [ ] Vercel Dashboard で以下が設定されてぁE��ぁE
+  - NEXT_PUBLIC_SUPABASE_URL ✁E  - NEXT_PUBLIC_SUPABASE_ANON_KEY ✁E  - SUPABASE_SERVICE_ROLE_KEY ✁E(Secret として)
 
-- [ ] Vercel Dashboard で以下が設定されているか:
-  - NEXT_PUBLIC_SUPABASE_URL ✅
-  - NEXT_PUBLIC_SUPABASE_ANON_KEY ✅
-  - SUPABASE_SERVICE_ROLE_KEY ✅ (Secret として)
-
-- [ ] .env.local（開発環境）と一致しているか
-
-### F. キャッシュクリア
+- [ ] .env.local�E�開発環墁E��と一致してぁE��ぁE
+### F. キャチE��ュクリア
 
 - [ ] Vercel: Redeploy without cache
-- [ ] ブラウザ: Ctrl+Shift+Delete で全キャッシュ削除
-- [ ] Supabase: SQL Editor で VACUUM を実行（オプション）
-
-### G. ログ確認
-
-- [ ] Vercel ダッシュボード → Deployments → [最新] → Logs
+- [ ] ブラウザ: Ctrl+Shift+Delete で全キャチE��ュ削除
+- [ ] Supabase: SQL Editor で VACUUM を実行（オプション�E�E
+### G. ログ確誁E
+- [ ] Vercel ダチE��ュボ�EチEↁEDeployments ↁE[最新] ↁELogs
   - "error", "Auth", "signup" で検索
   
-- [ ] Supabase Dashboard → Logs
-  - API calls, Auth, Database errors を確認
+- [ ] Supabase Dashboard ↁELogs
+  - API calls, Auth, Database errors を確誁E
+### H. 最後�E手段
 
-### H. 最後の手段
-
-- [ ] seed.sql を再実行
-- [ ] Supabase プロジェクトをリセット（開発環境のみ）
-- [ ] Vercel を新規デプロイ
+- [ ] seed.sql を�E実衁E- [ ] Supabase プロジェクトをリセチE���E�開発環墁E�Eみ�E�E- [ ] Vercel を新規デプロイ
 
 ---
 
-## ✅ 最終確認チェックリスト
-
+## ✁E最終確認チェチE��リスチE
 ### Before Deploy
-- [ ] app/page.tsx が async でない (changed to sync)
-- [ ] app/home-client.tsx の L104 _router.replace が削除されている
-- [ ] pnpm typecheck: ✅ No errors
-- [ ] pnpm lint: ✅ No errors
-- [ ] pnpm build: ✅ Build success
-- [ ] ローカル pnpm dev で / が ?careReceiverId=AT 付かない
-
+- [ ] app/page.tsx ぁEasync でなぁE(changed to sync)
+- [ ] app/home-client.tsx の L104 _router.replace が削除されてぁE��
+- [ ] pnpm typecheck: ✁ENo errors
+- [ ] pnpm lint: ✁ENo errors
+- [ ] pnpm build: ✁EBuild success
+- [ ] ローカル pnpm dev で / ぁE?careReceiverId=AT 付かなぁE
 ### Deploy
 - [ ] git push origin [branch]
-- [ ] Vercel ダッシュボード: Deployments に新しいデプロイ
+- [ ] Vercel ダチE��ュボ�EチE Deployments に新しいチE�Eロイ
 - [ ] Build & Deployment: Ready
 
 ### After Deploy
-- [ ] https://juushin-care-system-v0-careapp8.vercel.app/ を開く
-- [ ] 【重要】 / に ?careReceiverId=AT が付いていない
-- [ ] ダッシュボード表示（利用者選択ドロップダウンが見える）
-- [ ] 利用者選択ドロップダウンで A～X を選択できる
+- [ ] https://juushin-care-system-v0-careapp8.vercel.app/ を開ぁE- [ ] 【重要、E/ に ?careReceiverId=AT が付いてぁE��ぁE- [ ] ダチE��ュボ�Eド表示�E�利用老E��択ドロチE�Eダウンが見える！E- [ ] 利用老E��択ドロチE�Eダウンで A�E�X を選択できる
 - [ ] DevTools Network で:
   - Status 200
   - x-vercel-id: [id]
   - Query String: 空
-- [ ] ログイン機能テスト（必要に応じて）
-
+- [ ] ログイン機�EチE��ト（忁E��に応じて�E�E
 ### If Any Issue
 1. Vercel Redeploy without cache
 2. Browser cache clear (Ctrl+Shift+Delete)
-3. ブラウザ再起動
-4. 上記の"トラブルシュート"セクションを参照
+3. ブラウザ再起勁E4. 上記�E"トラブルシューチEセクションを参照
 
 ---
 
-## 🎯 最短デプロイコマンド（まとめ）
-
+## 🎯 最短チE�Eロイコマンド（まとめE��E
 ```bash
-# ローカル最終確認
-pnpm typecheck && pnpm lint && pnpm build
+# ローカル最終確誁Epnpm typecheck && pnpm lint && pnpm build
 
-# Git操作
-git add app/page.tsx app/home-client.tsx
+# Git操佁Egit add app/page.tsx app/home-client.tsx
 git commit -m "fix: remove auto-redirect to careReceiverId on root page"
 
 # Vercel へ自動デプロイ
 git push origin main
 
-# 本番環境で確認
-# https://juushin-care-system-v0-careapp8.vercel.app/ を開く
-# ✅ / に ?careReceiverId=AT が付かないことを確認
-```
+# 本番環墁E��確誁E# https://juushin-care-system-v0-careapp8.vercel.app/ を開ぁE# ✁E/ に ?careReceiverId=AT が付かなぁE��とを確誁E```
+

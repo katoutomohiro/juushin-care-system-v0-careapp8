@@ -1,85 +1,86 @@
-# PR マージ判定チェックリスト
+# PR マ�Eジ判定チェチE��リスチE
 
-> **マージの条件**: GitHub の Checks がすべて green になること
+> **マ�Eジの条件**: GitHub の Checks がすべて green になること
 
-## 1️⃣ ローカル確認（必須）
+## 1�E�⃣ ローカル確認（忁E��！E
 
-PR をマージする前に、ローカルで必ず以下を実行してください。
+PR を�Eージする前に、ローカルで忁E��以下を実行してください、E
 
 ```powershell
-# ステップ 1: 最新 commit をローカルで確認
+# スチE��チE1: 最新 commit をローカルで確誁E
 git log --oneline -1
 
-# ステップ 2: 型チェック
+# スチE��チE2: 型チェチE��
 pnpm typecheck
-# 期待: exit code 0（エラーなし）
+# 期征E exit code 0�E�エラーなし！E
 
-# ステップ 3: Lint
+# スチE��チE3: Lint
 pnpm lint
-# 期待: exit code 0（エラーなし）
+# 期征E exit code 0�E�エラーなし！E
 
-# ステップ 4: Build
+# スチE��チE4: Build
 pnpm build
-# 期待: exit code 0、すべてのページ生成成功
+# 期征E exit code 0、すべてのペ�Eジ生�E成功
 ```
 
-**どれか 1 つでも失敗した場合**:
-- ❌ マージしない
-- PR に問題のあるコミットを指摘してリクエスト修正
+**どれか 1 つでも失敗した場吁E*:
+- ❁Eマ�EジしなぁE
+- PR に問題�Eあるコミットを持E��してリクエスト修正
 
-## 2️⃣ GitHub Checks 確認（必須）
+## 2�E�⃣ GitHub Checks 確認（忁E��！E
 
-PR ページの **Checks** タブを確認：
+PR ペ�Eジの **Checks** タブを確認！E
 
 ```
-✅ Vercel        → SUCCESS
-✅ SonarCloud    → SUCCESS（Quality Gate PASS）
-✅ CodeQL        → SUCCESS
-✅ Lint & Type   → SUCCESS
-✅ Build Test    → SUCCESS
+✁EVercel        ↁESUCCESS
+✁ESonarCloud    ↁESUCCESS�E�Euality Gate PASS�E�E
+✁ECodeQL        ↁESUCCESS
+✁ELint & Type   ↁESUCCESS
+✁EBuild Test    ↁESUCCESS
 ```
 
-**落ちやすいもの**:
-1. **Vercel**: デプロイが失敗する場合は、本番環境の env vars を確認
-2. **SonarCloud**: New Code の質が基準を下回る場合は、該当ファイルの issues を修正
+**落ちめE��ぁE��の**:
+1. **Vercel**: チE�Eロイが失敗する場合�E、本番環墁E�E env vars を確誁E
+2. **SonarCloud**: New Code の質が基準を下回る場合�E、該当ファイルの issues を修正
 
-## 3️⃣ マージ実行
+## 3�E�⃣ マ�Eジ実衁E
 
-すべての Checks が green なら、以下を実行：
+すべての Checks ぁEgreen なら、以下を実行！E
 
 ```powershell
-# ローカルで確認済みなら GitHub UI でマージ
-# または CLI で:
+# ローカルで確認済みなめEGitHub UI でマ�Eジ
+# また�E CLI で:
 gh pr merge <PR番号> --squash
 
-# または
+# また�E
 git merge <branch> && git push origin main
 ```
 
-## 4️⃣ Post-merge 確認（推奨）
+## 4�E�⃣ Post-merge 確認（推奨�E�E
 
-マージ後、以下を確認：
+マ�Eジ後、以下を確認！E
 
 ```powershell
 # ローカル main ブランチを更新
 git checkout main
 git pull origin main
 
-# 本番環境（Vercel）のデプロイ完了を確認
-# https://vercel.com → Deployments → Status が SUCCESS
+# 本番環墁E��Eercel�E��EチE�Eロイ完亁E��確誁E
+# https://vercel.com ↁEDeployments ↁEStatus ぁESUCCESS
 ```
 
 ---
 
-## よくある失敗パターンと対応
+## よくある失敗パターンと対忁E
 
-| 失敗 | 原因 | 対応 |
+| 失敁E| 原因 | 対忁E|
 | --- | --- | --- |
-| Lint エラー | ESLint が引っかかった | `pnpm lint` の output を確認して修正 |
-| Build エラー | Next.js がコンパイル失敗 | `pnpm build` の log を読んで型やパス修正 |
-| SonarCloud 落ちる | Quality Gate 基準不達成 | SonarCloud の Issues tab で New Code を確認、修正 |
-| Vercel 失敗 | 本番環境の env vars 不足 | Vercel Project Settings → Environment Variables を確認 |
+| Lint エラー | ESLint が引っかかっぁE| `pnpm lint` の output を確認して修正 |
+| Build エラー | Next.js がコンパイル失敁E| `pnpm build` の log を読んで型やパス修正 |
+| SonarCloud 落ちめE| Quality Gate 基準不達戁E| SonarCloud の Issues tab で New Code を確認、修正 |
+| Vercel 失敁E| 本番環墁E�E env vars 不足 | Vercel Project Settings ↁEEnvironment Variables を確誁E|
 
 ---
 
 **最終更新**: 2026-01-29
+

@@ -1,9 +1,6 @@
 /**
- * API ルートテンプレート: RLS 対応
- * 
- * このファイルは app/api/care-receivers/list/route.ts の参考実装です。
- * 重要: RLS を前提とした実装になっています。
- */
+ * API ルートテンプレーチE RLS 対忁E * 
+ * こ�Eファイルは app/api/care-receivers/list/route.ts の参老E��裁E��す、E * 重要E RLS を前提とした実裁E��なってぁE��す、E */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
@@ -15,16 +12,14 @@ import { cookies } from 'next/headers'
  * Query params:
  *   - serviceCode: 'life-care' | 'after-school' (フィルタリング用)
  * 
- * RLS: 同一 facility_id のレコードのみ返す（自動）
- * 
+ * RLS: 同一 facility_id のレコード�Eみ返す�E��E動！E * 
  * Response:
  *   { ok: true, users: [...], count: number }
  *   { ok: false, error: "message" }
  */
 export async function GET(req: NextRequest) {
   try {
-    // 1. 認証情報を確認
-    const supabase = createRouteHandlerClient({ cookies })
+    // 1. 認証惁E��を確誁E    const supabase = createRouteHandlerClient({ cookies })
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -34,8 +29,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 2. ログインユーザーの facility_id を取得
-    const { data: profile, error: profileError } = await supabase
+    // 2. ログインユーザーの facility_id を取征E    const { data: profile, error: profileError } = await supabase
       .from('staff_profiles')
       .select('facility_id')
       .eq('id', user.id)
@@ -49,19 +43,16 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 3. Query params を取得（オプション）
-    const { searchParams } = new URL(req.url)
+    // 3. Query params を取得（オプション�E�E    const { searchParams } = new URL(req.url)
     const serviceCode = searchParams.get('serviceCode')
 
-    // 4. RLS により、自動的に自分の facility のレコードのみ取得
-    let query = supabase
+    // 4. RLS により、�E動的に自刁E�E facility のレコード�Eみ取征E    let query = supabase
       .from('care_receivers')
       .select('*')
       .eq('is_active', true)
       .order('name')
 
-    // serviceCode フィルタリング（オプション）
-    if (serviceCode) {
+    // serviceCode フィルタリング�E�オプション�E�E    if (serviceCode) {
       query = query.eq('service_code', serviceCode)
     }
 
@@ -96,16 +87,14 @@ export async function GET(req: NextRequest) {
  * Body:
  *   { code, name, service_code, age?, gender?, ... }
  * 
- * RLS: facility_id は自動設定（偽装防止）
- * 
+ * RLS: facility_id は自動設定（偽裁E��止�E�E * 
  * Response:
  *   { ok: true, user: {...} }
  *   { ok: false, error: "message" }
  */
 export async function POST(req: NextRequest) {
   try {
-    // 1. 認証情報を確認
-    const supabase = createRouteHandlerClient({ cookies })
+    // 1. 認証惁E��を確誁E    const supabase = createRouteHandlerClient({ cookies })
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -115,8 +104,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 2. ログインユーザーの facility_id を取得
-    const { data: profile, error: profileError } = await supabase
+    // 2. ログインユーザーの facility_id を取征E    const { data: profile, error: profileError } = await supabase
       .from('staff_profiles')
       .select('facility_id')
       .eq('id', user.id)
@@ -133,7 +121,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { code, name, service_code, age, gender, care_level, condition, medical_care } = body
 
-    // 4. バリデーション
+    // 4. バリチE�Eション
     if (!code || !name) {
       return NextResponse.json(
         { ok: false, error: 'code and name are required' },
@@ -141,15 +129,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. INSERT（facility_id は強制）
-    // RLS により、異なる facility_id での INSERT は拒否される
-    const { data, error } = await supabase
+    // 5. INSERT�E�Eacility_id は強制�E�E    // RLS により、異なめEfacility_id での INSERT は拒否されめE    const { data, error } = await supabase
       .from('care_receivers')
       .insert({
         code,
         name,
-        facility_id: profile.facility_id, // 重要: クライアント値を無視して強制設定
-        service_code,
+        facility_id: profile.facility_id, // 重要E クライアント値を無視して強制設宁E        service_code,
         age: age ? parseInt(age) : null,
         gender,
         care_level: care_level ? parseInt(care_level) : null,
@@ -162,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[POST /api/care-receivers]', error)
-      // RLS 拒否 = code が既存 or facility_id 不正
+      // RLS 拒否 = code が既孁Eor facility_id 不正
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: 400 }
@@ -187,7 +172,7 @@ export async function POST(req: NextRequest) {
  * 
  * Body: { name?, age?, gender?, ... }
  * 
- * RLS: 同一 facility_id のレコードのみ更新可
+ * RLS: 同一 facility_id のレコード�Eみ更新可
  */
 export async function PUT(
   req: NextRequest,
@@ -207,7 +192,7 @@ export async function PUT(
     const body = await req.json()
     const { id } = params
 
-    // RLS により、自分の facility 以外は UPDATE 拒否
+    // RLS により、�E刁E�E facility 以外�E UPDATE 拒否
     const { data, error } = await supabase
       .from('care_receivers')
       .update(body)
@@ -236,7 +221,7 @@ export async function PUT(
 /**
  * DELETE /api/care-receivers/[id]
  * 
- * RLS: 同一 facility_id のレコードのみ削除可
+ * RLS: 同一 facility_id のレコード�Eみ削除可
  */
 export async function DELETE(
   req: NextRequest,
@@ -255,7 +240,7 @@ export async function DELETE(
 
     const { id } = params
 
-    // RLS により、自分の facility 以外は DELETE 拒否
+    // RLS により、�E刁E�E facility 以外�E DELETE 拒否
     const { error } = await supabase
       .from('care_receivers')
       .delete()
@@ -278,3 +263,4 @@ export async function DELETE(
     )
   }
 }
+

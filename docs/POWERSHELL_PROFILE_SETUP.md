@@ -1,14 +1,13 @@
 # PowerShell Profile Setup Guide
-# このファイルを参考に、PowerShell プロファイルを設定してバッチジョブプロンプトを自動防止
+# こ�Eファイルを参老E��、PowerShell プロファイルを設定してバッチジョブ�Eロンプトを�E動防止
 
-# 1. PowerShell プロファイルの場所を確認
-# $PROFILE
-# 結果例: C:\Users\YourName\Documents\PowerShell\Microsoft.PowerShellISE_profile.ps1
+# 1. PowerShell プロファイルの場所を確誁E# $PROFILE
+# 結果侁E C:\Users\YourName\Documents\PowerShell\Microsoft.PowerShellISE_profile.ps1
 
-# 2. プロファイルが無い場合は作成
+# 2. プロファイルが無ぁE��合�E作�E
 # New-Item -Path $PROFILE -ItemType File -Force
 
-# 3. プロファイルを編集して以下を追加
+# 3. プロファイルを編雁E��て以下を追加
 # notepad $PROFILE
 
 # === 以下をプロファイルの末尾に追加 ===
@@ -21,14 +20,12 @@ function Remove-BackgroundJobs {
     }
 }
 
-# PowerShell 終了時にクリーンアップ実行
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
+# PowerShell 終亁E��にクリーンアチE�E実衁ERegister-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
     Remove-BackgroundJobs
 } -SupportEvent | Out-Null
 
 # === ここまで ===
 
-# 4. PowerShell を再起動して確認
+# 4. PowerShell を�E起動して確誁E
+# また�E、以下�Eワンライナ�Eで自動追加�E�EowerShell 7 推奨�E�E# Add-Content -Path $PROFILE -Value "`nRegister-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { Get-Job | Remove-Job -Force -ErrorAction SilentlyContinue } -SupportEvent | Out-Null"
 
-# または、以下のワンライナーで自動追加（PowerShell 7 推奨）
-# Add-Content -Path $PROFILE -Value "`nRegister-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { Get-Job | Remove-Job -Force -ErrorAction SilentlyContinue } -SupportEvent | Out-Null"

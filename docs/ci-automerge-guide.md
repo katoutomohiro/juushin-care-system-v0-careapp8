@@ -1,120 +1,100 @@
 # CI Auto-Merge Operator
 
-安全な PR 自動マージシステム - ラベルベースの制御と多層防御
+安�Eな PR 自動�EージシスチE�� - ラベルベ�Eスの制御と多層防御
 
-## 🎯 概要
-
-このシステムは、必須チェックが緑になった PR を **人間の判断を尊重しながら** 自動的にマージします。
-
+## 🎯 概要E
+こ�EシスチE��は、忁E��チェチE��が緑になっぁEPR めE**人間�E判断を尊重しながら** 自動的にマ�Eジします、E
 ### 主な特徴
 
-- ✅ **ラベルベース起動**: `ux-ready` ラベルで明示的に有効化
-- 🛑 **非常停止機能**: `no-auto-merge` ラベルで即座に停止
-- 🔒 **フォーク保護**: 外部フォーク由来の PR は自動実行対象外
-- 🔐 **最小権限**: `contents:write`, `pull-requests:write`, `checks:read` のみ
-- 🚦 **排他制御**: PR 単位で単一路線、多重マージを防止
-- 📊 **整合性チェック**: required contexts と実チェック名の一致を検証
+- ✁E**ラベルベ�Eス起勁E*: `ux-ready` ラベルで明示皁E��有効匁E- 🛑 **非常停止機�E**: `no-auto-merge` ラベルで即座に停止
+- 🔒 **フォーク保護**: 外部フォーク由来の PR は自動実行対象夁E- 🔐 **最小権陁E*: `contents:write`, `pull-requests:write`, `checks:read` のみ
+- 🚦 **排他制御**: PR 単位で単一路線、多重マ�Eジを防止
+- 📊 **整合性チェチE��**: required contexts と実チェチE��名�E一致を検証
 
-## 🚀 使い方
+## 🚀 使ぁE��
 
-### 1. 基本的な使い方（推奨）
-
+### 1. 基本皁E��使ぁE���E�推奨�E�E
 ```powershell
-# PR に ux-ready ラベルを付与 + Auto-merge 有効化
-.\scripts\enable-automerge.ps1 -Pr 149
+# PR に ux-ready ラベルを付丁E+ Auto-merge 有効匁E.\scripts\enable-automerge.ps1 -Pr 149
 ```
 
-これだけで以下が自動実行されます:
-1. `ux-ready` ラベル付与（ワークフロートリガー）
-2. GitHub Auto-merge 有効化（squash + delete-branch）
-3. 必須チェックの状態確認
-
-### 2. 手動での GitHub CLI 操作
-
+これだけで以下が自動実行されまぁE
+1. `ux-ready` ラベル付与（ワークフロートリガー�E�E2. GitHub Auto-merge 有効化！Equash + delete-branch�E�E3. 忁E��チェチE��の状態確誁E
+### 2. 手動での GitHub CLI 操佁E
 ```powershell
-# ラベル付与
-gh pr edit 149 --add-label 'ux-ready'
+# ラベル付丁Egh pr edit 149 --add-label 'ux-ready'
 
-# Auto-merge 有効化
-gh pr merge 149 --auto --squash --delete-branch
+# Auto-merge 有効匁Egh pr merge 149 --auto --squash --delete-branch
 ```
 
-### 3. 非常停止（マージを止めたい場合）
-
+### 3. 非常停止�E��Eージを止めたぁE��合！E
 ```powershell
-# no-auto-merge ラベルを付与
-gh pr edit 149 --add-label 'no-auto-merge'
+# no-auto-merge ラベルを付丁Egh pr edit 149 --add-label 'no-auto-merge'
 
-# または ux-ready ラベルを削除
+# また�E ux-ready ラベルを削除
 gh pr edit 149 --remove-label 'ux-ready'
 ```
 
-## 🔍 検証ツール
+## 🔍 検証チE�Eル
 
-### ブランチ保護整合性チェック
+### ブランチ保護整合性チェチE��
 
 ```powershell
 # 最新の PR で検証
 .\scripts\validate-branch-protection.ps1
 
-# 特定の PR で検証
+# 特定�E PR で検証
 .\scripts\validate-branch-protection.ps1 -PrNumber 149
 
-# 不一致を自動修正
+# 不一致を�E動修正
 .\scripts\validate-branch-protection.ps1 -PrNumber 149 -AutoFix
 ```
 
-このスクリプトは以下を確認します:
-- `main` ブランチの required status checks
-- 実際の check-runs 名
-- 不一致があれば修正コマンドを提示
+こ�Eスクリプトは以下を確認しまぁE
+- `main` ブランチ�E required status checks
+- 実際の check-runs 吁E- 不一致があれ�E修正コマンドを提示
 
 ## 📋 前提条件
 
-### リポジトリ設定
-
+### リポジトリ設宁E
 1. **Auto-merge の許可**
-   - Settings → General → Pull Requests
-   - ✅ Allow auto-merge
+   - Settings ↁEGeneral ↁEPull Requests
+   - ✁EAllow auto-merge
 
-2. **ブランチ保護（main）**
-   - Settings → Branches → main → Edit
-   - ✅ Require status checks to pass before merging
+2. **ブランチ保護�E�Eain�E�E*
+   - Settings ↁEBranches ↁEmain ↁEEdit
+   - ✁ERequire status checks to pass before merging
    - Required checks:
      - `SonarCloud Code Analysis`
      - `Vercel Preview Comments`
 
-3. **必須ラベル**
+3. **忁E��ラベル**
    - `ux-ready`: Auto-merge を有効化するトリガー
-   - `no-auto-merge`: 非常停止用（オプション）
-
-### ローカル環境
-
+   - `no-auto-merge`: 非常停止用�E�オプション�E�E
+### ローカル環墁E
 ```powershell
-# GitHub CLI インストール確認
-gh --version
+# GitHub CLI インスト�Eル確誁Egh --version
 
 # 認証
 gh auth login
 
-# または環境変数
+# また�E環墁E��数
 $env:GH_TOKEN = "ghp_xxxx..."
 ```
 
-## 🔄 ワークフローの動作
-
+## 🔄 ワークフローの動佁E
 ```mermaid
 graph TD
     A[PR opened/sync/labeled] --> B{Trigger条件}
-    B -->|Fork PR| C[スキップ]
+    B -->|Fork PR| C[スキチE�E]
     B -->|ux-readyなし| C
     B -->|no-auto-merge| C
     B -->|OK| D[CiUtils.psm1 読み込み]
     D --> E[Test-RequiredContextsAttached]
     E -->|不一致| F[修正コマンド提示 + exit 2]
     E -->|一致| G[監視ループ開始]
-    G --> H{全必須チェック緑?}
-    H -->|No| I[30秒待機]
+    G --> H{全忁E��チェチE��緁E}
+    H -->|No| I[30秒征E��]
     I --> G
     H -->|Yes| J[Auto-merge 実行]
     J --> K[ブランチ削除]
@@ -122,77 +102,69 @@ graph TD
 
 ### トリガー条件
 
-ワークフローは以下の条件で実行されます:
+ワークフローは以下�E条件で実行されまぁE
 
 ```yaml
 if: >
-  (フォーク由来でない) AND
+  (フォーク由来でなぁE AND
   (workflow_dispatch OR (
-    ux-ready ラベル付与 AND
-    no-auto-merge ラベル未付与
-  ))
+    ux-ready ラベル付丁EAND
+    no-auto-merge ラベル未付丁E  ))
 ```
 
-## 🛠️ トラブルシューティング
+## 🛠�E�EトラブルシューチE��ング
 
-### ワークフローが起動しない
-
+### ワークフローが起動しなぁE
 ```powershell
-# ラベル確認
-gh pr view 149 --json labels --jq '.labels[].name'
+# ラベル確誁Egh pr view 149 --json labels --jq '.labels[].name'
 
 # ワークフロー実行履歴
 gh run list --workflow=ci-automerge.yml --limit 5
 ```
 
-**確認ポイント:**
-- ✅ `ux-ready` ラベルが付与されているか
-- ✅ `no-auto-merge` ラベルが付与されていないか
-- ✅ PR がフォーク由来でないか
+**確認�EインチE**
+- ✁E`ux-ready` ラベルが付与されてぁE��ぁE- ✁E`no-auto-merge` ラベルが付与されてぁE��ぁE��
+- ✁EPR がフォーク由来でなぁE��
 
-### Auto-merge が有効化できない
-
+### Auto-merge が有効化できなぁE
 ```powershell
-# リポジトリ設定確認
-gh api repos/{owner}/{repo} --jq '.allow_auto_merge'
-# → true であること
+# リポジトリ設定確誁Egh api repos/{owner}/{repo} --jq '.allow_auto_merge'
+# ↁEtrue であること
 ```
 
 ### Required contexts の不一致
 
 ```powershell
-# 整合性チェック実行
-.\scripts\validate-branch-protection.ps1 -AutoFix
+# 整合性チェチE��実衁E.\scripts\validate-branch-protection.ps1 -AutoFix
 ```
 
 ## 📚 リファレンス
 
 ### コアモジュール: CiUtils.psm1
 
-| 関数 | 説明 |
+| 関数 | 説昁E|
 |------|------|
-| `Get-RepoSlug` | owner/repo 形式のスラッグ取得 |
-| `Get-PrInfo` | PR 情報取得（statusCheckRollup 正規化） |
-| `Get-RequiredContexts` | main の required contexts 取得 |
-| `Get-ActualCheckNames` | **実チェック名取得**（Checks API） |
-| `Test-RequiredContextsAttached` | **整合性検証**（required vs actual） |
+| `Get-RepoSlug` | owner/repo 形式�EスラチE��取征E|
+| `Get-PrInfo` | PR 惁E��取得！EtatusCheckRollup 正規化�E�E|
+| `Get-RequiredContexts` | main の required contexts 取征E|
+| `Get-ActualCheckNames` | **実チェチE��名取征E*�E�Ehecks API�E�E|
+| `Test-RequiredContextsAttached` | **整合性検証**�E�Eequired vs actual�E�E|
 | `Get-ActualContexts` | Status API + Checks API 結合 |
-| `Push-EmptyCommit` | 空コミットプッシュ |
+| `Push-EmptyCommit` | 空コミット�EチE��ュ |
 | `Get-ActionRunsForPr` | ワークフロー実行一覧 |
-| `Invoke-ActionRunRerun` | ワークフロー再実行 |
-| `Invoke-CheckSuiteRerequest` | Check Suite 再リクエスト |
-| `Test-AllRequiredChecksGreen` | 全必須チェック成功確認 |
+| `Invoke-ActionRunRerun` | ワークフロー再実衁E|
+| `Invoke-CheckSuiteRerequest` | Check Suite 再リクエスチE|
+| `Test-AllRequiredChecksGreen` | 全忁E��チェチE��成功確誁E|
 
 ### 主要スクリプト
 
-| ファイル | 用途 |
+| ファイル | 用送E|
 |----------|------|
-| `ci_automerge.ps1` | 自動マージ監視スクリプト（ワークフローから起動） |
-| `enable-automerge.ps1` | **運用補助**: ワンコマンドでラベル+Auto-merge設定 |
-| `validate-branch-protection.ps1` | **整合性チェック**: required contexts 検証 |
+| `ci_automerge.ps1` | 自動�Eージ監視スクリプト�E�ワークフローから起動！E|
+| `enable-automerge.ps1` | **運用補助**: ワンコマンドでラベル+Auto-merge設宁E|
+| `validate-branch-protection.ps1` | **整合性チェチE��**: required contexts 検証 |
 
-## 🔐 セキュリティ設計
-
+## 🔐 セキュリチE��設訁E
 ### 1. Fork PR 保護
 
 ```yaml
@@ -200,26 +172,21 @@ if: >
   github.event.pull_request.head.repo.full_name == github.repository
 ```
 
-外部フォーク由来の PR では Secrets が露出しないよう、`pull_request` トリガーを使用し、
-フォーク由来を明示的に除外しています。
+外部フォーク由来の PR では Secrets が露出しなぁE��ぁE��`pull_request` トリガーを使用し、Eフォーク由来を�E示皁E��除外してぁE��す、E
+**参老E*: [GitHub Security Guides - Using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)
 
-**参考**: [GitHub Security Guides - Using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)
-
-### 2. 最小権限
-
+### 2. 最小権陁E
 ```yaml
 permissions:
-  contents: write          # マージ操作
-  pull-requests: write     # PR ステータス更新
-  checks: read             # チェック参照のみ
+  contents: write          # マ�Eジ操佁E  pull-requests: write     # PR スチE�Eタス更新
+  checks: read             # チェチE��参�Eのみ
 ```
 
-**参考**: [Automatic token authentication](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
+**参老E*: [Automatic token authentication](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
 
-### 3. ラベルベース制御
+### 3. ラベルベ�Eス制御
 
-- `ux-ready`: 明示的な起動（誤作動防止）
-- `no-auto-merge`: 人間の最終判断を尊重
+- `ux-ready`: 明示皁E��起動（誤作動防止�E�E- `no-auto-merge`: 人間�E最終判断を尊重
 
 ### 4. Concurrency 制御
 
@@ -229,17 +196,14 @@ concurrency:
   cancel-in-progress: true
 ```
 
-PR 単位で排他制御、多重マージ事故を防止。
+PR 単位で排他制御、多重マ�Eジ事故を防止、E
+**参老E*: [Using concurrency](https://docs.github.com/en/actions/using-jobs/using-concurrency)
 
-**参考**: [Using concurrency](https://docs.github.com/en/actions/using-jobs/using-concurrency)
-
-## 🚦 運用ポリシー例
-
+## 🚦 運用ポリシー侁E
 ### パターン1: 厳格運用
 
 ```yaml
-# ux-ready ラベル必須 + レビュー承認必須
-if: >
+# ux-ready ラベル忁E��E+ レビュー承認忁E��Eif: >
   contains(..., 'ux-ready') &&
   !contains(..., 'no-auto-merge') &&
   github.event.pull_request.reviews_count > 0
@@ -248,8 +212,7 @@ if: >
 ### パターン2: Dependabot 自動化
 
 ```yaml
-# dependabot PRは自動マージ（minor/patchのみ）
-if: >
+# dependabot PRは自動�Eージ�E�Einor/patchのみ�E�Eif: >
   github.actor == 'dependabot[bot]' &&
   contains(github.event.pull_request.title, 'bump') &&
   !contains(github.event.pull_request.title, 'major')
@@ -257,13 +220,10 @@ if: >
 
 ### パターン3: Merge Queue 併用
 
-Settings → Branches → main で Merge queue を有効化すると、
-競合する PR も安全に直列化してマージできます。
+Settings ↁEBranches ↁEmain で Merge queue を有効化すると、E競合すめEPR も安�Eに直列化してマ�Eジできます、E
+**参老E*: [Managing a merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue)
 
-**参考**: [Managing a merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue)
-
-## 📖 関連ドキュメント
-
+## 📖 関連ドキュメンチE
 - [Automatically merging a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
 - [GitHub CLI - gh pr merge](https://cli.github.com/manual/gh_pr_merge)
 - [Branch protection API](https://docs.github.com/en/rest/branches/branch-protection)
@@ -272,33 +232,27 @@ Settings → Branches → main で Merge queue を有効化すると、
 
 ## 🎓 Tips
 
-### 失敗したチェックの再実行
-
+### 失敗したチェチE��の再実衁E
 ```powershell
-# ワークフロー再実行
-gh run rerun <run-id> --failed
+# ワークフロー再実衁Egh run rerun <run-id> --failed
 
-# Check Suite 再リクエスト
-Import-Module .\scripts\modules\CiUtils.psm1
+# Check Suite 再リクエスチEImport-Module .\scripts\modules\CiUtils.psm1
 Invoke-CheckSuiteRerequest -PrNumber 149 -AppSlug "github-actions"
 ```
 
-### ラベルの一括管理
-
+### ラベルの一括管琁E
 ```powershell
-# 複数PRにux-readyを付与
-149,148,147 | ForEach-Object {
+# 褁E��PRにux-readyを付丁E149,148,147 | ForEach-Object {
     gh pr edit $_ --add-label 'ux-ready'
 }
 ```
 
-### 定期的な整合性チェック（Scheduled workflow）
-
+### 定期皁E��整合性チェチE���E�Echeduled workflow�E�E
 ```yaml
 # .github/workflows/scheduled-validation.yml
 on:
   schedule:
-    - cron: '0 0 * * 0'  # 毎週日曜 0:00
+    - cron: '0 0 * * 0'  # 毎週日曁E0:00
 
 jobs:
   validate:
@@ -310,8 +264,9 @@ jobs:
 
 ---
 
-**Status**: ✅ Production Ready
+**Status**: ✁EProduction Ready
 
 **Last Updated**: 2025-01-12
 
 **Maintained by**: DevOps Team
+

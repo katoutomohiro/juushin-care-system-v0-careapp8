@@ -1,131 +1,96 @@
-# ケース記録機能｜仕様書
+# ケース記録機�E�E�仕様書
 
-> **📌 対象読者**: ケース記録機能を実装・修正する開発者  
-> **前提**: `docs/PLAN_MASTER.md` を先に読んでいること  
-> **関連**: `docs/PLAN_PERSONAL_INFO_SECURITY.md`（個人情報管理）  
-> **完成形リファレンス**: ATさんのページ (`/services/life-care/users/AT/case-records`)
-
----
-
-## 🎯 ケース記録機能の目的
-
-医療・介護現場で、スタッフが利用者（重症心身障がい児者）の日々のケア内容を記録するための機能。
-
-### 主な用途
-- 日ごとのケア実施記録（主担当・副担当スタッフ、日付、内容）
-- カスタムフィールド（利用者ごとの個別記録項目）
-- 家族への特記事項、スタッフ間の引き継ぎ事項
-
-### 重要なセキュリティ要件
-- **同時編集制御**: 複数スタッフが同じ記録を編集しても上書きされない（楽観ロック）
-- **RLS（Row Level Security）**: Supabase で利用者ごと・職員ごとにアクセス制御
-- **個人情報管理**: ケース記録に利用者の個人情報を含めない（display_name で表示）
-- **バリデーション**: 必須フィールドチェック、日付形式検証
+> **📌 対象読老E*: ケース記録機�Eを実裁E�E修正する開発老E 
+> **前提**: `docs/PLAN_MASTER.md` を�Eに読んでぁE��こと  
+> **関連**: `docs/PLAN_PERSONAL_INFO_SECURITY.md`�E�個人惁E��管琁E��E 
+> **完�E形リファレンス**: ATさんのペ�Eジ (`/services/life-care/users/AT/case-records`)
 
 ---
 
-## 🔗 個人情報との連携
+## 🎯 ケース記録機�Eの目皁E
+医療�E介護現場で、スタチE��が利用老E��重痁E��E��障がぁE�E老E���E日、E�Eケア冁E��を記録するための機�E、E
+### 主な用送E- 日ごとのケア実施記録�E�主拁E���E副拁E��スタチE��、日付、�E容�E�E- カスタムフィールド（利用老E��との個別記録頁E���E�E- 家族への特記事頁E��スタチE��間�E引き継ぎ事頁E
+### 重要なセキュリチE��要件
+- **同時編雁E��御**: 褁E��スタチE��が同じ記録を編雁E��ても上書きされなぁE��楽観ロチE���E�E- **RLS�E�Eow Level Security�E�E*: Supabase で利用老E��と・職員ごとにアクセス制御
+- **個人惁E��管琁E*: ケース記録に利用老E�E個人惁E��を含めなぁE��Eisplay_name で表示�E�E- **バリチE�Eション**: 忁E��フィールドチェチE��、日付形式検証
 
-### 利用者情報の参照方法
+---
 
-ケース記録フォームで利用者を選択する際、以下のように個人情報と匿名表示を使い分けます。
+## 🔗 個人惁E��との連携
 
+### 利用老E��報の参�E方況E
+ケース記録フォームで利用老E��選択する際、以下�Eように個人惁E��と匿名表示を使ぁE�Eけます、E
 ```
-┌─ ケース記録フォーム ────────────────────────┐
-│  利用者選択: [AT ▼]                          │  ← display_name を表示
-│                                             │
-│  記録内容                                    │
-│  ├ 主担当スタッフ: [Aさん ▼]                │
-│  ├ 副担当スタッフ: [Bさん ▼]                │
-│  └ 特記事項: [フリー入力]                   │
-│                                             │
-│  [保存]                                      │
-└─────────────────────────────────────────────┘
+┌─ ケース記録フォーム ────────────────────────━E━E 利用老E��抁E [AT ▼]                          ━E ↁEdisplay_name を表示
+━E                                            ━E━E 記録冁E��                                    ━E━E ━E主拁E��スタチE��: [Aさん ▼]                ━E━E ━E副拁E��スタチE��: [Bさん ▼]                ━E━E ━E特記事頁E [フリー入力]                   ━E━E                                            ━E━E [保存]                                      ━E└─────────────────────────────────────────────━E
+※ 実名�E�Eull_name�E��E、ケース記録フォームに
+  表示しなぁE��利用老E�E個人惁E��保護�E�E```
 
-※ 実名（full_name）は、ケース記録フォームに
-  表示しない（利用者の個人情報保護）
-```
-
-### API からのデータ取得
-
-ケース記録保存時の API リクエストは、以下の情報のみを送信します。
-
+### API からのチE�Eタ取征E
+ケース記録保存時の API リクエスト�E、以下�E惁E��のみを送信します、E
 ```typescript
 {
   date: "2026-01-28",
   care_receiver_id: "uuid-of-AT",  // ID で識別
-  // （注）full_name, address, phone などは含めない
-  main_staff_id: "uuid-of-staff-A",
+  // �E�注�E�full_name, address, phone などは含めなぁE  main_staff_id: "uuid-of-staff-A",
   sub_staff_id: "uuid-of-staff-B",
   special_notes: "...",
   custom: { ... }
 }
 ```
 
-### 利用者詳細ページとの関連
+### 利用老E��細ペ�Eジとの関連
 
-- `display_name`: ケース記録フォームで使用（常時表示）
-- `full_name`, `birthday`: 利用者詳細ページの「詳細情報を編集」ダイアログのみで表示
-- `medical_care_detail`: 個別の編集ダイアログで管理（ケース記録には含めない）
-
+- `display_name`: ケース記録フォームで使用�E�常時表示�E�E- `full_name`, `birthday`: 利用老E��細ペ�Eジの「詳細惁E��を編雁E��ダイアログのみで表示
+- `medical_care_detail`: 個別の編雁E��イアログで管琁E��ケース記録には含めなぁE��E
 詳細: [PLAN_PERSONAL_INFO_SECURITY.md](./PLAN_PERSONAL_INFO_SECURITY.md) を参照
 
 ---
 
-## 📋 ATさん = 完成形リファレンス
+## 📋 ATさん = 完�E形リファレンス
 
-**ATさんとは**: 開発・テスト用の利用者アカウント（userId: "AT"）
+**ATさんとは**: 開発・チE��ト用の利用老E��カウント！EserId: "AT"�E�E
+### ATさんのペ�Eジ構�E
 
-### ATさんのページ構成
-
-| URL | 説明 |
+| URL | 説昁E|
 |-----|------|
-| `/services/life-care/users/AT` | ATさんのプロフィールページ |
-| `/services/life-care/users/AT/case-records` | ATさんのケース記録ページ（**完成形**） |
+| `/services/life-care/users/AT` | ATさんのプロフィールペ�Eジ |
+| `/services/life-care/users/AT/case-records` | ATさんのケース記録ペ�Eジ�E�E*完�E形**�E�E|
 
-### ATさんのケース記録で実装済み機能
+### ATさんのケース記録で実裁E��み機�E
 
 1. **フォーム UI**
-   - 日付選択（DatePicker）
-   - 主担当スタッフ選択（ドロップダウン）
-   - 副担当スタッフ選択（ドロップダウン）
-   - 特記事項（テキストエリア）
-   - 家族への連絡事項（テキストエリア）
-   - カスタムフィールド（テンプレートベース）
-
-2. **データ保存**
+   - 日付選択！EatePicker�E�E   - 主拁E��スタチE��選択（ドロチE�Eダウン�E�E   - 副拁E��スタチE��選択（ドロチE�Eダウン�E�E   - 特記事頁E��テキストエリア�E�E   - 家族への連絡事頁E��テキストエリア�E�E   - カスタムフィールド（テンプレート�Eース�E�E
+2. **チE�Eタ保孁E*
    - `/api/case-records/save` API に POST
-   - `version` パラメータで楽観ロック
-   - 保存成功時に一覧リフレッシュ
+   - `version` パラメータで楽観ロチE��
+   - 保存�E功時に一覧リフレチE��ュ
 
-3. **同時編集制御**
+3. **同時編雁E��御**
    - 409 Conflict 時にダイアログ表示
-   - 「最新データを再読み込み」ボタン
+   - 「最新チE�Eタを�E読み込み」�Eタン
 
 4. **一覧表示**
-   - 保存済みケース記録の一覧表示（CaseRecordsListClient）
-   - 日付降順でソート
-
+   - 保存済みケース記録の一覧表示�E�EaseRecordsListClient�E�E   - 日付降頁E��ソーチE
 ---
 
-## 🗂️ データ構造
+## 🗂�E�EチE�Eタ構造
 
-### case_records テーブル（Supabase）
-
-| カラム名 | 型 | 説明 | 必須 |
+### case_records チE�Eブル�E�Eupabase�E�E
+| カラム吁E| 垁E| 説昁E| 忁E��E|
 |---------|---|------|------|
-| `id` | UUID | レコードID（主キー） | ✅ |
-| `care_receiver_id` | UUID | 利用者ID（外部キー） | ✅ |
-| `service_id` | UUID | サービスID（外部キー） | ✅ |
-| `date` | DATE | 記録日付 | ✅ |
-| `main_staff_id` | UUID | 主担当スタッフID | ✅ |
-| `sub_staff_id` | UUID | 副担当スタッフID | ❌ |
-| `special_notes` | TEXT | 特記事項 | ❌ |
-| `family_notes` | TEXT | 家族への連絡事項 | ❌ |
-| `custom` | JSONB | カスタムフィールド（テンプレート） | ❌ |
-| `version` | INTEGER | 楽観ロック用バージョン | ✅ |
-| `created_at` | TIMESTAMP | 作成日時 | ✅ |
-| `updated_at` | TIMESTAMP | 更新日時 | ✅ |
+| `id` | UUID | レコードID�E�主キー�E�E| ✁E|
+| `care_receiver_id` | UUID | 利用老ED�E�外部キー�E�E| ✁E|
+| `service_id` | UUID | サービスID�E�外部キー�E�E| ✁E|
+| `date` | DATE | 記録日仁E| ✁E|
+| `main_staff_id` | UUID | 主拁E��スタチE��ID | ✁E|
+| `sub_staff_id` | UUID | 副拁E��スタチE��ID | ❁E|
+| `special_notes` | TEXT | 特記事頁E| ❁E|
+| `family_notes` | TEXT | 家族への連絡事頁E| ❁E|
+| `custom` | JSONB | カスタムフィールド（テンプレート！E| ❁E|
+| `version` | INTEGER | 楽観ロチE��用バ�Eジョン | ✁E|
+| `created_at` | TIMESTAMP | 作�E日晁E| ✁E|
+| `updated_at` | TIMESTAMP | 更新日晁E| ✁E|
 
 ### TypeScript 型定義
 
@@ -139,11 +104,9 @@ export type CaseRecordFormData = {
   subStaffId: string | null       // UUID
   specialNotes: string
   familyNotes: string
-  custom: Record<string, any>     // カスタムフィールド
-}
+  custom: Record<string, any>     // カスタムフィールチE}
 
-// API レスポンス型
-export type CaseRecordResponse = {
+// API レスポンス垁Eexport type CaseRecordResponse = {
   record: {
     id: string
     care_receiver_id: string
@@ -154,7 +117,7 @@ export type CaseRecordResponse = {
     special_notes: string
     family_notes: string
     custom: Record<string, any>
-    version: number                // 楽観ロック用
+    version: number                // 楽観ロチE��用
     created_at: string
     updated_at: string
   }
@@ -163,40 +126,36 @@ export type CaseRecordResponse = {
 
 ---
 
-## 🔐 楽観ロック（同時編集制御）
+## 🔐 楽観ロチE���E�同時編雁E��御�E�E
+### 仕絁E��
 
-### 仕組み
-
-1. **フォーム読み込み時**: 既存レコードの `version` を取得
-2. **保存時**: `version` を API リクエストに含める
-3. **API 側チェック**: 
+1. **フォーム読み込み晁E*: 既存レコード�E `version` を取征E2. **保存時**: `version` めEAPI リクエストに含める
+3. **API 側チェチE��**: 
    ```sql
    UPDATE case_records 
    SET ... 
-   WHERE id = $1 AND version = $2  -- バージョンが一致するレコードのみ更新
+   WHERE id = $1 AND version = $2  -- バ�Eジョンが一致するレコード�Eみ更新
    ```
-4. **競合検出**: 更新件数が 0 件 → 409 Conflict を返却
-5. **フロント処理**: 409 受信時にダイアログ表示
+4. **競合検�E**: 更新件数ぁE0 件 ↁE409 Conflict を返却
+5. **フロント�E琁E*: 409 受信時にダイアログ表示
 
-### 実装ファイル
+### 実裁E��ァイル
 
-| ファイル | 説明 |
+| ファイル | 説昁E|
 |---------|------|
 | `supabase/migrations/20260128093212_add_version_to_case_records.sql` | `version` カラム追加 + トリガー |
-| `app/api/case-records/save/route.ts` | 保存API（409 Conflict 対応） |
-| `src/components/case-records/CaseRecordFormClient.tsx` | フロント（ダイアログ表示） |
+| `app/api/case-records/save/route.ts` | 保存API�E�E09 Conflict 対応！E|
+| `src/components/case-records/CaseRecordFormClient.tsx` | フロント（ダイアログ表示�E�E|
 
-詳細設計: `docs/CONCURRENCY.md` 参照
+詳細設訁E `docs/CONCURRENCY.md` 参�E
 
 ---
 
-## 📄 カスタムフィールド（テンプレート）
+## 📄 カスタムフィールド（テンプレート！E
+### チE��プレートとは
 
-### テンプレートとは
-
-利用者ごとに異なる記録項目を定義できる仕組み。
-
-**例: ATさんのカスタムフィールド**
+利用老E��とに異なる記録頁E��を定義できる仕絁E��、E
+**侁E ATさんのカスタムフィールチE*
 ```json
 {
   "customFields": [
@@ -204,7 +163,7 @@ export type CaseRecordResponse = {
       "id": "breathing_support",
       "label": "呼吸補助",
       "type": "select",
-      "options": ["不要", "酸素吸入", "人工呼吸器"]
+      "options": ["不要E, "酸素吸入", "人工呼吸器"]
     },
     {
       "id": "food_intake",
@@ -220,14 +179,12 @@ export type CaseRecordResponse = {
 }
 ```
 
-### テンプレート取得
-
+### チE��プレート取征E
 ```typescript
 // app/services/[serviceId]/users/[userId]/case-records/page.tsx
 const template = await getCareReceiverTemplate(careReceiverUuid)
 
-// template.customFields を CaseRecordForm に渡す
-<CaseRecordForm
+// template.customFields めECaseRecordForm に渡ぁE<CaseRecordForm
   templateFields={template?.customFields || []}
   ...
 />
@@ -258,16 +215,13 @@ const template = await getCareReceiverTemplate(careReceiverUuid)
 
 ---
 
-## 🔧 API エンドポイント
-
+## 🔧 API エンド�EインチE
 ### POST /api/case-records/save
 
-#### リクエスト
-```typescript
+#### リクエスチE```typescript
 {
-  recordId?: string              // 既存レコード更新時のみ
-  version?: number               // 楽観ロック用（既存レコード更新時のみ）
-  careReceiverId: string         // UUID
+  recordId?: string              // 既存レコード更新時�Eみ
+  version?: number               // 楽観ロチE��用�E�既存レコード更新時�Eみ�E�E  careReceiverId: string         // UUID
   serviceId: string              // UUID
   date: string                   // YYYY-MM-DD
   mainStaffId: string            // UUID
@@ -278,19 +232,17 @@ const template = await getCareReceiverTemplate(careReceiverUuid)
 }
 ```
 
-#### レスポンス（成功）
-```typescript
+#### レスポンス�E��E功！E```typescript
 {
   record: {
     id: string
-    version: number              // 保存後の新しいバージョン
+    version: number              // 保存後�E新しいバ�Eジョン
     ...
   }
 }
 ```
 
-#### レスポンス（409 Conflict）
-```typescript
+#### レスポンス�E�E09 Conflict�E�E```typescript
 {
   error: "Record has been updated by another session"
 }
@@ -320,33 +272,28 @@ const template = await getCareReceiverTemplate(careReceiverUuid)
 
 ---
 
-## 🎨 UI コンポーネント構成
+## 🎨 UI コンポ�Eネント構�E
 
-### ページ全体
-```
+### ペ�Eジ全佁E```
 app/services/[serviceId]/users/[userId]/case-records/page.tsx
-  ↓
-src/components/case-records/CaseRecordFormClient.tsx (クライアントコンポーネント)
+  ↁEsrc/components/case-records/CaseRecordFormClient.tsx (クライアントコンポ�EネンチE
   ├── CaseRecordForm.tsx (フォームUI)
   ├── CaseRecordsListClient.tsx (一覧表示)
   └── AlertDialog (409 Conflict ダイアログ)
 ```
 
-### 主要コンポーネント
-
+### 主要コンポ�EネンチE
 #### CaseRecordFormClient
-- **役割**: フォーム送信、API 呼び出し、状態管理
-- **状態**:
-  - `currentVersion`: 楽観ロック用バージョン
-  - `currentRecordId`: 編集中のレコードID
+- **役割**: フォーム送信、API 呼び出し、状態管琁E- **状慁E*:
+  - `currentVersion`: 楽観ロチE��用バ�Eジョン
+  - `currentRecordId`: 編雁E��のレコードID
   - `conflictDialogOpen`: 409 Conflict ダイアログ表示フラグ
   - `isSubmitting`: 送信中フラグ
 
 #### CaseRecordForm
 - **役割**: フォーム UI レンダリング
 - **Props**:
-  - `initial`: 初期値（日付、職員ID など）
-  - `staffOptions`: 職員選択肢
+  - `initial`: 初期値�E�日付、�E員ID など�E�E  - `staffOptions`: 職員選択肢
   - `templateFields`: カスタムフィールド定義
   - `onSubmit`: 送信ハンドラ
 
@@ -354,15 +301,14 @@ src/components/case-records/CaseRecordFormClient.tsx (クライアントコン�
 - **役割**: 保存済みケース記録の一覧表示
 - **Props**:
   - `serviceId`: サービスID
-  - `careReceiverId`: 利用者ID
+  - `careReceiverId`: 利用老ED
   - `refreshKey`: 再読み込みトリガー
 
 ---
 
-## ✅ バリデーション
+## ✁EバリチE�Eション
 
-### フロントエンドバリデーション（Zod）
-
+### フロントエンドバリチE�Eション�E�Eod�E�E
 ```typescript
 // src/lib/case-records/form-schemas.ts
 export const CaseRecordFormSchema = z.object({
@@ -377,7 +323,7 @@ export const CaseRecordFormSchema = z.object({
 })
 ```
 
-### バックエンドバリデーション
+### バックエンドバリチE�Eション
 
 ```typescript
 // app/api/case-records/save/route.ts
@@ -391,107 +337,72 @@ if (!body.careReceiverId || !body.serviceId || !body.date) {
 
 ---
 
-## 🧪 テスト手順
+## 🧪 チE��ト手頁E
+### 1. 新規作�EチE��チE```
+1. ATさんのケース記録ペ�Eジを開ぁE2. 日付選抁E 今日の日仁E3. 主拁E��スタチE��: 選択肢から選ぶ
+4. 特記事頁E "チE��ト記録" と入劁E5. 保存�EタンをクリチE��
+6. 期征E��佁E 保存�E功トースト表示、一覧に新規記録が追加されめE```
 
-### 1. 新規作成テスト
-```
-1. ATさんのケース記録ページを開く
-2. 日付選択: 今日の日付
-3. 主担当スタッフ: 選択肢から選ぶ
-4. 特記事項: "テスト記録" と入力
-5. 保存ボタンをクリック
-6. 期待動作: 保存成功トースト表示、一覧に新規記録が追加される
-```
-
-### 2. 更新テスト
-```
-1. 一覧から既存レコードを選択（編集モード）
-2. 特記事項を変更
-3. 保存ボタンをクリック
-4. 期待動作: 保存成功、version が 1→2 に増加
+### 2. 更新チE��チE```
+1. 一覧から既存レコードを選択（編雁E��ード！E2. 特記事頁E��変更
+3. 保存�EタンをクリチE��
+4. 期征E��佁E 保存�E功、version ぁE1ↁE に増加
 ```
 
-### 3. 同時編集制御テスト
-```
+### 3. 同時編雁E��御チE��チE```
 1. 同じレコードを2つのタブで開く
-2. タブ1で編集・保存 → version: 2
-3. タブ2で古い version: 1 のまま保存試行
-4. 期待動作: 409 Conflict ダイアログ表示
-5. "最新データを再読み込み" ボタンで更新
-6. タブ2がリフレッシュされ、version: 2 のデータが表示される
-```
+2. タチEで編雁E�E保孁EↁEversion: 2
+3. タチEで古ぁEversion: 1 のまま保存試衁E4. 期征E��佁E 409 Conflict ダイアログ表示
+5. "最新チE�Eタを�E読み込み" ボタンで更新
+6. タチEがリフレチE��ュされ、version: 2 のチE�Eタが表示されめE```
 
-### 4. カスタムフィールドテスト
-```
-1. ATさんのテンプレートにカスタムフィールドが定義されている
-2. フォームに "呼吸補助" などのフィールドが表示される
-3. 値を選択・入力して保存
-4. 期待動作: custom フィールドに JSON として保存される
+### 4. カスタムフィールドテスチE```
+1. ATさんのチE��プレートにカスタムフィールドが定義されてぁE��
+2. フォームに "呼吸補助" などのフィールドが表示されめE3. 値を選択�E入力して保孁E4. 期征E��佁E custom フィールドに JSON として保存される
 ```
 
 ---
 
-## 🚨 よくあるエラーと対処法
+## 🚨 よくあるエラーと対処況E
+### エラー: "職員チE�Eタが登録されてぁE��せん"
 
-### エラー: "職員データが登録されていません"
-
-**原因**: Supabase に職員データが存在しない
-
-**対処法**:
-1. Supabase Dashboard → Table Editor → `staff` テーブルを確認
-2. 職員データを手動追加、または `/api/staff` API で登録
+**原因**: Supabase に職員チE�Eタが存在しなぁE
+**対処況E*:
+1. Supabase Dashboard ↁETable Editor ↁE`staff` チE�Eブルを確誁E2. 職員チE�Eタを手動追加、また�E `/api/staff` API で登録
 
 ---
 
-### エラー: "他の端末で更新されています"（常に表示される）
-
-**原因**: `version` トリガーが正しく動作していない
-
-**対処法**:
+### エラー: "他�E端末で更新されてぁE��ぁE�E�常に表示される！E
+**原因**: `version` トリガーが正しく動作してぁE��ぁE
+**対処況E*:
 ```sql
--- Supabase SQL Editor で実行
-SELECT id, version, updated_at FROM case_records ORDER BY updated_at DESC LIMIT 10;
+-- Supabase SQL Editor で実衁ESELECT id, version, updated_at FROM case_records ORDER BY updated_at DESC LIMIT 10;
 
--- version が更新されていない場合、トリガーを再作成
--- supabase/migrations/20260128093212_add_version_to_case_records.sql を再実行
-```
+-- version が更新されてぁE��ぁE��合、トリガーを�E作�E
+-- supabase/migrations/20260128093212_add_version_to_case_records.sql を�E実衁E```
 
 ---
 
-### エラー: "カスタムフィールドが表示されない"
+### エラー: "カスタムフィールドが表示されなぁE
 
-**原因**: テンプレートが正しく取得できていない
+**原因**: チE��プレートが正しく取得できてぁE��ぁE
+**対処況E*:
+1. `getCareReceiverTemplate()` の戻り値をログ出劁E2. `template?.customFields` が空配�EでなぁE��確誁E3. Supabase の `care_receivers` チE�Eブルで `custom_template` カラムを確誁E
+---
 
-**対処法**:
-1. `getCareReceiverTemplate()` の戻り値をログ出力
-2. `template?.customFields` が空配列でないか確認
-3. Supabase の `care_receivers` テーブルで `custom_template` カラムを確認
+## 📚 関連ドキュメンチE
+- **楽観ロチE��設訁E*: `docs/CONCURRENCY.md`
+- **API 実裁E��E*: `app/api/case-records/save/route.ts`
+- **フロント実裁E*: `src/components/case-records/CaseRecordFormClient.tsx`
+- **チE��プレート構造**: `docs/case-records-template-structure.md`
 
 ---
 
-## 📚 関連ドキュメント
-
-- **楽観ロック設計**: `docs/CONCURRENCY.md`
-- **API 実装例**: `app/api/case-records/save/route.ts`
-- **フロント実装**: `src/components/case-records/CaseRecordFormClient.tsx`
-- **テンプレート構造**: `docs/case-records-template-structure.md`
-
+## 🔄 今後�E拡張予宁E
+### Phase 2�E�予定！E- [ ] 編雁E��歴機�E�E�Eudit log�E�E- [ ] PDF エクスポ�Eト（月次レポ�Eト！E- [ ] オフライン対応！EndexedDB + 同期�E�E
+### Phase 3�E�予定！E- [ ] AI による記録提案！Eercel AI SDK�E�E- [ ] 音声入力対応！Ehisper API�E�E- [ ] 画像添付機�E�E�Eercel Blob�E�E
 ---
 
-## 🔄 今後の拡張予定
-
-### Phase 2（予定）
-- [ ] 編集履歴機能（audit log）
-- [ ] PDF エクスポート（月次レポート）
-- [ ] オフライン対応（IndexedDB + 同期）
-
-### Phase 3（予定）
-- [ ] AI による記録提案（Vercel AI SDK）
-- [ ] 音声入力対応（Whisper API）
-- [ ] 画像添付機能（Vercel Blob）
-
----
-
-**最終更新**: 2026年1月28日  
-**完成形リファレンス**: `/services/life-care/users/AT/case-records`  
-**次回更新タイミング**: ATさんのテンプレート変更時、または新機能追加時
+**最終更新**: 2026年1朁E8日  
+**完�E形リファレンス**: `/services/life-care/users/AT/case-records`  
+**次回更新タイミング**: ATさんのチE��プレート変更時、また�E新機�E追加晁E

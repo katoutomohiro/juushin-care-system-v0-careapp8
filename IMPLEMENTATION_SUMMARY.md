@@ -18,7 +18,7 @@
 
 **テスト方法**:
 ```bash
-# ブラウザで http://localhost:3000 にアクセス
+# ブラウザで http://dev-app.local:3000 にアクセス
 # → /login へ自動リダイレクト確認
 ```
 
@@ -132,7 +132,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 | API 認証 | ✅ IMPLEMENTED | Token-based auth header |
 | RLS フィルタリング | ✅ IMPLEMENTED | facility_id auto-filter |
 | Realtime 同期 | ✅ IMPLEMENTED | postgres_changes channel |
-| ローカルテスト | ⏳ PENDING | `pnpm run reboot` → localhost:3000 |
+| ローカルテスト | ⏳ PENDING | `pnpm run reboot` → dev-app.local:3000 |
 | 本番デプロイ | ⏳ PENDING | Vercel: Settings → Env Vars |
 
 ---
@@ -142,7 +142,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 ### Step 1: ローカル検証
 ```bash
 pnpm run reboot
-# ブラウザで http://localhost:3000 → /login へリダイレクト確認
+# ブラウザで http://dev-app.local:3000 → /login へリダイレクト確認
 # staff.lifecare@example.com でログイン
 # /services/life-care/users で全 14 名表示確認
 ```
@@ -178,7 +178,7 @@ Redeploy
 ## 📊 システム構成図
 
 ```
-ブラウザ (localhost:3000)
+ブラウザ (dev-app.local:3000)
     ↓
 [middleware.ts] - 認証ガード
     ↓
@@ -282,7 +282,7 @@ UI: /services/life-care/users (list + Realtime sync)
 1. **ローカル実行テスト** (15分)
    ```bash
    pnpm run reboot
-   http://localhost:3000 → /login確認
+    http://dev-app.local:3000 → /login確認
    staff.lifecare@example.com でログイン
    24名全体表示 + Realtime 同期テスト
    ```

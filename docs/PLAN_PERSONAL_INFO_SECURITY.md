@@ -1,67 +1,55 @@
-# 個人情報セキュリティ管理計画（PLAN_PERSONAL_INFO_SECURITY）
-
-> **対象**: 重心ケア支援アプリにおける個人情報管理の設計・実装方針  
-> **更新日**: 2026年1月28日  
-> **責任者**: ChatGPT (設計責任) / チーム (実装)  
-> **関連ドキュメント**: [PLAN_MASTER.md](./PLAN_MASTER.md)、[PLAN_CASE_RECORD.md](./PLAN_CASE_RECORD.md)、[PLAN_DEPLOY.md](./PLAN_DEPLOY.md)
+# 個人惁E��セキュリチE��管琁E��画�E�ELAN_PERSONAL_INFO_SECURITY�E�E
+> **対象**: 重忁E��ア支援アプリにおける個人惁E��管琁E�E設計�E実裁E��釁E 
+> **更新日**: 2026年1朁E8日  
+> **責任老E*: ChatGPT (設計責任) / チ�Eム (実裁E  
+> **関連ドキュメンチE*: [PLAN_MASTER.md](./PLAN_MASTER.md)、[PLAN_CASE_RECORD.md](./PLAN_CASE_RECORD.md)、[PLAN_DEPLOY.md](./PLAN_DEPLOY.md)
 
 ---
 
-## 1. 個人情報と表示名の分離方針
-
-### 1.1 基本設計
-
-重心ケアアプリでは、**個人情報の可視性を権限と環境に応じて制御**するため、以下のように分離します。
-
-| カテゴリ | フィールド名 | 格納場所 | 表示条件 | 権限要件 | ログ出力 |
+## 1. 個人惁E��と表示名�E刁E��方釁E
+### 1.1 基本設訁E
+重忁E��アアプリでは、E*個人惁E��の可視性を権限と環墁E��応じて制御**するため、以下�Eように刁E��します、E
+| カチE��リ | フィールド名 | 格納場所 | 表示条件 | 権限要件 | ログ出劁E|
 |---------|-----------|--------|--------|---------|---------|
-| **匿名表示（常時可視）** | `display_name` | `care_receivers.display_name` | 全ページ（リスト、詳細） | 認証ユーザー | ✅ 可 |
-| **個人識別情報（制限付き）** | `full_name`, `birthday`, `gender` | `care_receivers.*` | 詳細ページ＋編集時のみ | staff/nurse/admin | ❌ 禁止 |
-| **連絡先情報（制限付き）** | `address`, `phone`, `emergency_contact` | `care_receivers.*` | 詳細ページ＋編集時のみ | admin/nurse | ❌ 禁止 |
-| **医療情報（最高制限）** | `medical_care_detail` (JSONB) | `care_receivers.*` | 詳細ページ＋編集時のみ | nurse/admin | ❌ 禁止 |
+| **匿名表示�E�常時可視！E* | `display_name` | `care_receivers.display_name` | 全ペ�Eジ�E�リスト、詳細�E�E| 認証ユーザー | ✁E可 |
+| **個人識別惁E���E�制限付き�E�E* | `full_name`, `birthday`, `gender` | `care_receivers.*` | 詳細ペ�Eジ�E�編雁E��のみ | staff/nurse/admin | ❁E禁止 |
+| **連絡先情報�E�制限付き�E�E* | `address`, `phone`, `emergency_contact` | `care_receivers.*` | 詳細ペ�Eジ�E�編雁E��のみ | admin/nurse | ❁E禁止 |
+| **医療情報�E�最高制限！E* | `medical_care_detail` (JSONB) | `care_receivers.*` | 詳細ペ�Eジ�E�編雁E��のみ | nurse/admin | ❁E禁止 |
 
-### 1.2 表示名（display_name）の役割
+### 1.2 表示名！Eisplay_name�E��E役割
 
-- **用途**: リスト画面、日誌、ケース記録、A4シートなど、全ページで利用者を識別
-- **例示値**: "AT"、"User-001"、"田中（匿名）"
-- **変更時期**: 新規作成時に設定、編集可能
-- **ログ出力**: Console / Network タブ / 監査ログで表示OK
-- **本番運用**: 実名でも匿名でも可（施設の運用方針に従う）
-
-### 1.3 実名（full_name）の取り扱い
-
-- **用途**: 利用者詳細ページで「詳細情報編集」ダイアログにのみ表示
-- **ログ出力**: **絶対禁止**（Console, API Response Log, Network タブに出さない）
-- **開発環境**: 入力不要（空欄のまま）
-- **本番環境**: 必要に応じて入力（但しログには一切出さない）
-- **Supabase RLS**: Staff/Nurse/Admin ロール以外は SELECT 不可
+- **用送E*: リスト画面、日誌、ケース記録、A4シートなど、�Eペ�Eジで利用老E��識別
+- **例示値**: "AT"、EUser-001"、E田中�E�匿名！E
+- **変更時期**: 新規作�E時に設定、編雁E��能
+- **ログ出劁E*: Console / Network タチE/ 監査ログで表示OK
+- **本番運用**: 実名でも匿名でも可�E�施設の運用方針に従う�E�E
+### 1.3 実名�E�Eull_name�E��E取り扱ぁE
+- **用送E*: 利用老E��細ペ�Eジで「詳細惁E��編雁E��ダイアログにのみ表示
+- **ログ出劁E*: **絶対禁止**�E�Eonsole, API Response Log, Network タブに出さなぁE��E- **開発環墁E*: 入力不要E��空欁E�Eまま�E�E- **本番環墁E*: 忁E��に応じて入力（佁E��ログには一刁E�EさなぁE��E- **Supabase RLS**: Staff/Nurse/Admin ロール以外�E SELECT 不可
 
 ---
 
-## 2. RLS（Row Level Security）による権限管理
+## 2. RLS�E�Eow Level Security�E�による権限管琁E
+### 2.1 ロール定義と権限�Eトリクス
 
-### 2.1 ロール定義と権限マトリクス
-
-| ロール名 | Supabase Role | 説明 | display_name | full_name | medical_detail | 監査ログ |
+| ロール吁E| Supabase Role | 説昁E| display_name | full_name | medical_detail | 監査ログ |
 |---------|---------------|------|-------------|----------|----------------|---------|
-| **anon** | anon | 認証未実施 | ❌ | ❌ | ❌ | ❌ |
-| **staff** | authenticated+service_staff | 介護職員 | ✅ | ✅ 読み取り | ✅ 読み取り | ✅ 読み取り |
-| **nurse** | authenticated+service_nurse | 看護師 | ✅ | ✅ 読み取り/編集 | ✅ 読み取り/編集 | ✅ 読み取り/編集 |
-| **admin** | authenticated+service_admin | サービス責任者 | ✅ | ✅ 読み取り/編集 | ✅ 読み取り/編集 | ✅ 読み取り/編集 |
+| **anon** | anon | 認証未実施 | ❁E| ❁E| ❁E| ❁E|
+| **staff** | authenticated+service_staff | 介護職員 | ✁E| ✁E読み取り | ✁E読み取り | ✁E読み取り |
+| **nurse** | authenticated+service_nurse | 看護師 | ✁E| ✁E読み取り/編雁E| ✁E読み取り/編雁E| ✁E読み取り/編雁E|
+| **admin** | authenticated+service_admin | サービス責任老E| ✁E| ✁E読み取り/編雁E| ✁E読み取り/編雁E| ✁E読み取り/編雁E|
 
-### 2.2 RLS ポリシー実装
-
+### 2.2 RLS ポリシー実裁E
 ```sql
--- ① anon: care_receivers を全て拒否
+-- ① anon: care_receivers を�Eて拒否
 CREATE POLICY "anon_deny_all" ON public.care_receivers
   FOR ALL
   TO anon
   USING (false)
   WITH CHECK (false);
 
--- ② staff: 自分のサービスに属する利用者のみ閲覧
---    （full_name などの個人情報は SELECT 対象外）
-CREATE POLICY "staff_view_care_receivers" ON public.care_receivers
+-- ② staff: 自刁E�Eサービスに属する利用老E�Eみ閲覧
+--    �E�Eull_name などの個人惁E��は SELECT 対象外！ECREATE POLICY "staff_view_care_receivers" ON public.care_receivers
   FOR SELECT
   TO authenticated
   USING (
@@ -73,9 +61,7 @@ CREATE POLICY "staff_view_care_receivers" ON public.care_receivers
     )
   );
 
--- ③ nurse: 自分のサービスに属する利用者のみ閲覧・編集
---    （medical_care_detail は編集可能）
-CREATE POLICY "nurse_update_care_receivers" ON public.care_receivers
+-- ③ nurse: 自刁E�Eサービスに属する利用老E�Eみ閲覧・編雁E--    �E�Eedical_care_detail は編雁E��能�E�ECREATE POLICY "nurse_update_care_receivers" ON public.care_receivers
   FOR UPDATE
   TO authenticated
   USING (
@@ -95,8 +81,7 @@ CREATE POLICY "nurse_update_care_receivers" ON public.care_receivers
     )
   );
 
--- ④ admin: サービス内の全利用者を読み取り・編集
-CREATE POLICY "admin_full_access_care_receivers" ON public.care_receivers
+-- ④ admin: サービス冁E�E全利用老E��読み取り・編雁ECREATE POLICY "admin_full_access_care_receivers" ON public.care_receivers
   FOR ALL
   TO authenticated
   USING (
@@ -131,101 +116,66 @@ CREATE POLICY "nurse_read_care_receiver_audits" ON public.care_receiver_audits
   );
 ```
 
-### 2.3 列レベルセキュリティ（Column RLS）
-
+### 2.3 列レベルセキュリチE���E�Eolumn RLS�E�E
 ```sql
--- ① staff: full_name, address, phone は見えない
--- （Supabase RLS では難しいため、API レスポンスレベルで実装）
+-- ① staff: full_name, address, phone は見えなぁE-- �E�Eupabase RLS では難しいため、API レスポンスレベルで実裁E��E
+-- ② nurse: 全列見える（佁E��ログに出さなぁE��E
+-- ③ admin: 全列見える（佁E��ログに出さなぁE��E```
 
--- ② nurse: 全列見える（但しログに出さない）
+**注**: Supabase の RLS は行レベルのため、�Eレベルの制限�E API レスポンスでサニタイズする、E
+---
 
--- ③ admin: 全列見える（但しログに出さない）
+## 3. UI段階表示設訁E
+### 3.1 リスト画面�E�Esers list�E�E
 ```
+┌─ サービス詳細 ─────────────────────────────━E━E 利用老E��覧                                 ━E├──────────────────────────────────────────┤
+━E ▢ display_name: "AT"          (匿名OK)  ━E ↁE全員表示
+━E ▢ display_name: "User-001"             ━E ↁE全員表示
+━E ▢ display_name: "田中太郁E             ━E ↁE表示名を実名にした侁E━E                                         ━E━E 👤: full_name/birthday/address は       ━E ↁE非表示
+━E     非表示�E�詳細ペ�Eジで表示�E�E          ━E└──────────────────────────────────────────━E```
 
-**注**: Supabase の RLS は行レベルのため、列レベルの制限は API レスポンスでサニタイズする。
+### 3.2 利用老E��細ペ�Eジ�E�Eser profile�E�E
+```
+┌─ 利用老E��細 ─────────────────────────────━E━E 表示名！Eisplay_name�E�E                  ━E ↁE常時表示
+━E 🔒 詳細惁E��を編雁E[ボタン]               ━E ↁE権限チェチE��征E├──────────────────────────────────────────┤
+━E 基本惁E��                                  ━E━E ━E生年月日: 2000-01-01    [staff/nurse] ━E ↁEダイアログ冁E�Eみ
+━E ━E性別: 男性              [staff/nurse] ━E ↁEダイアログ冁E�Eみ
+━E ━E実名: (非表示)          [staff/nurse] ━E ↁEダイアログ冁E�Eみ
+━E                                         ━E━E 連絡先情報�E�管琁E��E�Eみ�E�E                ━E━E ━E住所: (非表示)          [admin only]  ━E ↁEダイアログ冁E�Eみ
+━E ━E電話: (非表示)          [admin only]  ━E ↁEダイアログ冁E�Eみ
+━E ━E緊急連絡允E (非表示)    [admin only]  ━E ↁEダイアログ冁E�Eみ
+━E                                         ━E━E 医療情報�E�看護師のみ�E�E                  ━E━E ━E経管栁E��E ✁E            [nurse only]  ━E ↁEダイアログ冁E�Eみ
+━E ━E吸引対忁E ✁E            [nurse only]  ━E ↁEダイアログ冁E�Eみ
+└──────────────────────────────────────────━E```
+
+### 3.3 編雁E��イアログ冁E��示フロー
+
+```
+ユーザーが「詳細惁E��を編雁E���EタンをクリチE��
+    ↁEauth.uid() で権限取征E    ↁEservice_staff チE�Eブルから role を確誁E    ↁE┌─ role ぁE"staff" の場吁E━E ━Edisplay_name: ✁E編雁E��
+━E ━Efull_name: ✁E表示・読み取り
+━E ━Ebirthday: ✁E表示・読み取り
+━E ━Egender: ✁E表示・読み取り
+━E ━Eaddress, phone, medical_detail: ❁E非表示
+━E├─ role ぁE"nurse" の場吁E━E ━Edisplay_name: ✁E編雁E��
+━E ━Efull_name: ✁E編雁E��
+━E ━Ebirthday: ✁E編雁E��
+━E ━Egender: ✁E編雁E��
+━E ━Emedical_care_detail: ✁E編雁E��
+━E ━Eaddress, phone: ❁E非表示
+━E└─ role ぁE"admin" の場吁E   ━E全フィールチE ✁E表示・編雁E��
+   ━E�E�佁E��ログには出さなぁE��E```
 
 ---
 
-## 3. UI段階表示設計
-
-### 3.1 リスト画面（users list）
-
-```
-┌─ サービス詳細 ─────────────────────────────┐
-│  利用者一覧                                 │
-├──────────────────────────────────────────┤
-│  ▢ display_name: "AT"          (匿名OK)  │  → 全員表示
-│  ▢ display_name: "User-001"             │  → 全員表示
-│  ▢ display_name: "田中太郎"             │  → 表示名を実名にした例
-│                                          │
-│  👤: full_name/birthday/address は       │  → 非表示
-│      非表示（詳細ページで表示）           │
-└──────────────────────────────────────────┘
-```
-
-### 3.2 利用者詳細ページ（user profile）
-
-```
-┌─ 利用者詳細 ─────────────────────────────┐
-│  表示名（display_name）                   │  → 常時表示
-│  🔒 詳細情報を編集 [ボタン]               │  → 権限チェック後
-├──────────────────────────────────────────┤
-│  基本情報                                  │
-│  ├ 生年月日: 2000-01-01    [staff/nurse] │  → ダイアログ内のみ
-│  ├ 性別: 男性              [staff/nurse] │  → ダイアログ内のみ
-│  └ 実名: (非表示)          [staff/nurse] │  → ダイアログ内のみ
-│                                          │
-│  連絡先情報（管理者のみ）                 │
-│  ├ 住所: (非表示)          [admin only]  │  → ダイアログ内のみ
-│  ├ 電話: (非表示)          [admin only]  │  → ダイアログ内のみ
-│  └ 緊急連絡先: (非表示)    [admin only]  │  → ダイアログ内のみ
-│                                          │
-│  医療情報（看護師のみ）                   │
-│  ├ 経管栄養: ✓             [nurse only]  │  → ダイアログ内のみ
-│  └ 吸引対応: ✓             [nurse only]  │  → ダイアログ内のみ
-└──────────────────────────────────────────┘
-```
-
-### 3.3 編集ダイアログ内表示フロー
-
-```
-ユーザーが「詳細情報を編集」ボタンをクリック
-    ↓
-auth.uid() で権限取得
-    ↓
-service_staff テーブルから role を確認
-    ↓
-┌─ role が "staff" の場合
-│  ├ display_name: ✅ 編集可
-│  ├ full_name: ✅ 表示・読み取り
-│  ├ birthday: ✅ 表示・読み取り
-│  ├ gender: ✅ 表示・読み取り
-│  └ address, phone, medical_detail: ❌ 非表示
-│
-├─ role が "nurse" の場合
-│  ├ display_name: ✅ 編集可
-│  ├ full_name: ✅ 編集可
-│  ├ birthday: ✅ 編集可
-│  ├ gender: ✅ 編集可
-│  ├ medical_care_detail: ✅ 編集可
-│  └ address, phone: ❌ 非表示
-│
-└─ role が "admin" の場合
-   ├ 全フィールド: ✅ 表示・編集可
-   └ （但しログには出さない）
-```
-
----
-
-## 4. 編集・更新履歴方針
-
-### 4.1 監査ログ（care_receiver_audits）の記録内容
+## 4. 編雁E�E更新履歴方釁E
+### 4.1 監査ログ�E�Eare_receiver_audits�E��E記録冁E��
 
 ```sql
 INSERT INTO care_receiver_audits (
   care_receiver_id,
   action,
-  changed_fields,  -- JSONB 配列: ["display_name", "medical_care_detail"]
+  changed_fields,  -- JSONB 配�E: ["display_name", "medical_care_detail"]
   actor
 ) VALUES (
   'care_receiver_uuid',
@@ -235,48 +185,38 @@ INSERT INTO care_receiver_audits (
 )
 ```
 
-**重要**: `changed_fields` には**フィールド名のみ**記録し、変更された**値は含めない**。
-
-### 4.2 表示権限による監査ログ閲覧制限
-
-| ロール | 監査ログ閲覧 | 備考 |
+**重要E*: `changed_fields` には**フィールド名のみ**記録し、変更されぁE*値は含めなぁE*、E
+### 4.2 表示権限による監査ログ閲覧制陁E
+| ロール | 監査ログ閲覧 | 備老E|
 |--------|----------|------|
-| anon | ❌ 不可 | |
-| staff | ❌ 不可 | |
-| nurse | ✅ 可 | 同じサービス内のみ |
-| admin | ✅ 可 | 全サービス（又はサービス内） |
+| anon | ❁E不可 | |
+| staff | ❁E不可 | |
+| nurse | ✁E可 | 同じサービス冁E�Eみ |
+| admin | ✁E可 | 全サービス�E�又はサービス冁E��E|
 
 ### 4.3 更新履歴の表示UI
 
 ```
-┌─ 更新履歴タブ ───────────────────────────┐
-│  2026-01-28 14:30  admin: display_name 更新
-│  2026-01-28 13:15  nurse: medical_detail 更新
-│  2026-01-27 09:00  staff: (表示権限なし)
-│
-│  ⓘ 個人情報の変更内容は、セキュリティ上
-│    表示されません
-└──────────────────────────────────────────┘
-```
+┌─ 更新履歴タチE───────────────────────────━E━E 2026-01-28 14:30  admin: display_name 更新
+━E 2026-01-28 13:15  nurse: medical_detail 更新
+━E 2026-01-27 09:00  staff: (表示権限なぁE
+━E━E ⓁE個人惁E��の変更冁E��は、セキュリチE��丁E━E   表示されません
+└──────────────────────────────────────────━E```
 
 ---
 
-## 5. 技術実装の詳細
+## 5. 技術実裁E�E詳細
 
-### 5.1 DB層（Supabase）
-
-#### スキーマ
-```sql
--- care_receivers テーブル
+### 5.1 DB層�E�Eupabase�E�E
+#### スキーチE```sql
+-- care_receivers チE�Eブル
 CREATE TABLE public.care_receivers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id uuid NOT NULL,
-  code text NOT NULL,  -- 利用者ID（例: "AT", "User-001"）
+  code text NOT NULL,  -- 利用老ED�E�侁E "AT", "User-001"�E�E  
+  -- 匿名表示�E�常時可視！E  display_name text NOT NULL DEFAULT '',
   
-  -- 匿名表示（常時可視）
-  display_name text NOT NULL DEFAULT '',
-  
-  -- 個人識別情報
+  -- 個人識別惁E��
   full_name text,      -- 実名
   birthday date,       -- 生年月日
   gender text,         -- 性別
@@ -284,22 +224,20 @@ CREATE TABLE public.care_receivers (
   -- 連絡先情報
   address text,        -- 住所
   phone text,          -- 電話番号
-  emergency_contact text,  -- 緊急連絡先
-  
+  emergency_contact text,  -- 緊急連絡允E  
   -- 医療情報
   medical_care_detail jsonb,  -- {tube_feeding: true, suctioning: true, ...}
   
-  -- メタデータ
+  -- メタチE�Eタ
   notes text,
-  version int NOT NULL DEFAULT 1,  -- 楽観ロック用
-  updated_by uuid,     -- 最終編集者
-  created_at timestamptz NOT NULL DEFAULT now(),
+  version int NOT NULL DEFAULT 1,  -- 楽観ロチE��用
+  updated_by uuid,     -- 最終編雁E��E  created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   
   UNIQUE (service_id, code)
 );
 
--- care_receiver_audits テーブル
+-- care_receiver_audits チE�Eブル
 CREATE TABLE public.care_receiver_audits (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   care_receiver_id uuid NOT NULL REFERENCES public.care_receivers(id),
@@ -309,8 +247,7 @@ CREATE TABLE public.care_receiver_audits (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- service_staff テーブル（権限管理）
-CREATE TABLE public.service_staff (
+-- service_staff チE�Eブル�E�権限管琁E��ECREATE TABLE public.service_staff (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id uuid NOT NULL REFERENCES public.services(id),
   user_id uuid NOT NULL REFERENCES auth.users(id),
@@ -320,11 +257,10 @@ CREATE TABLE public.service_staff (
 );
 ```
 
-### 5.2 API層（Next.js）
-
+### 5.2 API層�E�Eext.js�E�E
 #### GET `/api/care-receivers/[id]`
 ```typescript
-// ✅ 権限チェック後に、role に応じたフィールドのみ返す
+// ✁E権限チェチE��後に、role に応じたフィールド�Eみ返す
 const response = {
   id: careReceiver.id,
   display_name: careReceiver.display_name,  // 常時含む
@@ -349,52 +285,49 @@ const response = {
   }),
 }
 
-// ⚠️ ログに出す場合は、個人情報を除外
-const sanitizedResponse = {
+// ⚠�E�Eログに出す場合�E、個人惁E��を除夁Econst sanitizedResponse = {
   id: response.id,
   display_name: response.display_name,
   version: careReceiver.version,
 }
-console.log('Fetched care receiver:', sanitizedResponse)  // ✅ OKログ
+console.log('Fetched care receiver:', sanitizedResponse)  // ✁EOKログ
 ```
 
 #### PUT `/api/care-receivers/[id]`
 ```typescript
-// ✅ 権限チェック後に、role に応じた編集を許可
+// ✁E権限チェチE��後に、role に応じた編雁E��許可
 const userRole = await getUserRole(auth.uid(), careReceiver.service_id)
 
 if (userRole === 'staff') {
-  // display_name のみ編集可
+  // display_name のみ編雁E��
   allowedFields = ['display_name']
 } else if (userRole === 'nurse') {
-  // 個人情報 + 医療情報は編集可
+  // 個人惁E�� + 医療情報は編雁E��
   allowedFields = ['display_name', 'full_name', 'birthday', 'gender', 'medical_care_detail', 'notes']
 } else if (userRole === 'admin') {
-  // 全フィールド編集可
+  // 全フィールド編雁E��
   allowedFields = ['display_name', 'full_name', 'birthday', 'gender', 'address', 'phone', 'emergency_contact', 'medical_care_detail', 'notes']
 }
 
-// ⚠️ 監査ログ記録時は、値は含めず、フィールド名のみ
+// ⚠�E�E監査ログ記録時�E、値は含めず、フィールド名のみ
 const changedFields = Object.keys(payload).filter(key => allowedFields.includes(key))
 ```
 
-### 5.3 UI層（React）
-
-#### EditCareReceiverDialog コンポーネント
-```typescript
+### 5.3 UI層�E�Eeact�E�E
+#### EditCareReceiverDialog コンポ�EネンチE```typescript
 export function EditCareReceiverDialog({ careReceiver, userRole, isOpen, onClose, onSuccess }: Props) {
   // ① 権限に応じたフィールド表示制御
   const canEditPersonalInfo = ['staff', 'nurse', 'admin'].includes(userRole)
   const canEditMedicalInfo = ['nurse', 'admin'].includes(userRole)
   const canEditContactInfo = userRole === 'admin'
   
-  // ② フォームレンダリング時に権限チェック
+  // ② フォームレンダリング時に権限チェチE��
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
-        {/* display_name は常時表示・編集可 */}
+        {/* display_name は常時表示・編雁E�� */}
         <Field
-          label="表示名"
+          label="表示吁E
           value={displayName}
           onChange={setDisplayName}
           disabled={false}
@@ -409,8 +342,8 @@ export function EditCareReceiverDialog({ careReceiver, userRole, isOpen, onClose
         
         {canEditMedicalInfo && (
           <FieldGroup label="医療情報">
-            <Checkbox label="経管栄養" checked={medicalTubeFeed} onChange={setMedicalTubeFeed} />
-            <Checkbox label="吸引対応" checked={medicalSuctioning} onChange={setMedicalSuctioning} />
+            <Checkbox label="経管栁E��E checked={medicalTubeFeed} onChange={setMedicalTubeFeed} />
+            <Checkbox label="吸引対忁E checked={medicalSuctioning} onChange={setMedicalSuctioning} />
           </FieldGroup>
         )}
         
@@ -430,74 +363,64 @@ export function EditCareReceiverDialog({ careReceiver, userRole, isOpen, onClose
 
 ## 6. ログ出力ルール
 
-### 6.1 禁止事項
-
-| ❌ 禁止 | 理由 | 例 |
+### 6.1 禁止事頁E
+| ❁E禁止 | 琁E�� | 侁E|
 |---------|------|-----|
-| Console.log に個人情報を出す | GitHub や Chat に漏れる | `console.log('User:', careReceiver)` |
-| API Response に個人情報を含める | Network タブで見える | `res.json({ full_name, address })` |
-| Migration や Seed に実名を入れる | コミット履歴に残る | `INSERT INTO care_receivers (full_name) VALUES ('山田太郎')` |
-| エラーメッセージに個人情報を含める | ユーザーに見える | `"User 太郎 already exists"` |
+| Console.log に個人惁E��を�EぁE| GitHub めEChat に漏れめE| `console.log('User:', careReceiver)` |
+| API Response に個人惁E��を含める | Network タブで見えめE| `res.json({ full_name, address })` |
+| Migration めESeed に実名を�Eれる | コミット履歴に残る | `INSERT INTO care_receivers (full_name) VALUES ('山田太郁E)` |
+| エラーメチE��ージに個人惁E��を含める | ユーザーに見えめE| `"User 太郁Ealready exists"` |
 
 ### 6.2 推奨ルール
 
-| ✅ 推奨 | 例 |
+| ✁E推奨 | 侁E|
 |--------|-----|
-| Sanitized response をログに出す | `console.log('Updated:', { id, version, display_name })` |
-| エラーメッセージは一般的に | `"User already exists"` |
-| 個人情報は Supabase に保存のみ | DB には記録、Console には出さない |
+| Sanitized response をログに出ぁE| `console.log('Updated:', { id, version, display_name })` |
+| エラーメチE��ージは一般皁E�� | `"User already exists"` |
+| 個人惁E��は Supabase に保存�Eみ | DB には記録、Console には出さなぁE|
 | 監査ログには変更されたフィールド名のみ | `['full_name', 'medical_care_detail']` |
 
 ---
 
-## 7. 本番環境での運用
+## 7. 本番環墁E��の運用
 
-### 7.1 環境別ポリシー
+### 7.1 環墁E��ポリシー
 
-| 環境 | display_name | full_name 入力 | 監査ログ取得 |
+| 環墁E| display_name | full_name 入劁E| 監査ログ取征E|
 |-----|------------|------------|-----------|
-| **ローカル開発** | 匿名OK（"User-001"など） | **空欄推奨** | 自由 |
-| **Preview** | 匿名OK（"User-001"など） | **空欄推奨** | 自由 |
-| **本番** | 実名OK | **実名入力推奨** | 権限チェック（nurse/admin） |
+| **ローカル開発** | 匿名OK�E�EUser-001"など�E�E| **空欁E��奨** | 自由 |
+| **Preview** | 匿名OK�E�EUser-001"など�E�E| **空欁E��奨** | 自由 |
+| **本番** | 実名OK | **実名入力推奨** | 権限チェチE���E�Eurse/admin�E�E|
 
-### 7.2 本番デプロイ直前チェック
+### 7.2 本番チE�Eロイ直前チェチE��
 
 ```bash
-# 1. RLS ポリシー確認
-npx supabase link --project-ref <project-id>
+# 1. RLS ポリシー確誁Enpx supabase link --project-ref <project-id>
 npx supabase db pull
 
-# 2. migration 適用確認
-SELECT * FROM information_schema.columns 
+# 2. migration 適用確誁ESELECT * FROM information_schema.columns 
 WHERE table_name = 'care_receivers' AND column_name IN ('full_name', 'medical_care_detail');
 
-# 3. RLS テスト（anon ロールで full_name が見えないこと）
-SET ROLE anon;
-SELECT full_name FROM care_receivers LIMIT 1;  -- 期待: 0件
+# 3. RLS チE��ト！Enon ロールで full_name が見えなぁE��と�E�ESET ROLE anon;
+SELECT full_name FROM care_receivers LIMIT 1;  -- 期征E 0件
 
-# 4. ログ出力確認（Console に個人情報が出ていないこと）
-# → ブラウザの DevTools で確認
-```
+# 4. ログ出力確認！Eonsole に個人惁E��が�EてぁE��ぁE��と�E�E# ↁEブラウザの DevTools で確誁E```
 
 ---
 
-## 8. トラブルシューティング
+## 8. トラブルシューチE��ング
 
-| 問題 | 原因 | 対処 |
+| 問顁E| 原因 | 対処 |
 |-----|------|------|
-| Console に full_name が出ている | API の sanitizeResponse が未実装 | API の PUT/GET で sanitizedResponse を使用 |
-| staff が medical_detail を見られる | RLS ポリシーが不完全 | RLS で nurse/admin のみに制限 |
-| 開発環境で実名が保存されている | 運用ポリシーが未周知 | 開発者に「開発環境では display_name のみ」を徹底 |
-| 409 Conflict が頻発する | version カラムがない | migration を実行して version を追加 |
+| Console に full_name が�EてぁE�� | API の sanitizeResponse が未実裁E| API の PUT/GET で sanitizedResponse を使用 |
+| staff ぁEmedical_detail を見られる | RLS ポリシーが不完�E | RLS で nurse/admin のみに制陁E|
+| 開発環墁E��実名が保存されてぁE�� | 運用ポリシーが未周知 | 開発老E��「開発環墁E��は display_name のみ」を徹庁E|
+| 409 Conflict が頻発する | version カラムがなぁE| migration を実行して version を追加 |
 
 ---
 
-## まとめ
-
-1. **display_name（匿名表示）** → 常時可視、ログ出力OK
-2. **full_name + medical_detail（個人情報）** → 権限制限、ログ出力禁止
-3. **RLS ポリシー** → staff/nurse/admin で段階的に制限
-4. **監査ログ** → フィールド名のみ記録、値は含めない
-5. **本番運用** → 実名は本番のみ、ログには一切出さない
-
-このポリシーを遵守することで、医療機関として求められるセキュリティと利便性のバランスを実現できます。
+## まとめE
+1. **display_name�E�匿名表示�E�E* ↁE常時可視、ログ出力OK
+2. **full_name + medical_detail�E�個人惁E���E�E* ↁE権限制限、ログ出力禁止
+3. **RLS ポリシー** ↁEstaff/nurse/admin で段階的に制陁E4. **監査ログ** ↁEフィールド名のみ記録、値は含めなぁE5. **本番運用** ↁE実名は本番のみ、ログには一刁E�EさなぁE
+こ�Eポリシーを�E守することで、医療機関として求められるセキュリチE��と利便性のバランスを実現できます、E

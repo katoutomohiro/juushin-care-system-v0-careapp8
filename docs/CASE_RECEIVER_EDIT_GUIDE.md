@@ -1,43 +1,43 @@
-# 利用者情報編集機能 - 実装ガイド
+# 利用老E��報編雁E���E - 実裁E��イチE
 
-## 概要
+## 概要E
 
-このドキュメントは、Next.js App Router + Supabase を使用した「利用者（case receiver）」詳細ページの**安全な編集・更新UI**の実装を説明します。
+こ�Eドキュメント�E、Next.js App Router + Supabase を使用した「利用老E��Ease receiver�E�」詳細ペ�Eジの**安�Eな編雁E�E更新UI**の実裁E��説明します、E
 
-## アーキテクチャ
+## アーキチE��チャ
 
-### 1. **フロントエンド（React コンポーネント）**
+### 1. **フロントエンド！Eeact コンポ�Eネント！E*
 
-#### 利用者詳細ページ
+#### 利用老E��細ペ�Eジ
 - **ファイル**: `app/services/[serviceId]/users/[userId]/page.tsx`
-- **機能**:
-  - 利用者基本情報の表示
-  - 「編集」ボタン（ヘッダー右上）
-  - 編集ダイアログの制御
+- **機�E**:
+  - 利用老E��本惁E��の表示
+  - 「編雁E���Eタン�E��EチE��ー右上！E
+  - 編雁E��イアログの制御
 
-#### 編集ダイアログコンポーネント
+#### 編雁E��イアログコンポ�EネンチE
 - **ファイル**: `components/edit-care-receiver-dialog.tsx`
-- **機能**:
-  - フォーム入力（name, full_name, birthday, gender, address, phone, emergency_contact, notes）
-  - 権限ベース表示制御（userRole: "staff" | "nurse" | "admin"）
-  - 変更前後の差分表示（簡易版）
-  - バリデーション（必須フィールド、文字数チェック）
-  - 楽観ロックの表示（version による競合検出）
+- **機�E**:
+  - フォーム入力！Eame, full_name, birthday, gender, address, phone, emergency_contact, notes�E�E
+  - 権限�Eース表示制御�E�EserRole: "staff" | "nurse" | "admin"�E�E
+  - 変更前後�E差刁E��示�E�簡易版�E�E
+  - バリチE�Eション�E�忁E��フィールド、文字数チェチE���E�E
+  - 楽観ロチE��の表示�E�Eersion による競合検�E�E�E
 
-### 2. **バックエンド（API ルート）**
+### 2. **バックエンド！EPI ルート！E*
 
-#### 利用者更新 API
+#### 利用老E��新 API
 - **ファイル**: `app/api/care-receivers/[id]/route.ts`
-- **メソッド**: `PUT /api/care-receivers/[id]`
-- **機能**:
+- **メソチE��**: `PUT /api/care-receivers/[id]`
+- **機�E**:
   - Supabase を使用した更新
-  - 🔐 **楽観ロック**: `version` フィールドを使用して、他のユーザーとの競合を検出
-  - RLS（Row Level Security）前提（Supabase ポリシー）
-  - エラー時の適切なステータスコード返却（409 Conflict, 400 Bad Request, 500 Internal Server Error）
+  - 🔐 **楽観ロチE��**: `version` フィールドを使用して、他�Eユーザーとの競合を検�E
+  - RLS�E�Eow Level Security�E�前提！Eupabase ポリシー�E�E
+  - エラー時�E適刁E��スチE�Eタスコード返却�E�E09 Conflict, 400 Bad Request, 500 Internal Server Error�E�E
 
-### 3. **データベーススキーマ（Supabase PostgreSQL）**
+### 3. **チE�Eタベ�Eススキーマ！Eupabase PostgreSQL�E�E*
 
-テーブル: `care_receivers`
+チE�Eブル: `care_receivers`
 
 ```sql
 CREATE TABLE care_receivers (
@@ -45,12 +45,12 @@ CREATE TABLE care_receivers (
   code TEXT UNIQUE NOT NULL,
   name TEXT,
   display_name TEXT,
-  full_name TEXT,           -- 個人情報（staff は読み取り専用）
-  birthday DATE,            -- 個人情報（staff は読み取り専用）
+  full_name TEXT,           -- 個人惁E���E�Etaff は読み取り専用�E�E
+  birthday DATE,            -- 個人惁E���E�Etaff は読み取り専用�E�E
   gender TEXT,
-  address TEXT,             -- 個人情報（admin のみ）
-  phone TEXT,               -- 個人情報（staff は読み取り専用）
-  emergency_contact TEXT,   -- 個人情報（staff は読み取り専用）
+  address TEXT,             -- 個人惁E���E�Edmin のみ�E�E
+  phone TEXT,               -- 個人惁E���E�Etaff は読み取り専用�E�E
+  emergency_contact TEXT,   -- 個人惁E���E�Etaff は読み取り専用�E�E
   notes TEXT,
   medical_care_detail JSONB,
   age INTEGER,
@@ -58,7 +58,7 @@ CREATE TABLE care_receivers (
   condition TEXT,
   service_code TEXT,
   is_active BOOLEAN DEFAULT true,
-  version INTEGER DEFAULT 1, -- 楽観ロック用
+  version INTEGER DEFAULT 1, -- 楽観ロチE��用
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now(),
   updated_by TEXT,
@@ -68,49 +68,49 @@ CREATE TABLE care_receivers (
 
 ## 使用フロー
 
-### 1. 利用者詳細ページへのアクセス
+### 1. 利用老E��細ペ�Eジへのアクセス
 ```
 /services/life-care/users/A%E3%83%BBT
 ```
 
-### 2. 編集ボタンクリック
-- ページヘッダー右上の「編集」ボタンをクリック
-- 利用者の最新データを Supabase から取得
-- 編集ダイアログを開く
+### 2. 編雁E�EタンクリチE��
+- ペ�Eジヘッダー右上�E「編雁E���EタンをクリチE��
+- 利用老E�E最新チE�EタめESupabase から取征E
+- 編雁E��イアログを開ぁE
 
-### 3. フォーム編集
-- 表示名、実名、生年月日、性別、住所、電話、緊急連絡先、メモを編集
-- 権限に基づいて表示/編集可能なフィールドが制限される
-  - **staff**: 表示名のみ編集可能
-  - **nurse**: 基本情報を編集可能
-  - **admin**: すべてのフィールド編集可能
+### 3. フォーム編雁E
+- 表示名、実名、生年月日、性別、住所、E��話、緊急連絡先、メモを編雁E
+- 権限に基づぁE��表示/編雁E��能なフィールドが制限される
+  - **staff**: 表示名�Eみ編雁E��能
+  - **nurse**: 基本惁E��を編雁E��能
+  - **admin**: すべてのフィールド編雁E��能
 
-### 4. バリデーション
-- 必須フィールド: `display_name`（最小1文字）
+### 4. バリチE�Eション
+- 忁E��フィールチE `display_name`�E�最封E斁E��！E
 - 空白のみは禁止
-- 年齢: 0 以上
+- 年齢: 0 以丁E
 
-### 5. 保存
-- 「保存」ボタンをクリック
-- リクエストボディに `version` を含める（楽観ロック用）
-- API レスポンスの確認:
-  - **成功 (200)**: トースト表示「✅ 利用者情報を更新しました」
-  - **409 Conflict**: 「⚠️ 他のユーザーが先に更新しています」 → ページ再読み込み
-  - **エラー (400/500)**: 「❌ 保存エラー」 + 詳細メッセージ
+### 5. 保孁E
+- 「保存」�EタンをクリチE��
+- リクエスト�EチE��に `version` を含める�E�楽観ロチE��用�E�E
+- API レスポンスの確誁E
+  - **成功 (200)**: ト�Eスト表示「✅ 利用老E��報を更新しました、E
+  - **409 Conflict**: 「⚠�E�E他�Eユーザーが�Eに更新してぁE��す、EↁEペ�Eジ再読み込み
+  - **エラー (400/500)**: 「❌ 保存エラー、E+ 詳細メチE��ージ
 
-## セキュリティ設計
+## セキュリチE��設訁E
 
-### 1. **RLS（Row Level Security）**
-Supabase RLS ポリシーで以下を実装:
+### 1. **RLS�E�Eow Level Security�E�E*
+Supabase RLS ポリシーで以下を実裁E
 ```sql
--- 個人情報フィールドのマスキング（staff は編集不可）
+-- 個人惁E��フィールド�Eマスキング�E�Etaff は編雁E��可�E�E
 CREATE POLICY staff_readonly_on_full_name
   ON care_receivers
   FOR UPDATE
   USING (auth.uid() IN (SELECT id FROM staff_roles))
   WITH CHECK (full_name = (SELECT full_name FROM care_receivers WHERE id = care_receivers.id));
 
--- admin のみ特定フィールド編集可
+-- admin のみ特定フィールド編雁E��
 CREATE POLICY admin_can_edit_address
   ON care_receivers
   FOR UPDATE
@@ -118,10 +118,10 @@ CREATE POLICY admin_can_edit_address
   WITH CHECK (true);
 ```
 
-### 2. **楽観ロック（Optimistic Locking）**
-- `version` フィールドを使用して競合を検出
-- 更新時に古い `version` を検出 → 409 Conflict を返す
-- DB トリガーで `version` を自動インクリメント
+### 2. **楽観ロチE���E�Eptimistic Locking�E�E*
+- `version` フィールドを使用して競合を検�E
+- 更新時に古ぁE`version` を検�E ↁE409 Conflict を返す
+- DB トリガーで `version` を�E動インクリメンチE
 
 ```sql
 CREATE TRIGGER increment_version
@@ -130,63 +130,64 @@ FOR EACH ROW
 EXECUTE FUNCTION increment_version_column();
 ```
 
-### 3. **個人情報の取り扱い**
-- ログには `full_name`, `birthday`, `address`, `phone`, `emergency_contact` を含めない
-- API レスポンスから個人情報を除外（`sanitizedResponse`）
-- UI では権限ベースのフィールド表示制御
+### 3. **個人惁E��の取り扱ぁE*
+- ログには `full_name`, `birthday`, `address`, `phone`, `emergency_contact` を含めなぁE
+- API レスポンスから個人惁E��を除外！EsanitizedResponse`�E�E
+- UI では権限�Eースのフィールド表示制御
 
 ### 4. **監査ログ**
 - `updated_at`: 更新時刻
-- `updated_by`: 更新者 ID（トリガーで自動設定）
+- `updated_by`: 更新老EID�E�トリガーで自動設定！E
 
 ## エラーハンドリング
 
-| ステータス | エラー | 対応 |
+| スチE�Eタス | エラー | 対忁E|
 |-----------|--------|-----|
-| 200 | 成功 | トースト表示、ダイアログ閉じる |
-| 400 | バリデーション失敗 | 詳細メッセージ表示 |
-| 409 | 競合（他者が更新済み） | 「最新のデータを再読み込みしてください」 |
-| 500 | サーバーエラー | 「Internal server error」 |
+| 200 | 成功 | ト�Eスト表示、ダイアログ閉じめE|
+| 400 | バリチE�Eション失敁E| 詳細メチE��ージ表示 |
+| 409 | 競合（他老E��更新済み�E�E| 「最新のチE�Eタを�E読み込みしてください、E|
+| 500 | サーバ�Eエラー | 「Internal server error、E|
 
-## 実装チェックリスト
+## 実裁E��ェチE��リスチE
 
-- [x] EditCareReceiverDialog コンポーネント実装
-- [x] API ルート（PUT）実装
-- [x] RLS ポリシー（ TODO: DB 側で実装確認）
+- [x] EditCareReceiverDialog コンポ�Eネント実裁E
+- [x] API ルート！EUT�E�実裁E
+- [x] RLS ポリシー�E�ETODO: DB 側で実裁E��認！E
 - [x] エラーハンドリング
-- [x] トースト通知
-- [x] 楽観ロック（version チェック）
-- [x] 権限ベース表示制御
-- [x] TypeScript 型安全性
+- [x] ト�Eスト通知
+- [x] 楽観ロチE���E�Eersion チェチE���E�E
+- [x] 権限�Eース表示制御
+- [x] TypeScript 型安�E性
 - [x] ESLint 通過
 - [x] Build 成功
 
-## テスト手順
+## チE��ト手頁E
 
-### 1. 単一ユーザーの編集
+### 1. 単一ユーザーの編雁E
 ```bash
 pnpm dev
-# ブラウザ: http://localhost:3000/services/life-care/users/A%E3%83%BBT
-# 編集ボタン → フォーム編集 → 保存 → 確認
+# ブラウザ: http://dev-app.local:3000/services/life-care/users/A%E3%83%BBT
+# 編雁E�Eタン ↁEフォーム編雁EↁE保孁EↁE確誁E
 ```
 
-### 2. 権限ベース表示制御
+### 2. 権限�Eース表示制御
 ```typescript
 // components/edit-care-receiver-dialog.tsx で userRole を変更
-userRole="staff"   // 表示名のみ
-userRole="nurse"   // 基本情報
+userRole="staff"   // 表示名�Eみ
+userRole="nurse"   // 基本惁E��
 userRole="admin"   // すべて
 ```
 
-### 3. 競合検出テスト
+### 3. 競合検�EチE��チE
 ```bash
-# 同時に2つのウィンドウで編集 → version 競合を確認
+# 同時に2つのウィンドウで編雁EↁEversion 競合を確誁E
 ```
 
-## 今後の改善
+## 今後�E改喁E
 
-- [ ] 差分プレビュー（Before/After）の表示
-- [ ] Undo/Redo 機能
-- [ ] バッチ更新（複数利用者）
+- [ ] 差刁E�Eレビュー�E�Eefore/After�E��E表示
+- [ ] Undo/Redo 機�E
+- [ ] バッチ更新�E�褁E��利用老E��E
 - [ ] 変更履歴のビュー
-- [ ] RLS ポリシーの完全実装と検証
+- [ ] RLS ポリシーの完�E実裁E��検証
+

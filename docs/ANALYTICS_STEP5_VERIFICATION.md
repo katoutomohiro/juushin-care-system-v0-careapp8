@@ -1,22 +1,22 @@
-# Records Analytics Step5 検証ドキュメント
+# Records Analytics Step5 検証ドキュメンチE
 
-**Status**: ✅ 実装完了  
+**Status**: ✁E実裁E��亁E 
 **Date**: 2025-02-15  
-**Task**: Step5 - DB実データを使ってanalytics APIを叩く
+**Task**: Step5 - DB実データを使ってanalytics APIを叩ぁE
 
-## 完了内容
+## 完亁E�E容
 
-### ✅ Step5-① データ構造確認
-- RecordsAnalyticsResponse 型定義: 完了
-- 日次集計スキーマ: (date, seizureCount, sleepMins, mealsCompleted)
-- サマリースキーマ: (seizureCountTotal, sleepMinsAvg, mealsCompletedTotal)
+### ✁EStep5-① チE�Eタ構造確誁E
+- RecordsAnalyticsResponse 型定義: 完亁E
+- 日次雁E��スキーチE (date, seizureCount, sleepMins, mealsCompleted)
+- サマリースキーチE (seizureCountTotal, sleepMinsAvg, mealsCompletedTotal)
 
-### ✅ Step5-② DB接続実装
+### ✁EStep5-② DB接続実裁E
 **修正ファイル**: `app/api/case-records/analytics/route.ts`
 
-#### 実装内容
+#### 実裁E�E容
 ```typescript
-// case_recordsテーブルから実データを取得
+// case_recordsチE�Eブルから実データを取征E
 let query = supabaseAdmin
   .from("case_records")
   .select("record_date, record_data")
@@ -29,20 +29,20 @@ if (serviceId) query = query.eq("service_id", serviceId)
 const { data: records, error: dbError } = await query
 ```
 
-#### 集計ロジック
+#### 雁E��ロジチE��
 - record_data JSON から `seizure_count`, `sleep_minutes`, `meals_completed` を抽出
-- 日付ごとに集計してdailyMap に格納
-- サマリー統計を計算:
+- 日付ごとに雁E��してdailyMap に格紁E
+- サマリー統計を計箁E
   - `seizureCountTotal`: 合計発作数
-  - `sleepMinsAvg`: 平均睡眠時間 (0超の日平均)
-  - `mealsCompletedTotal`: 食事完了合計
+  - `sleepMinsAvg`: 平坁E��眠時間 (0趁E�E日平坁E
+  - `mealsCompletedTotal`: 食事完亁E��訁E
 
 #### エラーハンドリング
-- `ensureSupabaseAdmin()` で null チェック
-- DB エラーキャッチ → JSON 500 レスポンス
-- 無効な認証 → 401 レスポンス
+- `ensureSupabaseAdmin()` で null チェチE��
+- DB エラーキャチE�� ↁEJSON 500 レスポンス
+- 無効な認証 ↁE401 レスポンス
 
-### ✅ Step5-③ 型安全性確認
+### ✁EStep5-③ 型安�E性確誁E
 **修正**: supabaseAdmin null check の追加
 ```typescript
 if (!supabaseAdmin) {
@@ -50,38 +50,38 @@ if (!supabaseAdmin) {
 }
 ```
 
-**質量チェック結果**:
+**質量チェチE��結果**:
 ```
-✓ pnpm typecheck  → PASS (0 errors)
-✓ pnpm build      → PASS (5.66 kB page size)
-✓ pnpm lint       → PASS (no new violations)
+✁Epnpm typecheck  ↁEPASS (0 errors)
+✁Epnpm build      ↁEPASS (5.66 kB page size)
+✁Epnpm lint       ↁEPASS (no new violations)
 ```
 
-### ✅ Step5-④ Frontend 準備
+### ✁EStep5-④ Frontend 準備
 **ファイル**: `components/AnalyticsViewer.tsx`
-- ✅ 既に実装済み（mock → real データの自動対応）
-- ✅ 3つのサマリーカード: `data.summary` の値を表示
-- ✅ 3つのグラフ: `data.daily` 配列から描画
-- ✅ 日付フィルタはquery params で対応
+- ✁E既に実裁E��み�E�Eock ↁEreal チE�Eタの自動対応！E
+- ✁E3つのサマリーカーチE `data.summary` の値を表示
+- ✁E3つのグラチE `data.daily` 配�Eから描画
+- ✁E日付フィルタはquery params で対忁E
 
-## テスト手順
+## チE��ト手頁E
 
-### 方法1: ブラウザ
-1. `pnpm dev` でサーバー起動
-2. `http://localhost:3000/login` にアクセス
-3. 認証後、`/analytics` にナビゲート
-4. 日付範囲を選択 → "Fetch Analytics" クリック
-5. **期待値**: 
-   - カード3枚に実数値表示 (0以上)
-   - グラフに実測データ描画
-   - テーブルに日次データ表示
+### 方況E: ブラウザ
+1. `pnpm dev` でサーバ�E起勁E
+2. `http://dev-app.local:3000/login` にアクセス
+3. 認証後、`/analytics` にナビゲーチE
+4. 日付篁E��を選抁EↁE"Fetch Analytics" クリチE��
+5. **期征E��**: 
+   - カーチE枚に実数値表示 (0以丁E
+   - グラフに実測チE�Eタ描画
+   - チE�Eブルに日次チE�Eタ表示
 
-### 方法2: API 直接テスト
+### 方況E: API 直接チE��チE
 ```bash
 curl -H "Authorization: Bearer <your-token>" \
-  "http://localhost:3000/api/case-records/analytics?dateFrom=2025-02-01&dateTo=2025-02-15"
+  "http://dev-app.local:3000/api/case-records/analytics?dateFrom=2025-02-01&dateTo=2025-02-15"
 
-# 期待レスポンス:
+# 期征E��スポンス:
 # {
 #   "ok": true,
 #   "data": {
@@ -99,72 +99,73 @@ curl -H "Authorization: Bearer <your-token>" \
 # }
 ```
 
-## 次のステップ (Step5-⑤)
+## 次のスチE��チE(Step5-⑤)
 
-### テスト検証
-- [ ] dev サーバーでブラウザテスト実施
-- [ ] API が実データ返却確認
-- [ ] カード・グラフが値を表示確認
-- [ ] 日付フィルタが機能確認
+### チE��ト検証
+- [ ] dev サーバ�EでブラウザチE��ト実施
+- [ ] API が実データ返却確誁E
+- [ ] カード�Eグラフが値を表示確誁E
+- [ ] 日付フィルタが機�E確誁E
 
-### デプロイ前チェック
-- [ ] `pnpm lint` 再確認
-- [ ] `pnpm typecheck` 再確認
-- [ ] `pnpm build` 再確認
-- [ ] git diff で不要な変更がないか確認
+### チE�Eロイ前チェチE��
+- [ ] `pnpm lint` 再確誁E
+- [ ] `pnpm typecheck` 再確誁E
+- [ ] `pnpm build` 再確誁E
+- [ ] git diff で不要な変更がなぁE��確誁E
 
-### PR マージ
+### PR マ�Eジ
 - [ ] GitHub で main への PR 準備
-- [ ] CI/CD パス確認
-- [ ] レビュイーによる最終確認
+- [ ] CI/CD パス確誁E
+- [ ] レビュイーによる最終確誁E
 
 ## 関連ファイル
 
-| ファイル | 用途 | 状態 |
+| ファイル | 用送E| 状慁E|
 | --- | --- | --- |
-| `app/api/case-records/analytics/route.ts` | API エンドポイント | ✅ 修正済み |
-| `app/analytics/page.tsx` | Server Component (auth gate) | ✅ 完了 |
-| `app/analytics/analytics-client.tsx` | Client Component (form + fetch) | ✅ 完了 |
-| `components/AnalyticsViewer.tsx` | UI (cards, graphs, table) | ✅ 完了 |
-| `src/types/recordsAnalytics.ts` | 型定義 | ✅ 完了 |
+| `app/api/case-records/analytics/route.ts` | API エンド�EインチE| ✁E修正済み |
+| `app/analytics/page.tsx` | Server Component (auth gate) | ✁E完亁E|
+| `app/analytics/analytics-client.tsx` | Client Component (form + fetch) | ✁E完亁E|
+| `components/AnalyticsViewer.tsx` | UI (cards, graphs, table) | ✁E完亁E|
+| `src/types/recordsAnalytics.ts` | 型定義 | ✁E完亁E|
 
 ## DB スキーマ参照
 
-### case_records テーブル
-| カラム | 型 | 説明 |
+### case_records チE�Eブル
+| カラム | 垁E| 説昁E|
 | --- | --- | --- |
 | id | uuid | プライマリキー |
 | care_receiver_id | uuid | 対象ユーザー |
 | service_id | uuid | サービス |
 | record_date | date | 記録日 |
 | record_data | jsonb | `{ seizure_count, sleep_minutes, meals_completed, ... }` |
-| created_at | timestamp | 作成日時 |
-| updated_at | timestamp | 更新日時 |
+| created_at | timestamp | 作�E日晁E|
+| updated_at | timestamp | 更新日晁E|
 
-## トラブルシューティング
+## トラブルシューチE��ング
 
-### API が空データ返す
-- **原因**: case_records に該当日の記録がない
-- **対策**: 
-  - 日付範囲を確認 (dateFrom ≤ dateTo)
-  - Supabase ダッシュボードで case_records の件数確認
-  - record_data フィールドが JSON で格納されているか確認
+### API が空チE�Eタ返す
+- **原因**: case_records に該当日の記録がなぁE
+- **対筁E*: 
+  - 日付篁E��を確誁E(dateFrom ≤ dateTo)
+  - Supabase ダチE��ュボ�Eドで case_records の件数確誁E
+  - record_data フィールドが JSON で格納されてぁE��か確誁E
 
-### グラフが描画されない
-- **原因**: daily 配列が空
-- **対策**: console で API レスポンス確認 (DevTools > Network)
+### グラフが描画されなぁE
+- **原因**: daily 配�Eが空
+- **対筁E*: console で API レスポンス確誁E(DevTools > Network)
 
 ### "Supabase admin client not initialized" エラー
-- **原因**: 環境変数 SUPABASE_SERVICE_ROLE_KEY が設定されていない
-- **対策**: `.env.local` を確認し、キーを設定
+- **原因**: 環墁E��数 SUPABASE_SERVICE_ROLE_KEY が設定されてぁE��ぁE
+- **対筁E*: `.env.local` を確認し、キーを設宁E
 
 ## 成果物サマリー
 
 - **変更行数**: +86 / -11 (analytics route.ts)
 - **新ファイル**: 0
-- **ビルドサイズ増加**: 0 kB (既存 page size 5.66 kB 維持)
-- **テスト状態**: 品質チェック完了、dev server 起動待ち
+- **ビルドサイズ増加**: 0 kB (既孁Epage size 5.66 kB 維持E
+- **チE��ト状慁E*: 品質チェチE��完亁E��dev server 起動征E��
 
 ---
 
-**Next Milestone**: Step5-⑤ 最終確認・マージ
+**Next Milestone**: Step5-⑤ 最終確認�Eマ�Eジ
+

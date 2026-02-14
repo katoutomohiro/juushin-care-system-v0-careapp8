@@ -84,7 +84,7 @@ pnpm run reboot
 ## Step 7: ブラウザでアクセス
 
 ```
-http://localhost:3000
+http://dev-app.local:3000
 ```
 
 ### ログイン情報（テスト用）

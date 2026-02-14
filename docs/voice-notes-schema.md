@@ -99,7 +99,7 @@ After migration, test the API:
 
 \`\`\`bash
 # Test save endpoint
-curl -X POST http://localhost:3000/api/voice/save \
+curl -X POST http://dev-app.local:3000/api/voice/save \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Test transcript",
@@ -130,3 +130,4 @@ Or (without credentials):
 - Add full-text search index on `text` column for search functionality
 - Consider partitioning by `created_at` for large datasets
 - Add soft-delete column (`deleted_at`) for audit trail
+
