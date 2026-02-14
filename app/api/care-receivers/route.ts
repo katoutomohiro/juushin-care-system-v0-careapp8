@@ -58,9 +58,13 @@ export async function GET(req: NextRequest) {
       const { data, error } = await query
 
       if (error) {
+        console.error("[care-receivers list] Query failed for serviceId:", serviceId, "Error:", error.message)
         return supabaseErrorResponse('care-receivers GET (list)', error)
       }
 
+      const count = data?.length || 0
+      console.log(`[care-receivers list] Fetched ${count} records for serviceId: ${serviceId}`)
+      
       return NextResponse.json({
         ok: true,
         careReceivers: (data || []).map((row: any) => ({

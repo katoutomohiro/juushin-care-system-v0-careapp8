@@ -16,7 +16,7 @@ export async function GET() {
   if (missingEnv.length > 0) {
     console.error("[health] Missing required env:", missingEnv.join(", "))
     return NextResponse.json(
-      { ok: false, missing_env: missingEnv, supabase_error: null },
+      { ok: false, status: "missing_env", missing_env: missingEnv },
       { status: 500 }
     )
   }
@@ -28,17 +28,18 @@ export async function GET() {
     if (error) {
       console.error("[health] Supabase query failed:", error.message)
       return NextResponse.json(
-        { ok: false, missing_env: [], supabase_error: error.message },
+        { ok: false, status: "database_error", error: error.message },
         { status: 502 }
       )
     }
 
-    return NextResponse.json({ ok: true, missing_env: [], supabase_error: null })
+    console.log("[health] Health check passed")
+    return NextResponse.json({ ok: true, status: "healthy" })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
-    console.error("[health] Supabase check failed:", message)
+    console.error("[health] Supabase connection failed:", message)
     return NextResponse.json(
-      { ok: false, missing_env: [], supabase_error: message },
+      { ok: false, status: "connection_error", error: message },
       { status: 502 }
     )
   }
