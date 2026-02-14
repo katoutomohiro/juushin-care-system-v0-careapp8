@@ -1,60 +1,60 @@
-# PLAN: 個人情報編集・追加・保存機能の実装
+# PLAN: 個人惁E��編雁E�E追加・保存機�Eの実裁E
 
-## 📋 概要
+## 📋 概要E
 
 **背景**:
-- 現在、利用者名はプライバシー保護のため `display_name`（アルファベット表示: "A・T", "I・K" など）のみで表示
-- ただし、実運用では「本名・住所・連絡先・医療情報の追加更新」が必頻繁に発生
-- **要件**: アプリ内で個人情報を安全に編集・追加・保存できるようにしたい
+- 現在、利用老E��はプライバシー保護のため `display_name`�E�アルファベット表示: "A・T", "I・K" など�E��Eみで表示
+- ただし、実運用では「本名�E住所・連絡先�E医療情報の追加更新」が忁E��繁に発甁E
+- **要件**: アプリ冁E��個人惁E��を安�Eに編雁E�E追加・保存できるようにしたぁE
 
-**目的**:
-- DB に `full_name`（本名）を含む個人情報カラムを追加
-- 画面表示は引き続き `display_name` を基本に、詳細画面で `full_name` 等を閲覧・編集可能に
-- Role（admin/nurse/staff/anon）に応じた表示・編集権限の分離
-- 監査ログ機能の準備（誰がいつ変更したか記録）
+**目皁E*:
+- DB に `full_name`�E�本名）を含む個人惁E��カラムを追加
+- 画面表示は引き続き `display_name` を基本に、詳細画面で `full_name` 等を閲覧・編雁E��能に
+- Role�E�Edmin/nurse/staff/anon�E�に応じた表示・編雁E��限�E刁E��
+- 監査ログ機�Eの準備�E�誰がいつ変更したか記録�E�E
 
 ---
 
-## 🎯 実装フェーズ
+## 🎯 実裁E��ェーズ
 
-### Phase 1: DB + API（必須）
+### Phase 1: DB + API�E�忁E��！E
 
-#### 1.1 Supabase Migration: care_receivers テーブル拡張
+#### 1.1 Supabase Migration: care_receivers チE�Eブル拡張
 
 ```sql
 -- 20260202_add_personal_info_columns.sql
 ALTER TABLE care_receivers
-ADD COLUMN IF NOT EXISTS full_name TEXT,         -- 本名（個人情報）
+ADD COLUMN IF NOT EXISTS full_name TEXT,         -- 本名（個人惁E���E�E
 ADD COLUMN IF NOT EXISTS birthday DATE,          -- 生年月日
 ADD COLUMN IF NOT EXISTS address TEXT,           -- 住所
 ADD COLUMN IF NOT EXISTS phone TEXT,             -- 電話番号
-ADD COLUMN IF NOT EXISTS emergency_contact TEXT, -- 緊急連絡先
+ADD COLUMN IF NOT EXISTS emergency_contact TEXT, -- 緊急連絡允E
 ADD COLUMN IF NOT EXISTS notes TEXT,             -- 自由記述メモ
 ADD COLUMN IF NOT EXISTS medical_care_detail JSONB, -- 医療的ケア詳細
-ADD COLUMN IF NOT EXISTS updated_by UUID,       -- 編集者（RLS用）
+ADD COLUMN IF NOT EXISTS updated_by UUID,       -- 編雁E��E��ELS用�E�E
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
 
--- インデックス作成（検索性能向上）
+-- インチE��クス作�E�E�検索性能向上！E
 CREATE INDEX IF NOT EXISTS idx_care_receivers_updated_at 
   ON care_receivers(updated_at DESC);
 ```
 
-#### 1.2 RLS（行レベルセキュリティ）ポリシー
+#### 1.2 RLS�E�行レベルセキュリチE���E��Eリシー
 
 ```sql
 -- 20260203_add_personal_info_rls.sql
 
--- 基本: 全員が display_name を閲覧可能（既存ポリシー継続）
--- 新規: full_name 等は role に応じた閲覧制限
+-- 基本: 全員ぁEdisplay_name を閲覧可能�E�既存�Eリシー継続！E
+-- 新要E full_name 等�E role に応じた閲覧制陁E
 
 -- Policy 1: anon は display_name のみ読み取り可能
 CREATE POLICY "anon_view_display_name" ON public.care_receivers
   FOR SELECT
   TO anon
   USING (true);
-  -- SELECT では display_name のみ返す（VIEW か SELECT で列制限）
+  -- SELECT では display_name のみ返す�E�EIEW ぁESELECT で列制限！E
 
--- Policy 2: staff は display_name + medical_care_detail 読み取り可能、編集不可
+-- Policy 2: staff は display_name + medical_care_detail 読み取り可能、編雁E��可
 CREATE POLICY "staff_view_care_details" ON public.care_receivers
   FOR SELECT
   TO staff
@@ -63,12 +63,12 @@ CREATE POLICY "staff_view_care_details" ON public.care_receivers
     WHERE id = auth.uid()
   ));
 
--- Policy 3: nurse/admin は全カラム読み取り可能、編集可能
+-- Policy 3: nurse/admin は全カラム読み取り可能、編雁E��能
 CREATE POLICY "nurse_admin_edit_personal_info" ON public.care_receivers
   FOR UPDATE
   TO authenticated
   USING (
-    -- UPDATE 前提条件: nurse または admin role
+    -- UPDATE 前提条件: nurse また�E admin role
     auth.jwt() -> 'user_metadata' ->> 'role' IN ('nurse', 'admin')
     AND facility_id IN (
       SELECT facility_id FROM public.staff_profiles 
@@ -76,11 +76,11 @@ CREATE POLICY "nurse_admin_edit_personal_info" ON public.care_receivers
     )
   )
   WITH CHECK (
-    -- UPDATE 後の値も同じ条件でチェック
+    -- UPDATE 後�E値も同じ条件でチェチE��
     auth.jwt() -> 'user_metadata' ->> 'role' IN ('nurse', 'admin')
   );
 
--- Policy 4: 誰が編集したか記録（トリガー）
+-- Policy 4: 誰が編雁E��たか記録�E�トリガー�E�E
 CREATE OR REPLACE FUNCTION update_care_receiver_audit()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -96,9 +96,9 @@ CREATE TRIGGER trig_care_receiver_audit
   EXECUTE FUNCTION update_care_receiver_audit();
 ```
 
-#### 1.3 API エンドポイント
+#### 1.3 API エンド�EインチE
 
-**既存**:
+**既孁E*:
 - `PATCH /api/care-receivers/[id]` で `display_name` 更新済み
 
 **拡張**:
@@ -112,7 +112,7 @@ export async function PATCH(
   const user = await getSessionUser(req); // auth check
   const { id } = await context.params;
 
-  // role check: nurse/admin のみ全項目更新可
+  // role check: nurse/admin のみ全頁E��更新可
   if (!['nurse', 'admin'].includes(user.role)) {
     return NextResponse.json(
       { error: 'Unauthorized: personal info edit requires nurse/admin role' },
@@ -136,7 +136,7 @@ export async function PATCH(
 
   const validated = schema.parse(body);
 
-  // Supabase で更新（RLS が自動チェック）
+  // Supabase で更新�E�ELS が�E動チェチE���E�E
   const { data, error } = await supabase
     .from('care_receivers')
     .update(validated)
@@ -153,9 +153,9 @@ export async function PATCH(
 
 ---
 
-### Phase 2: UI（アクセシビリティ）
+### Phase 2: UI�E�アクセシビリチE���E�E
 
-#### 2.1 EditCareReceiverDialog コンポーネント拡張
+#### 2.1 EditCareReceiverDialog コンポ�Eネント拡張
 
 ```tsx
 // components/edit-care-receiver-dialog.tsx
@@ -177,11 +177,11 @@ export function EditCareReceiverDialog({
 }: Props) {
   const [formData, setFormData] = useState({
     display_name: careReceiver.display_name || '',
-    full_name: careReceiver.full_name || '',      // ← 新規
-    birthday: careReceiver.birthday || '',         // ← 新規
-    address: careReceiver.address || '',           // ← 新規
-    phone: careReceiver.phone || '',               // ← 新規
-    emergency_contact: careReceiver.emergency_contact || '', // ← 新規
+    full_name: careReceiver.full_name || '',      // ↁE新要E
+    birthday: careReceiver.birthday || '',         // ↁE新要E
+    address: careReceiver.address || '',           // ↁE新要E
+    phone: careReceiver.phone || '',               // ↁE新要E
+    emergency_contact: careReceiver.emergency_contact || '', // ↁE新要E
     notes: careReceiver.notes || '',
     medical_care_detail: careReceiver.medical_care_detail || {},
   });
@@ -193,35 +193,35 @@ export function EditCareReceiverDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>利用者情報を編集</DialogTitle>
+          <DialogTitle>利用老E��報を編雁E/DialogTitle>
         </DialogHeader>
 
-        {/* 表示名（全員表示可） */}
+        {/* 表示名（�E員表示可�E�E*/}
         <div>
-          <Label htmlFor="display_name">表示名（匿名表示用）</Label>
+          <Label htmlFor="display_name">表示名（匿名表示用�E�E/Label>
           <Input
             id="display_name"
             value={formData.display_name}
             onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-            placeholder="例: A・T, User-001"
+            placeholder="侁E A・T, User-001"
           />
         </div>
 
-        {/* 本名（nurse/admin のみ表示・編集） */}
+        {/* 本名！Eurse/admin のみ表示・編雁E��E*/}
         {canEditPersonalInfo && (
           <div>
-            <Label htmlFor="full_name">本名</Label>
+            <Label htmlFor="full_name">本吁E/Label>
             <Input
               id="full_name"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              placeholder="例: 山田 太郎"
+              placeholder="侁E 山田 太郁E
               disabled={userRole === 'staff'} // staff は読み取り専用
             />
           </div>
         )}
 
-        {/* 生年月日（nurse/admin のみ） */}
+        {/* 生年月日�E�Eurse/admin のみ�E�E*/}
         {canEditPersonalInfo && (
           <div>
             <Label htmlFor="birthday">生年月日</Label>
@@ -235,7 +235,7 @@ export function EditCareReceiverDialog({
           </div>
         )}
 
-        {/* 住所（admin のみ） */}
+        {/* 住所�E�Edmin のみ�E�E*/}
         {userRole === 'admin' && (
           <div>
             <Label htmlFor="address">住所</Label>
@@ -248,7 +248,7 @@ export function EditCareReceiverDialog({
           </div>
         )}
 
-        {/* 電話・緊急連絡先（admin のみ） */}
+        {/* 電話・緊急連絡先！Edmin のみ�E�E*/}
         {userRole === 'admin' && (
           <>
             <div>
@@ -261,7 +261,7 @@ export function EditCareReceiverDialog({
               />
             </div>
             <div>
-              <Label htmlFor="emergency_contact">緊急連絡先</Label>
+              <Label htmlFor="emergency_contact">緊急連絡允E/Label>
               <Textarea
                 id="emergency_contact"
                 value={formData.emergency_contact}
@@ -281,9 +281,9 @@ export function EditCareReceiverDialog({
           />
         </div>
 
-        {/* 保存ボタン */}
+        {/* 保存�Eタン */}
         <Button onClick={handleSubmit} disabled={!canEditPersonalInfo}>
-          {canEditPersonalInfo ? '保存' : '表示のみ'}
+          {canEditPersonalInfo ? '保孁E : '表示のみ'}
         </Button>
       </DialogContent>
     </Dialog>
@@ -291,101 +291,101 @@ export function EditCareReceiverDialog({
 }
 ```
 
-#### 2.2 利用者詳細ページへのリンク
+#### 2.2 利用老E��細ペ�Eジへのリンク
 
 ```tsx
 // app/services/[serviceId]/users/[userId]/page.tsx
 
-// 詳細情報編集ボタンを追加
+// 詳細惁E��編雁E�Eタンを追加
 <Button onClick={() => setIsEditDialogOpen(true)}>
-  詳細情報を編集
+  詳細惁E��を編雁E
 </Button>
 ```
 
 ---
 
-### Phase 3: テスト（検証）
+### Phase 3: チE��ト（検証�E�E
 
-#### 3.1 Unit テスト
+#### 3.1 Unit チE��チE
 
 ```typescript
 // tests/unit/personal-info-edit.spec.ts
 
 describe('EditCareReceiverDialog', () => {
-  it('anon/staff は full_name フィールドを見えない', () => {
+  it('anon/staff は full_name フィールドを見えなぁE, () => {
     // render with userRole='staff'
     // expect full_name input to not be visible
   });
 
-  it('nurse/admin は full_name を編集可能', () => {
+  it('nurse/admin は full_name を編雁E��能', () => {
     // render with userRole='admin'
     // expect full_name input to be enabled
     // expect handleSubmit to include full_name in request
   });
 
-  it('admin のみ address/phone を編集可能', () => {
-    // userRole='nurse' → address hidden
-    // userRole='admin' → address visible & editable
+  it('admin のみ address/phone を編雁E��能', () => {
+    // userRole='nurse' ↁEaddress hidden
+    // userRole='admin' ↁEaddress visible & editable
   });
 });
 ```
 
-#### 3.2 E2E テスト（Playwright）
+#### 3.2 E2E チE��ト！Elaywright�E�E
 
 ```typescript
 // tests/e2e/personal-info-edit.spec.ts
 
-test('admin が利用者の本名・住所を編集・保存できる', async ({ page }) => {
+test('admin が利用老E�E本名�E住所を編雁E�E保存できる', async ({ page }) => {
   // 1. admin でログイン
   await login(page, 'admin@example.com', 'password');
 
-  // 2. 利用者詳細ページへ移動
+  // 2. 利用老E��細ペ�Eジへ移勁E
   await page.goto('/services/life-care/users/AT');
 
-  // 3. 「詳細情報を編集」ボタンをクリック
-  await page.click('button:has-text("詳細情報を編集")');
+  // 3. 「詳細惁E��を編雁E���EタンをクリチE��
+  await page.click('button:has-text("詳細惁E��を編雁E)');
 
-  // 4. full_name を入力
-  await page.fill('#full_name', '山田太郎');
+  // 4. full_name を�E劁E
+  await page.fill('#full_name', '山田太郁E);
 
-  // 5. address を入力
+  // 5. address を�E劁E
   await page.fill('#address', '東京都渋谷区');
 
-  // 6. 保存ボタンをクリック
-  await page.click('button:has-text("保存")');
+  // 6. 保存�EタンをクリチE��
+  await page.click('button:has-text("保孁E)');
 
-  // 7. 成功メッセージを確認
+  // 7. 成功メチE��ージを確誁E
   await expect(page.getByText('保存しました')).toBeVisible();
 
-  // 8. Supabase に実際に保存されたか確認
+  // 8. Supabase に実際に保存されたか確誁E
   // SELECT full_name, address FROM care_receivers WHERE id = '...'
 });
 ```
 
 ---
 
-## 📝 実装チェックリスト
+## 📝 実裁E��ェチE��リスチE
 
 ### DB/API
 - [ ] Supabase migration: care_receivers に full_name/birthday/address/phone/emergency_contact/notes/medical_care_detail を追加
-- [ ] RLS ポリシー: role に応じた行フィルタリング + 列マスキング
-- [ ] 監査トリガー: updated_by/updated_at を自動記録
-- [ ] API エンドポイント: PATCH /api/care-receivers/[id] に個人情報を含める
-- [ ] バリデーション: Zod で型チェック
+- [ ] RLS ポリシー: role に応じた行フィルタリング + 列�Eスキング
+- [ ] 監査トリガー: updated_by/updated_at を�E動記録
+- [ ] API エンド�EインチE PATCH /api/care-receivers/[id] に個人惁E��を含める
+- [ ] バリチE�Eション: Zod で型チェチE��
 
 ### UI/UX
 - [ ] EditCareReceiverDialog に new fields を追加
-- [ ] 権限に応じた表示制御（role check）
-- [ ] アクセシビリティ: `<label>` + `id` で a11y 対応
+- [ ] 権限に応じた表示制御�E�Eole check�E�E
+- [ ] アクセシビリチE��: `<label>` + `id` で a11y 対忁E
 - [ ] エラーハンドリング: 403 Forbidden を画面に表示
 
-### テスト
+### チE��チE
 - [ ] Unit: form state management & role checks
-- [ ] E2E: 実際の保存・リロード後の表示確認
-- [ ] RLS: Supabase で role を切り替えて権限テスト
+- [ ] E2E: 実際の保存�Eリロード後�E表示確誁E
+- [ ] RLS: Supabase で role を�Eり替えて権限テスチE
 
-### セキュリティ
-- [ ] 個人情報をログに出力しない（log sanitization）
+### セキュリチE��
+- [ ] 個人惁E��をログに出力しなぁE��Eog sanitization�E�E
 - [ ] RLS を信頼し、API では role check のみ実施
 - [ ] Supabase JWT の role claim を信頼
 
@@ -394,25 +394,25 @@ test('admin が利用者の本名・住所を編集・保存できる', async ({
 ## 🚀 次のブランチでの作業フロー
 
 ```bash
-# 1. 新しいブランチを作成
+# 1. 新しいブランチを作�E
 git checkout -b feat/personal-info-edit
 
-# 2. Phase 1: DB/API を実装
-# - migration ファイル作成
-# - RLS ポリシー設定
-# - API route 実装
-# - lint/build テスト
+# 2. Phase 1: DB/API を実裁E
+# - migration ファイル作�E
+# - RLS ポリシー設宁E
+# - API route 実裁E
+# - lint/build チE��チE
 
-# 3. Phase 2: UI を実装
+# 3. Phase 2: UI を実裁E
 # - EditCareReceiverDialog を拡張
 # - role check を追加
-# - lint/build テスト
+# - lint/build チE��チE
 
-# 4. Phase 3: テスト
-# - Unit + E2E テスト
+# 4. Phase 3: チE��チE
+# - Unit + E2E チE��チE
 # - ローカル検証
 
-# 5. PR 作成 & マージ
+# 5. PR 作�E & マ�Eジ
 git push origin feat/personal-info-edit
 gh pr create --title "feat: personal info editing with role-based access"
 ```
@@ -421,23 +421,24 @@ gh pr create --title "feat: personal info editing with role-based access"
 
 ## 📊 優先度・難易度
 
-| タスク | 優先度 | 難易度 | 見積時間 |
+| タスク | 優先度 | 難易度 | 見積時閁E|
 | --- | --- | --- | --- |
-| Migration + RLS | 🔴 必須 | ⭐⭐⭐ | 2-3h |
-| API 拡張 | 🔴 必須 | ⭐⭐ | 1-2h |
-| UI 拡張 | 🟠 高 | ⭐⭐ | 1-2h |
-| テスト | 🟠 高 | ⭐⭐⭐ | 2-3h |
-| **合計** | - | - | **6-10h** |
+| Migration + RLS | 🔴 忁E��E| ⭐⭐⭁E| 2-3h |
+| API 拡張 | 🔴 忁E��E| ⭐⭁E| 1-2h |
+| UI 拡張 | 🟠 髁E| ⭐⭁E| 1-2h |
+| チE��チE| 🟠 髁E| ⭐⭐⭁E| 2-3h |
+| **合訁E* | - | - | **6-10h** |
 
 ---
 
-## 📌 依存関係
+## 📌 依存関俁E
 
-- Supabase RLS ポリシーが正しく機能していること
-- staff_profiles に role 情報が正しく設定されていること
-- 既存の care-receivers CRUD API が正常に動作していること
+- Supabase RLS ポリシーが正しく機�EしてぁE��こと
+- staff_profiles に role 惁E��が正しく設定されてぁE��こと
+- 既存�E care-receivers CRUD API が正常に動作してぁE��こと
 
 ---
 
 **最終更新**: 2026-01-29
-**作成者**: GitHub Copilot
+**作�E老E*: GitHub Copilot
+

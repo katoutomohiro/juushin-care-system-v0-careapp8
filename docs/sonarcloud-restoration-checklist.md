@@ -6,7 +6,7 @@
 
 ## Pre-Restoration Status
 
-### ✅ Completed
+### ✁ECompleted
 - [x] Auto-merge system deployed and tested (PR #149, #147 successfully merged)
 - [x] SonarCloud issue diagnosed: "Automatic Analysis enabled" conflict
 - [x] Temporary required checks configuration: `Vercel Preview Comments` only
@@ -23,7 +23,7 @@ gh api repos/katoutomohiro/juushin-care-system-v0-careapp8/branches/main/protect
 
 ## Restoration Steps
 
-### Step 1: Disable SonarCloud Automatic Analysis ⚠️ MANUAL
+### Step 1: Disable SonarCloud Automatic Analysis ⚠�E�EMANUAL
 
 **Action Required**: Web UI access to SonarCloud.io
 
@@ -33,8 +33,8 @@ gh api repos/katoutomohiro/juushin-care-system-v0-careapp8/branches/main/protect
    ```
 
 2. Under "Analysis Method":
-   - ❌ **Disable**: "Automatic Analysis"
-   - ✅ **Enable**: "GitHub Actions" (CI-based analysis)
+   - ❁E**Disable**: "Automatic Analysis"
+   - ✁E**Enable**: "GitHub Actions" (CI-based analysis)
 
 3. Save changes
 
@@ -153,8 +153,8 @@ gh pr checks $testPr --watch
 ```
 
 **Expected behavior**:
-1. Vercel Preview Comments: ✅ SUCCESS
-2. SonarCloud Code Analysis: ✅ SUCCESS
+1. Vercel Preview Comments: ✁ESUCCESS
+2. SonarCloud Code Analysis: ✁ESUCCESS
 3. ci-automerge workflow: Triggered after both checks pass
 4. PR auto-merged with squash + branch delete
 
@@ -222,3 +222,4 @@ gh workflow disable "SonarQube Scan"
 - [CI Auto-Merge Guide](./ci-automerge-guide.md)
 - [GitHub Branch Protection API](https://docs.github.com/en/rest/branches/branch-protection)
 - [SonarCloud GitHub Actions Integration](https://docs.sonarsource.com/sonarcloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud/)
+

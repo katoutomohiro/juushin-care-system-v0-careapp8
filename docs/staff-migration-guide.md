@@ -1,77 +1,49 @@
-# 職員マスタDB化マイグレーションガイド
-
-## 概要
-MOCK_STAFF_OPTIONSからSupabase staffテーブルへの移行手順
-
-## 実行順序
-
-### 1. マイグレーション実行
-```bash
+# 職員マスタDB化�EイグレーションガイチE
+## 概要EMOCK_STAFF_OPTIONSからSupabase staffチE�Eブルへの移行手頁E
+## 実行頁E��E
+### 1. マイグレーション実衁E```bash
 # Supabase CLIでマイグレーションを適用
 supabase db push
 
-# または、Supabase Dashboardで直接SQLを実行
-# Migration: supabase/migrations/20260114_create_staff_table.sql
+# また�E、Supabase Dashboardで直接SQLを実衁E# Migration: supabase/migrations/20260114_create_staff_table.sql
 ```
 
-### 2. 作成されるもの
+### 2. 作�Eされるもの
 
-#### staffテーブル
+#### staffチE�Eブル
 - `id` (uuid PK) - 職員ID
-- `service_id` (uuid) - サービスID（外部キー: services.id）
-- `name` (text) - 職員名
-- `sort_order` (int) - 表示順
-- `is_active` (boolean) - 有効フラグ（退職・異動管理用）
-- `created_at` / `updated_at` (timestamptz)
+- `service_id` (uuid) - サービスID�E�外部キー: services.id�E�E- `name` (text) - 職員吁E- `sort_order` (int) - 表示頁E- `is_active` (boolean) - 有効フラグ�E�退職・異動管琁E���E�E- `created_at` / `updated_at` (timestamptz)
 
-#### case_recordsテーブルに追加される列
-- `main_staff_id` (uuid) - 主担当職員ID（外部キー: staff.id）
-- `sub_staff_id` (uuid) - 副担当職員ID（外部キー: staff.id）
-
+#### case_recordsチE�Eブルに追加される�E
+- `main_staff_id` (uuid) - 主拁E���E員ID�E�外部キー: staff.id�E�E- `sub_staff_id` (uuid) - 副拁E���E員ID�E�外部キー: staff.id�E�E
 #### シードデータ
-13人の職員データが自動登録されます：
-1. 山田 太郎
-2. 佐藤 花子
-3. 鈴木 一郎
-4. 田中 美咲
+13人の職員チE�Eタが�E動登録されます！E1. 山田 太郁E2. 佐藤 花孁E3. 鈴木 一郁E4. 田中 美咲
 5. 伊藤 健太
-6. 渡辺 由美
-7. 高橋 大輔
-8. 中村 真理
+6. 渡辺 由羁E7. 高橁E大輁E8. 中杁E真理
 9. 小林 孝夫
 10. 加藤 麻衣
-11. 吉田 和也
-12. 山本 奈々
-13. 佐々木 翔
-
-### 3. データ移行（既存レコードがある場合）
-
-既存のcase_recordsにmain_staff_idが空のレコードがある場合は、手動で設定：
-
+11. 吉田 和乁E12. 山本 奈、E13. 佐、E�� 翁E
+### 3. チE�Eタ移行（既存レコードがある場合！E
+既存�Ecase_recordsにmain_staff_idが空のレコードがある場合�E、手動で設定！E
 ```sql
--- 例: 全レコードにデフォルト職員を設定
-UPDATE case_records 
+-- 侁E 全レコードにチE��ォルト�E員を設宁EUPDATE case_records 
 SET main_staff_id = (SELECT id FROM staff ORDER BY sort_order LIMIT 1)
 WHERE main_staff_id IS NULL;
 ```
 
-### 4. NOT NULL制約の追加（移行完了後）
-
-全レコードにmain_staff_idが設定されたことを確認後：
-
+### 4. NOT NULL制紁E�E追加�E�移行完亁E��！E
+全レコードにmain_staff_idが設定されたことを確認後！E
 ```sql
--- main_staff_id を必須化
+-- main_staff_id を忁E��化
 ALTER TABLE case_records ALTER COLUMN main_staff_id SET NOT NULL;
 ```
 
 ### 5. 確認クエリ
 
 ```sql
--- 職員データ確認
-SELECT COUNT(*) FROM staff;
+-- 職員チE�Eタ確誁ESELECT COUNT(*) FROM staff;
 
--- ケース記録の職員設定状況
-SELECT 
+-- ケース記録の職員設定状況ESELECT 
   COUNT(*) as total,
   COUNT(main_staff_id) as with_main_staff,
   COUNT(sub_staff_id) as with_sub_staff
@@ -90,19 +62,15 @@ ORDER BY s.sort_order;
 ## フロントエンド変更
 
 ### API追加
-- **GET /api/staff** - 職員一覧取得（serviceId必須）
+- **GET /api/staff** - 職員一覧取得！EerviceId忁E��！E
+### コンポ�Eネント変更
+- **CaseRecordFormClient** - `useEffect`でDB から職員チE�Eタ取征E- **API保存時** - `mainStaffId` (UUID), `subStaffId` (UUID) を送信
 
-### コンポーネント変更
-- **CaseRecordFormClient** - `useEffect`でDB から職員データ取得
-- **API保存時** - `mainStaffId` (UUID), `subStaffId` (UUID) を送信
+### 削除されたコーチE- `MOCK_STAFF_OPTIONS` 定数
 
-### 削除されたコード
-- `MOCK_STAFF_OPTIONS` 定数
-
-## ロールバック手順（必要時）
-
+## ロールバック手頁E��忁E��時�E�E
 ```sql
--- 外部キー制約削除
+-- 外部キー制紁E��除
 ALTER TABLE case_records DROP CONSTRAINT IF EXISTS fk_case_records_main_staff;
 ALTER TABLE case_records DROP CONSTRAINT IF EXISTS fk_case_records_sub_staff;
 
@@ -110,16 +78,12 @@ ALTER TABLE case_records DROP CONSTRAINT IF EXISTS fk_case_records_sub_staff;
 ALTER TABLE case_records DROP COLUMN IF EXISTS main_staff_id;
 ALTER TABLE case_records DROP COLUMN IF EXISTS sub_staff_id;
 
--- staffテーブル削除
+-- staffチE�Eブル削除
 DROP TABLE IF EXISTS staff CASCADE;
 ```
 
-## 注意事項
-
-1. **service_id設定**: シードデータは最初のサービスに紐付けられます。複数サービスがある場合は手動で調整してください。
-
-2. **職員名の変更**: staffテーブルのnameを更新すれば、過去のケース記録にも反映されます（UUIDで紐付けているため）。
-
-3. **退職・異動**: `is_active = false`に設定すれば、新規記録の選択肢から除外できます（既存記録は表示可能）。
-
-4. **副担当**: 現在は1人のみ対応（`sub_staff_id`）。複数副担当が必要な場合は、中間テーブル`case_record_staff`の追加を検討してください。
+## 注意事頁E
+1. **service_id設宁E*: シードデータは最初�Eサービスに紐付けられます。褁E��サービスがある場合�E手動で調整してください、E
+2. **職員名�E変更**: staffチE�Eブルのnameを更新すれば、E��去のケース記録にも反映されます！EUIDで紐付けてぁE��ため�E�、E
+3. **退職・異勁E*: `is_active = false`に設定すれ�E、新規記録の選択肢から除外できます（既存記録は表示可能�E�、E
+4. **副拁E��E*: 現在は1人のみ対応！Esub_staff_id`�E�。褁E��副拁E��が忁E��な場合�E、中間テーブル`case_record_staff`の追加を検討してください、E

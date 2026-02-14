@@ -25,7 +25,7 @@
 
 ```bash
 pnpm run reboot
-# localhost:3000 で検証開始
+# dev-app.local:3000 で検証開始
 ```
 
 ---
@@ -96,7 +96,7 @@ $ pnpm build
 
 ```bash
 pnpm run reboot
-# 1. http://localhost:3000 → /login redirect
+# 1. http://dev-app.local:3000 → /login redirect
 # 2. staff.lifecare@example.com login
 # 3. /services/life-care/users → 14 users display
 # 4. Realtime sync test (2 windows)

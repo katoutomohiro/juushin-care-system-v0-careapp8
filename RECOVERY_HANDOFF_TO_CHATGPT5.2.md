@@ -2,7 +2,7 @@
 ## GitHub Copilot → ChatGPT 5.2 へのハンドオフ
 
 **作成日時**: 2026年1月23日  
-**現在のステータス**: dev サーバ起動完了（localhost:3002）、DB マイグレーション実行完了
+**現在のステータス**: dev サーバ起動完了（dev-app.local:3002）、DB マイグレーション実行完了
 
 ---
 
@@ -107,7 +107,7 @@ $env:PORT=3002; pnpm dev
 **結果**: 
 ```
 ▲ Next.js 15.5.9
-- Local:        http://localhost:3002
+- Local:        http://dev-app.local:3002
 - Network:      http://192.168.2.7:3002
 - Environments: .env.local
 
@@ -165,9 +165,9 @@ if (authBypassEnabled) {
 |------|------|------|
 | **ブランチ** | main | origin/main と同期済み |
 | **DB** | ✅ マイグレーション適用 | is_active 列＆インデックス追加済み |
-| **Dev サーバ** | ✅ 起動中 | localhost:3002 |
+| **Dev サーバ** | ✅ 起動中 | dev-app.local:3002 |
 | **環境変数** | ✅ 完全設定 | SUPABASE_URL 含め全て配置 |
-| **ログイン画面** | ✅ アクセス可能 | http://localhost:3002 → /login にリダイレクト |
+| **ログイン画面** | ✅ アクセス可能 | http://dev-app.local:3002 → /login にリダイレクト |
 
 ---
 
@@ -177,7 +177,7 @@ if (authBypassEnabled) {
 
 **テスト 1: ログイン画面**
 ```
-URL: http://localhost:3002
+URL: http://dev-app.local:3002
 期待: ログインフォーム表示
 確認ポイント:
   - メール入力フィールド ✓

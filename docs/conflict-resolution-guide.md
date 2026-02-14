@@ -169,3 +169,4 @@ git commit -m "resolve: merge conflicts"
 - Playwright for E2E testing
 - Jest for unit testing
 - Lighthouse for performance testing
+

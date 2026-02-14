@@ -1,48 +1,48 @@
-# 同時編集制御ガイド
+# 同時編雁E��御ガイチE
 
-**対象**: 重心ケア支援アプリ v0  
-**更新日**: 2026年1月28日  
-**方式**: 楽観的ロック（Optimistic Locking）
+**対象**: 重忁E��ア支援アプリ v0  
+**更新日**: 2026年1朁E8日  
+**方弁E*: 楽観皁E��チE���E�Eptimistic Locking�E�E
 
 ---
 
-## 🎯 目的
+## 🎯 目皁E
 
-複数の端末（スマホ・タブレット・PC）やスタッフが同時にケース記録を編集する際、**データの破壊や上書きを防止**する。
+褁E��の端末�E�スマ�E・タブレチE��・PC�E�やスタチE��が同時にケース記録を編雁E��る際、E*チE�Eタの破壊や上書きを防止**する、E
 
 ### 想定シナリオ
 
 ```
-時刻 10:00 - スタッフA（スマホ）がケース記録を開く
-時刻 10:01 - スタッフB（PC）が同じケース記録を開く
-時刻 10:02 - スタッフAが「バイタル: 体温36.5℃」を保存
-時刻 10:03 - スタッフBが「備考: 食事量良好」を保存
-  ↓
-🔴 問題: スタッフAの変更が消える（Last Write Wins）
+時刻 10:00 - スタチE��A�E�スマ�E�E�がケース記録を開ぁE
+時刻 10:01 - スタチE��B�E�EC�E�が同じケース記録を開ぁE
+時刻 10:02 - スタチE��Aが「バイタル: 体温36.5℁E��を保孁E
+時刻 10:03 - スタチE��Bが「備老E 食事量良好」を保孁E
+  ↁE
+🔴 問顁E スタチE��Aの変更が消える！East Write Wins�E�E
 ```
 
-**対策**: 楽観的ロックで競合を検知し、ユーザーに通知する
+**対筁E*: 楽観皁E��チE��で競合を検知し、ユーザーに通知する
 
 ---
 
-## 🔐 楽観的ロック方式
+## 🔐 楽観皁E��チE��方弁E
 
 ### 基本原理
 
-1. **レコード読み取り時**: `version` または `updated_at` を取得
-2. **保存時**: 「version が変わっていない」ことを確認して更新
-3. **競合発生時**: 更新が 0 件 → 409 Conflict エラーを返す
-4. **ユーザー対応**: 「他の端末で更新されました」ダイアログ → 再読み込み
+1. **レコード読み取り晁E*: `version` また�E `updated_at` を取征E
+2. **保存時**: 「version が変わってぁE��ぁE��ことを確認して更新
+3. **競合発生時**: 更新ぁE0 件 ↁE409 Conflict エラーを返す
+4. **ユーザー対忁E*: 「他�E端末で更新されました」ダイアログ ↁE再読み込み
 
-### 採用方式
+### 採用方弁E
 
-**Version カラム方式**（推奨）
+**Version カラム方弁E*�E�推奨�E�E
 
 ```sql
--- case_records テーブルに version カラムを追加
+-- case_records チE�Eブルに version カラムを追加
 ALTER TABLE case_records ADD COLUMN version INT DEFAULT 1 NOT NULL;
 
--- 更新時のクエリ
+-- 更新時�Eクエリ
 UPDATE case_records
 SET 
   record_data = $1,
@@ -53,50 +53,50 @@ RETURNING *;
 ```
 
 **利点**:
-- ✅ 明示的なバージョン管理
-- ✅ `updated_at` の精度に依存しない
-- ✅ 競合検知が確実
+- ✁E明示皁E��バ�Eジョン管琁E
+- ✁E`updated_at` の精度に依存しなぁE
+- ✁E競合検知が確宁E
 
 **欠点**:
-- ❌ カラム追加が必要（マイグレーション）
+- ❁Eカラム追加が忁E��E���Eイグレーション�E�E
 
 ---
 
-## 📐 実装アーキテクチャ
+## 📐 実裁E��ーキチE��チャ
 
-### データフロー
+### チE�Eタフロー
 
 ```
-[フロント] ケース記録ページを開く
-  ↓ GET /api/case-records/list
+[フロンチE ケース記録ペ�Eジを開ぁE
+  ↁEGET /api/case-records/list
 [API] record_data + version を返す
-  ↓
-[フロント] フォーム編集
-  ↓
-[フロント] 保存ボタンクリック
-  ↓ POST /api/case-records/save { version: 3 }
+  ↁE
+[フロンチE フォーム編雁E
+  ↁE
+[フロンチE 保存�EタンクリチE��
+  ↁEPOST /api/case-records/save { version: 3 }
 [API] WHERE id = ? AND version = 3
-  ↓
-[DB] 更新成功（1件） → version = 4
-  ↓ 200 OK
-[フロント] 「保存しました」トースト
+  ↁE
+[DB] 更新成功�E�E件�E�EↁEversion = 4
+  ↁE200 OK
+[フロンチE 「保存しました」トースチE
 
 --- 競合発生時 ---
 
-[フロント] 保存ボタンクリック
-  ↓ POST /api/case-records/save { version: 3 }
+[フロンチE 保存�EタンクリチE��
+  ↁEPOST /api/case-records/save { version: 3 }
 [API] WHERE id = ? AND version = 3
-  ↓
-[DB] 更新失敗（0件）← 他の端末が version = 4 に更新済
-  ↓ 409 Conflict
-[フロント] 「他の端末で更新されました。再読み込みしてください」ダイアログ
+  ↁE
+[DB] 更新失敗！E件�E��E 他�E端末ぁEversion = 4 に更新渁E
+  ↁE409 Conflict
+[フロンチE 「他�E端末で更新されました。�E読み込みしてください」ダイアログ
 ```
 
 ---
 
-## 🔧 実装詳細
+## 🔧 実裁E��細
 
-### 1. データベーススキーマ
+### 1. チE�Eタベ�EススキーチE
 
 **マイグレーション**: `supabase/migrations/YYYYMMDD_add_version_to_case_records.sql`
 
@@ -105,10 +105,10 @@ RETURNING *;
 ALTER TABLE case_records 
 ADD COLUMN IF NOT EXISTS version INT DEFAULT 1 NOT NULL;
 
--- 既存レコードの version を 1 に初期化
+-- 既存レコード�E version めE1 に初期匁E
 UPDATE case_records SET version = 1 WHERE version IS NULL;
 
--- updated_at トリガー（version 自動インクリメント用、オプション）
+-- updated_at トリガー�E�Eersion 自動インクリメント用、オプション�E�E
 CREATE OR REPLACE FUNCTION increment_version()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -124,7 +124,7 @@ FOR EACH ROW
 EXECUTE FUNCTION increment_version();
 ```
 
-### 2. API 実装（`app/api/case-records/save/route.ts`）
+### 2. API 実裁E��Eapp/api/case-records/save/route.ts`�E�E
 
 **更新クエリ**:
 
@@ -133,9 +133,9 @@ EXECUTE FUNCTION increment_version();
 export async function POST(req: NextRequest) {
   const { userId, serviceId, careReceiverName, date, record_data, recordTime, version } = await req.json()
   
-  // version が無い場合は新規作成
+  // version が無ぁE��合�E新規作�E
   if (version === undefined) {
-    // INSERT 処理（新規）
+    // INSERT 処琁E��新規！E
     const { data, error } = await supabase
       .from('case_records')
       .insert({ 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         date, 
         record_data, 
         record_time: recordTime,
-        version: 1  // 初期バージョン
+        version: 1  // 初期バ�Eジョン
       })
       .select()
       .single()
@@ -153,18 +153,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, data })
   }
   
-  // 既存レコードの更新（楽観的ロック）
+  // 既存レコード�E更新�E�楽観皁E��チE���E�E
   const { data, error, count } = await supabase
     .from('case_records')
     .update({ 
       record_data, 
       record_time: recordTime,
       updated_at: new Date().toISOString()
-      // version は トリガーで自動インクリメント
+      // version は トリガーで自動インクリメンチE
     })
     .eq('user_id', userId)
     .eq('date', date)
-    .eq('version', version)  // 🔐 楽観的ロックのキー
+    .eq('version', version)  // 🔐 楽観皁E��チE��のキー
     .select()
     .single()
   
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'conflict', 
-        message: '他の端末で更新されています。再読み込みしてください。' 
+        message: '他�E端末で更新されてぁE��す。�E読み込みしてください、E 
       }, 
       { status: 409 }  // 409 Conflict
     )
@@ -185,28 +185,28 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-### 3. フロントエンド実装（`src/components/case-records/CaseRecordFormClient.tsx`）
+### 3. フロントエンド実裁E��Esrc/components/case-records/CaseRecordFormClient.tsx`�E�E
 
-**状態管理**:
+**状態管琁E*:
 
 ```typescript
 const [currentVersion, setCurrentVersion] = useState<number>(1)
 const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
 
-// レコード読み込み時
+// レコード読み込み晁E
 useEffect(() => {
   async function loadRecord() {
     const res = await fetch(`/api/case-records/list?userId=${userId}&date=${date}`)
     const data = await res.json()
     if (data.records?.[0]) {
-      setCurrentVersion(data.records[0].version)  // version を保存
+      setCurrentVersion(data.records[0].version)  // version を保孁E
       // ... フォームに展開
     }
   }
   loadRecord()
 }, [userId, date])
 
-// 保存処理
+// 保存�E琁E
 const handleSave = async () => {
   const res = await fetch('/api/case-records/save', {
     method: 'POST',
@@ -220,7 +220,7 @@ const handleSave = async () => {
   })
   
   if (res.status === 409) {
-    // 競合発生 → ダイアログ表示
+    // 競合発甁EↁEダイアログ表示
     setConflictDialogOpen(true)
     return
   }
@@ -228,7 +228,7 @@ const handleSave = async () => {
   const result = await res.json()
   if (result.ok) {
     setCurrentVersion(result.data.version)  // 新しい version に更新
-    toast({ title: '✅ 保存しました' })
+    toast({ title: '✁E保存しました' })
   }
 }
 ```
@@ -239,10 +239,10 @@ const handleSave = async () => {
 <AlertDialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
   <AlertDialogContent>
     <AlertDialogHeader>
-      <AlertDialogTitle>⚠️ 他の端末で更新されています</AlertDialogTitle>
+      <AlertDialogTitle>⚠�E�E他�E端末で更新されてぁE��ぁE/AlertDialogTitle>
       <AlertDialogDescription>
-        このケース記録は、別の端末またはスタッフによって更新されました。
-        最新の内容を確認してから、再度編集してください。
+        こ�Eケース記録は、別の端末また�EスタチE��によって更新されました、E
+        最新の冁E��を確認してから、�E度編雁E��てください、E
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
@@ -257,53 +257,53 @@ const handleSave = async () => {
 
 ---
 
-## 🧪 テストシナリオ
+## 🧪 チE��トシナリオ
 
-### シナリオ 1: 同時編集（競合発生）
+### シナリオ 1: 同時編雁E��競合発生！E
 
-1. **スマホ**: ケース記録（AT, 2026-01-28）を開く → version = 1
-2. **PC**: 同じケース記録を開く → version = 1
-3. **スマホ**: 「体温: 36.5℃」を保存 → version = 2
-4. **PC**: 「備考: 良好」を保存 → **409 Conflict**
-5. **PC**: ダイアログ表示 → 再読み込み → version = 2 で再編集
+1. **スマ�E**: ケース記録�E�ET, 2026-01-28�E�を開く ↁEversion = 1
+2. **PC**: 同じケース記録を開ぁEↁEversion = 1
+3. **スマ�E**: 「体温: 36.5℁E��を保孁EↁEversion = 2
+4. **PC**: 「備老E 良好」を保孁EↁE**409 Conflict**
+5. **PC**: ダイアログ表示 ↁE再読み込み ↁEversion = 2 で再編雁E
 
-**期待結果**:
-- ✅ スマホの変更が保存される
-- ✅ PC で競合ダイアログが表示される
-- ✅ 再読み込み後、スマホの変更が反映されている
+**期征E��果**:
+- ✁Eスマ�Eの変更が保存される
+- ✁EPC で競合ダイアログが表示されめE
+- ✁E再読み込み後、スマ�Eの変更が反映されてぁE��
 
-### シナリオ 2: 順次編集（競合なし）
+### シナリオ 2: 頁E��編雁E��競合なし！E
 
-1. **スマホ**: ケース記録を開く → version = 1
-2. **スマホ**: 保存 → version = 2
-3. **PC**: ケース記録を開く → version = 2
-4. **PC**: 保存 → version = 3
+1. **スマ�E**: ケース記録を開ぁEↁEversion = 1
+2. **スマ�E**: 保孁EↁEversion = 2
+3. **PC**: ケース記録を開ぁEↁEversion = 2
+4. **PC**: 保孁EↁEversion = 3
 
-**期待結果**:
-- ✅ すべての保存が成功
-- ✅ 競合ダイアログは表示されない
+**期征E��果**:
+- ✁Eすべての保存が成功
+- ✁E競合ダイアログは表示されなぁE
 
 ---
 
-## 📋 実装チェックリスト
+## 📋 実裁E��ェチE��リスチE
 
-- [ ] `case_records` に `version` カラム追加（マイグレーション）
-- [ ] API で `WHERE version = ?` による更新実装
+- [ ] `case_records` に `version` カラム追加�E��Eイグレーション�E�E
+- [ ] API で `WHERE version = ?` による更新実裁E
 - [ ] 0件更新時に 409 Conflict を返す
-- [ ] フロントで `version` を state 管理
+- [ ] フロントで `version` めEstate 管琁E
 - [ ] 保存時に `version` を送信
 - [ ] 409 エラーで競合ダイアログ表示
-- [ ] 再読み込み機能実装
-- [ ] テストシナリオ 1, 2 を手動テスト
+- [ ] 再読み込み機�E実裁E
+- [ ] チE��トシナリオ 1, 2 を手動テスチE
 
 ---
 
-## 🔄 代替案: updated_at による競合検知
+## 🔄 代替桁E updated_at による競合検知
 
-**Version カラムを追加したくない場合**:
+**Version カラムを追加したくなぁE��吁E*:
 
 ```typescript
-// 読み込み時
+// 読み込み晁E
 const originalUpdatedAt = record.updated_at
 
 // 保存時
@@ -315,24 +315,25 @@ const { data, count } = await supabase
   .select()
 
 if (count === 0) {
-  // 競合発生
+  // 競合発甁E
 }
 ```
 
 **注意点**:
-- ⚠️ `updated_at` の精度に依存（PostgreSQL は microsecond 精度）
-- ⚠️ トリガーで自動更新される場合、競合検知が難しい
-- ✅ Version カラム方式を推奨
+- ⚠�E�E`updated_at` の精度に依存！EostgreSQL は microsecond 精度�E�E
+- ⚠�E�Eトリガーで自動更新される場合、競合検知が難しい
+- ✁EVersion カラム方式を推奨
 
 ---
 
-## 📚 参考資料
+## 📚 参老E��E��
 
 - **Optimistic Locking**: https://en.wikipedia.org/wiki/Optimistic_concurrency_control
-- **Supabase Real-time**: https://supabase.com/docs/guides/realtime（将来的な拡張案）
+- **Supabase Real-time**: https://supabase.com/docs/guides/realtime�E�封E��皁E��拡張案！E
 - **PostgreSQL Row Versioning**: https://www.postgresql.org/docs/current/mvcc-intro.html
 
 ---
 
 **End of Document**  
-*次回更新: 楽観的ロック実装完了時*
+*次回更新: 楽観皁E��チE��実裁E��亁E��*
+

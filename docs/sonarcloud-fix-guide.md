@@ -2,13 +2,13 @@
 
 ## Current Status (2025-11-13)
 
-### ✅ Working Components
+### ✁EWorking Components
 - **Auto-merge system**: Production ready and tested
 - **PR #149**: Successfully auto-merged (Dependabot minor/patch updates)
 - **PR #147**: Successfully auto-merged (actions/checkout bump)
 - **Required checks**: Currently `Vercel Preview Comments` only (stable)
 
-### ⚠️ Known Issue: SonarCloud Analysis Failure
+### ⚠�E�EKnown Issue: SonarCloud Analysis Failure
 
 **Error Message:**
 ```
@@ -146,11 +146,11 @@ gh api -X POST "repos/katoutomohiro/juushin-care-system-v0-careapp8/check-suites
 
 After completing the fix:
 
-1. ✅ SonarQube Scan workflow runs without "Automatic Analysis" error
-2. ✅ "SonarCloud Code Analysis" check appears on PRs
-3. ✅ Check conclusion is SUCCESS (or actionable FAILURE with quality gate details)
-4. ✅ Both required checks enforce gating: Vercel + SonarCloud
-5. ✅ Auto-merge respects both checks before merging
+1. ✁ESonarQube Scan workflow runs without "Automatic Analysis" error
+2. ✁E"SonarCloud Code Analysis" check appears on PRs
+3. ✁ECheck conclusion is SUCCESS (or actionable FAILURE with quality gate details)
+4. ✁EBoth required checks enforce gating: Vercel + SonarCloud
+5. ✁EAuto-merge respects both checks before merging
 
 ## References
 
@@ -164,3 +164,4 @@ After completing the fix:
 **Status**: 📋 Awaiting SonarCloud.io configuration fix  
 **Impact**: Low - Auto-merge operational with Vercel gating  
 **Priority**: Medium - Quality gate restoration desired but not blocking
+

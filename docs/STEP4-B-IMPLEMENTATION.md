@@ -1,118 +1,87 @@
-# STEP4-B 実装完了ドキュメント
+# STEP4-B 実裁E��亁E��キュメンチE
+完亁E��: 2026年1朁E5日
 
-完了日: 2026年1月15日
+## 実裁E�E容�E��E5スチE��プ！E
+### ✁ESTEP4-B-1�E�DBスキーマ整合！Eervice_id 500エラー解決�E�E**ファイル**: `app/api/care-receivers/list/route.ts`
 
-## 実装内容（全5ステップ）
+**変更冁E��**:
+- service_id (uuid FK) ではなぁEservice_code (text) で filter
+- 不要な services チE�Eブル join を削除
+- display_name, age, gender, care_level, condition, medical_care めEresponse に含める
+- エラーハンドリング: ok: false めE200 で返す
 
-### ✅ STEP4-B-1：DBスキーマ整合（service_id 500エラー解決）
-**ファイル**: `app/api/care-receivers/list/route.ts`
-
-**変更内容**:
-- service_id (uuid FK) ではなく service_code (text) で filter
-- 不要な services テーブル join を削除
-- display_name, age, gender, care_level, condition, medical_care を response に含める
-- エラーハンドリング: ok: false を 200 で返す
-
-**動作**: `GET /api/care-receivers/list?serviceCode=life-care` で 200 OK、users 配列を返す
+**動佁E*: `GET /api/care-receivers/list?serviceCode=life-care` で 200 OK、users 配�Eを返す
 
 ---
 
-### ✅ STEP4-B-2：利用者管理画面（2カテゴリ表示）
-**ファイル**: `app/services/[serviceId]/users/page.tsx`
+### ✁ESTEP4-B-2�E�利用老E��琁E��面�E�EカチE��リ表示�E�E**ファイル**: `app/services/[serviceId]/users/page.tsx`
 
-**変更内容**:
-- 単一サービステーブル UI → 2セクション（生活介護/放デイ）カード型 UI に変更
-- 両サービスを並列 fetch（Promise.all）
-- 各セクション: loading/error/empty/users グリッド表示
-- カード click で詳細ページへ遷移（`/services/[serviceCode]/users/[id]`）
-
-**表示フィールド**: code, name, age, gender, care_level, condition
+**変更冁E��**:
+- 単一サービスチE�Eブル UI ↁE2セクション�E�生活介護/放チE���E�カード型 UI に変更
+- 両サービスを並刁Efetch�E�Eromise.all�E�E- 吁E��クション: loading/error/empty/users グリチE��表示
+- カーチEclick で詳細ペ�Eジへ遷移�E�E/services/[serviceCode]/users/[id]`�E�E
+**表示フィールチE*: code, name, age, gender, care_level, condition
 
 ---
 
-### ✅ STEP4-B-3：CRUD API実装
-**ファイル**: 
+### ✁ESTEP4-B-3�E�CRUD API実裁E**ファイル**: 
 - `app/api/care-receivers/[id]/route.ts` (GET/PUT/DELETE)
 - `app/api/care-receivers/list/route.ts` (POST追加)
 
-**API エンドポイント**:
-- `GET /api/care-receivers/[id]` - 単一取得
-- `PUT /api/care-receivers/[id]` - 更新（display_name を name にマップ）
-- `DELETE /api/care-receivers/[id]` - 削除
-- `POST /api/care-receivers/list` - 作成（code 重複チェック付き）
-
-**全APIの返却形式**: `{ ok: true/false, user?: {...}, error?: "..." }`
+**API エンド�EインチE*:
+- `GET /api/care-receivers/[id]` - 単一取征E- `PUT /api/care-receivers/[id]` - 更新�E�Eisplay_name めEname にマップ！E- `DELETE /api/care-receivers/[id]` - 削除
+- `POST /api/care-receivers/list` - 作�E�E�Eode 重褁E��ェチE��付き�E�E
+**全APIの返却形弁E*: `{ ok: true/false, user?: {...}, error?: "..." }`
 
 ---
 
-### ✅ STEP4-B-4：データ反映保証（server actions + revalidatePath）
-**ファイル**:
+### ✁ESTEP4-B-4�E�データ反映保証�E�Eerver actions + revalidatePath�E�E**ファイル**:
 - `lib/actions/care-receivers.ts` (server actions)
-- `components/edit-care-receiver-modal.tsx` (編集UI)
+- `components/edit-care-receiver-modal.tsx` (編雁EI)
 
 **server actions**:
-- `revalidateCareReceiversData()` - 全関連ページを再検証
+- `revalidateCareReceiversData()` - 全関連ペ�Eジを�E検証
 - `createCareReceiverAction()` - POST + revalidate
 - `updateCareReceiverAction()` - PUT + revalidate
 - `deleteCareReceiverAction()` - DELETE + revalidate
 
-**再検証範囲**: `/services/[serviceId]/users`, `/dashboard`, tag: `care-receivers-*`
+**再検証篁E��**: `/services/[serviceId]/users`, `/dashboard`, tag: `care-receivers-*`
 
-**編集 UI**:
-- モーダル型フォーム（全フィールド）
-- 保存 → server action + router.refresh()
-- 削除 → 確認 → server action + 一覧へ戻す
-- エラー表示（toast/alert）
-
+**編雁EUI**:
+- モーダル型フォーム�E��Eフィールド！E- 保孁EↁEserver action + router.refresh()
+- 削除 ↁE確誁EↁEserver action + 一覧へ戻ぁE- エラー表示�E�Eoast/alert�E�E
 ---
 
-### ✅ STEP4-B-5：開発手順標準化（既実装）
-**対応**:
-- README に "推奨スタートアップ" セクション追加
-- `pnpm run reboot` コマンド確立（port free → cache 削除 → 起動）
-- `pnpm run check-server` で起動確認
-- トラブル対応セクション整備
-- PowerShell プロファイル設定ガイド提供
-
+### ✁ESTEP4-B-5�E�開発手頁E��準化�E�既実裁E��E**対忁E*:
+- README に "推奨スタートアチE�E" セクション追加
+- `pnpm run reboot` コマンド確立！Eort free ↁEcache 削除 ↁE起動！E- `pnpm run check-server` で起動確誁E- トラブル対応セクション整傁E- PowerShell プロファイル設定ガイド提侁E
 ---
 
-## テスト手順
-
+## チE��ト手頁E
 ```powershell
-# 1. キャッシュ削除・起動
-pnpm run reboot
+# 1. キャチE��ュ削除・起勁Epnpm run reboot
 
-# 2. サーバー確認
-pnpm run check-server
+# 2. サーバ�E確誁Epnpm run check-server
 
-# 3. ブラウザで確認
-# - http://localhost:3000
-# - サービスへ移動 → "利用者管理" ボタン
-# - 2セクション（生活介護/放デイ）が表示されている
-# - 利用者カード click → 詳細ページ
-# - "編集" ボタン → モーダルで氏名・年齢など更新可能
+# 3. ブラウザで確誁E# - http://dev-app.local:3000
+# - サービスへ移勁EↁE"利用老E��琁E ボタン
+# - 2セクション�E�生活介護/放チE���E�が表示されてぁE��
+# - 利用老E��ーチEclick ↁE詳細ペ�Eジ
+# - "編雁E ボタン ↁEモーダルで氏名・年齢など更新可能
 
-# 4. TypeScript/Lint チェック
+# 4. TypeScript/Lint チェチE��
 pnpm typecheck
 pnpm lint
 ```
 
 ---
 
-## 追加実装が必要な場合
-
-### 「新規利用者追加」画面
-`app/services/[serviceId]/users/page.tsx` に "新規追加" ボタンを追加し、
-POST /api/care-receivers/list を呼び出すフォームを実装してください。
-server action: `createCareReceiverAction()` を使用してください。
-
+## 追加実裁E��忁E��な場吁E
+### 「新規利用老E��加」画面
+`app/services/[serviceId]/users/page.tsx` に "新規追加" ボタンを追加し、EPOST /api/care-receivers/list を呼び出すフォームを実裁E��てください、Eserver action: `createCareReceiverAction()` を使用してください、E
 ### ケース記録との連携
-利用者削除時にケース記録も削除するか、orphaned record を処理する仕様を決定してください。
-現在は cascade delete なし。
-
-### RLS（Row Level Security）
-開発環境では RLS ポリシーが開放的です。本番デプロイ前に Supabase RLS を設定してください。
-
+利用老E��除時にケース記録も削除するか、orphaned record を�E琁E��る仕様を決定してください、E現在は cascade delete なし、E
+### RLS�E�Eow Level Security�E�E開発環墁E��は RLS ポリシーが開放皁E��す。本番チE�Eロイ前に Supabase RLS を設定してください、E
 ---
 
 ## 関連 commit log
@@ -126,9 +95,7 @@ afd5275 fix(STEP4-B-1): resolve service_id 500 error
 
 ---
 
-## 質問・確認事項
-
-- [ ] 利用者の「新規追加」フォーム UI は別タスクか?
-- [ ] ケース記録との利用者 FK 制約は設定済みか？
-- [ ] Supabase RLS ポリシーの本番化スケジュールは？
+## 質問�E確認事頁E
+- [ ] 利用老E�E「新規追加」フォーム UI は別タスクぁE
+- [ ] ケース記録との利用老EFK 制紁E�E設定済みか！E- [ ] Supabase RLS ポリシーの本番化スケジュールは�E�E
 

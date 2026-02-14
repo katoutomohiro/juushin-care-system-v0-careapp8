@@ -1,252 +1,253 @@
-# 新しいGitHubプロジェクト作成・移行ガイド
-## PC初心者向け詳細手順書
+# 新しいGitHubプロジェクト作�E・移行ガイチE
+## PC初忁E��E��け詳細手頁E��
 
 ### 📋 事前準備
 - GitHubアカウントにログイン済みであること
-- 現在のワークスペースが正常に動作していること
+- 現在のワークスペ�Eスが正常に動作してぁE��こと
 
 ---
 
-## 🚀 Step 1: 新しいGitHubリポジトリの作成
+## 🚀 Step 1: 新しいGitHubリポジトリの作�E
 
 ### 1-1. GitHubにアクセス
-- ブラウザで https://github.com を開く
-- 右上のプロフィール画像をクリックしてログイン状態を確認
+- ブラウザで https://github.com を開ぁE
+- 右上�Eプロフィール画像をクリチE��してログイン状態を確誁E
 
-### 1-2. 新しいリポジトリを作成
-1. **緑色の「New」ボタンをクリック**
+### 1-2. 新しいリポジトリを作�E
+1. **緑色の「New」�EタンをクリチE��**
    - 画面左側の「Top repositories」セクションにある緑色のボタン
-   - または画面右上の「+」アイコン → 「New repository」
+   - また�E画面右上�E、E」アイコン ↁE「New repository、E
 
-2. **リポジトリ情報を入力**
+2. **リポジトリ惁E��を�E劁E*
    \`\`\`
    Repository name: soul-care-system-v2
-   Description: 重症心身障がい児者支援アプリ - PROJECT SOUL (新バージョン)
+   Description: 重症忁E��障がぁE�E老E��援アプリ - PROJECT SOUL (新バ�Eジョン)
    \`\`\`
 
-3. **設定を選択**
-   - ✅ Public (推奨) または Private
-   - ✅ Add a README file
-   - ✅ Add .gitignore → 「Node」を選択
-   - ✅ Choose a license → 「MIT License」を選択
+3. **設定を選抁E*
+   - ✁EPublic (推奨) また�E Private
+   - ✁EAdd a README file
+   - ✁EAdd .gitignore ↁE「Node」を選抁E
+   - ✁EChoose a license ↁE「MIT License」を選抁E
 
-4. **「Create repository」ボタンをクリック**
+4. **「Create repository」�EタンをクリチE��**
 
-### 1-3. リポジトリURLを確認
-- 作成後のURL例: `https://github.com/katoutomohiro/soul-care-system-v2`
-- このURLをメモしておく
+### 1-3. リポジトリURLを確誁E
+- 作�E後�EURL侁E `https://github.com/katoutomohiro/soul-care-system-v2`
+- こ�EURLをメモしておく
 
 ---
 
-## 📁 Step 2: v0ワークスペースからファイルをダウンロード
+## 📁 Step 2: v0ワークスペ�EスからファイルをダウンローチE
 
-### 2-1. v0でZIPダウンロード
-1. **v0画面右上の「⋯」(三点メニュー)をクリック**
-2. **「Download ZIP」を選択**
-3. **ファイルを保存** (例: `soul-care-system.zip`)
+### 2-1. v0でZIPダウンローチE
+1. **v0画面右上�E「⋯、E三点メニュー)をクリチE��**
+2. **「Download ZIP」を選抁E*
+3. **ファイルを保孁E* (侁E `soul-care-system.zip`)
 
 ### 2-2. ZIPファイルを展開
-1. **ダウンロードしたZIPファイルを右クリック**
-2. **「すべて展開」または「Extract All」を選択**
-3. **展開先フォルダを選択** (例: `C:\Users\[ユーザー名]\Desktop\soul-care-system`)
+1. **ダウンロードしたZIPファイルを右クリチE��**
+2. **「すべて展開」また�E「Extract All」を選抁E*
+3. **展開先フォルダを選抁E* (侁E `C:\Users\[ユーザー名]\Desktop\soul-care-system`)
 
 ---
 
-## 🔄 Step 3: GitHubにファイルをアップロード
+## 🔄 Step 3: GitHubにファイルをアチE�EローチE
 
-### 3-1. GitHub Web UIでアップロード
-1. **新しく作成したリポジトリページを開く**
+### 3-1. GitHub Web UIでアチE�EローチE
+1. **新しく作�Eしたリポジトリペ�Eジを開ぁE*
    - URL: `https://github.com/katoutomohiro/soul-care-system-v2`
 
-2. **「uploading an existing file」リンクをクリック**
-   - 「Quick setup」セクション内にあります
+2. **「uploading an existing file」リンクをクリチE��**
+   - 「Quick setup」セクション冁E��ありまぁE
 
-3. **ファイルをドラッグ&ドロップ**
-   - 展開したフォルダ内の**すべてのファイル**を選択
-   - ブラウザの点線枠内にドラッグ&ドロップ
+3. **ファイルをドラチE��&ドロチE�E**
+   - 展開したフォルダ冁E�E**すべてのファイル**を選抁E
+   - ブラウザの点線枠冁E��ドラチE��&ドロチE�E
 
-### 3-2. コミット情報を入力
+### 3-2. コミット情報を�E劁E
 \`\`\`
-Commit title: Initial commit - 重心ケアアプリ移行
+Commit title: Initial commit - 重忁E��アアプリ移衁E
 Description: 
-- v0ワークスペースから完全移行
-- 重症心身障がい児者支援システム
-- 全機能正常動作確認済み
+- v0ワークスペ�Eスから完�E移衁E
+- 重症忁E��障がぁE�E老E��援シスチE��
+- 全機�E正常動作確認済み
 \`\`\`
 
-### 3-3. 「Commit changes」をクリック
+### 3-3. 「Commit changes」をクリチE��
 
 ---
 
-## ⚙️ Step 4: GitHub設定の最適化
+## ⚙︁EStep 4: GitHub設定�E最適匁E
 
-### 4-1. リポジトリ設定
-1. **「Settings」タブをクリック**
-2. **「General」セクションで以下を設定:**
-   - ✅ Issues (課題管理を有効化)
-   - ✅ Projects (プロジェクト管理を有効化)
-   - ✅ Wiki (ドキュメント管理を有効化)
+### 4-1. リポジトリ設宁E
+1. **「Settings」タブをクリチE��**
+2. **「General」セクションで以下を設宁E**
+   - ✁EIssues (課題管琁E��有効匁E
+   - ✁EProjects (プロジェクト管琁E��有効匁E
+   - ✁EWiki (ドキュメント管琁E��有効匁E
 
-### 4-2. ブランチ保護設定
-1. **「Branches」セクションを開く**
-2. **「Add rule」をクリック**
-3. **設定内容:**
+### 4-2. ブランチ保護設宁E
+1. **「Branches」セクションを開ぁE*
+2. **「Add rule」をクリチE��**
+3. **設定�E容:**
    \`\`\`
    Branch name pattern: main
-   ✅ Require pull request reviews before merging
-   ✅ Require status checks to pass before merging
+   ✁ERequire pull request reviews before merging
+   ✁ERequire status checks to pass before merging
    \`\`\`
 
-### 4-3. GitHub Pages設定 (オプション)
-1. **「Pages」セクションを開く**
+### 4-3. GitHub Pages設宁E(オプション)
+1. **「Pages」セクションを開ぁE*
 2. **Source: Deploy from a branch**
 3. **Branch: main / (root)**
-4. **「Save」をクリック**
+4. **「Save」をクリチE��**
 
 ---
 
-## 🔗 Step 5: v0との連携設定
+## 🔗 Step 5: v0との連携設宁E
 
 ### 5-1. v0でGitHub連携
-1. **v0画面右上の歯車アイコンをクリック**
-2. **「GitHub」セクションを選択**
-3. **新しいリポジトリURLを入力:**
+1. **v0画面右上�E歯車アイコンをクリチE��**
+2. **「GitHub」セクションを選抁E*
+3. **新しいリポジトリURLを�E劁E**
    \`\`\`
    https://github.com/katoutomohiro/soul-care-system-v2
    \`\`\`
-4. **「Connect」をクリック**
+4. **「Connect」をクリチE��**
 
-### 5-2. 連携確認
-- ✅ 緑色のチェックマークが表示される
-- ✅ 「変更をプッシュ」ボタンが有効になる
+### 5-2. 連携確誁E
+- ✁E緑色のチェチE��マ�Eクが表示されめE
+- ✁E「変更を�EチE��ュ」�Eタンが有効になめE
 
 ---
 
-## 📊 Step 6: プロジェクト管理設定
+## 📊 Step 6: プロジェクト管琁E��宁E
 
-### 6-1. GitHub Projectsの作成
-1. **「Projects」タブをクリック**
-2. **「New project」をクリック**
-3. **テンプレート選択: 「Team planning」**
-4. **プロジェクト名: 「重心ケアアプリ開発」**
+### 6-1. GitHub Projectsの作�E
+1. **「Projects」タブをクリチE��**
+2. **「New project」をクリチE��**
+3. **チE��プレート選抁E 「Team planning、E*
+4. **プロジェクト名: 「重忁E��アアプリ開発、E*
 
-### 6-2. 初期タスクの作成
+### 6-2. 初期タスクの作�E
 \`\`\`
 📋 Phase 1: 基盤安定化
-- [x] v0からの完全移行
-- [ ] CI/CD設定
-- [ ] テスト環境構築
+- [x] v0からの完�E移衁E
+- [ ] CI/CD設宁E
+- [ ] チE��ト環墁E��篁E
 
-📋 Phase 2: 機能拡張
-- [ ] 新機能開発
-- [ ] UI/UX改善
-- [ ] パフォーマンス最適化
+📋 Phase 2: 機�E拡張
+- [ ] 新機�E開発
+- [ ] UI/UX改喁E
+- [ ] パフォーマンス最適匁E
 
 📋 Phase 3: 本格運用
-- [ ] 本番環境デプロイ
-- [ ] ユーザーテスト
-- [ ] 運用開始
+- [ ] 本番環墁E��プロイ
+- [ ] ユーザーチE��チE
+- [ ] 運用開姁E
 \`\`\`
 
 ---
 
-## 🎯 Step 7: 開発環境の準備
+## 🎯 Step 7: 開発環墁E�E準備
 
-### 7-1. ローカル開発環境 (オプション)
+### 7-1. ローカル開発環墁E(オプション)
 \`\`\`bash
 # リポジトリをクローン
 git clone https://github.com/katoutomohiro/soul-care-system-v2.git
 
-# ディレクトリに移動
+# チE��レクトリに移勁E
 cd soul-care-system-v2
 
-# 依存関係をインストール
+# 依存関係をインスト�Eル
 npm install
 
-# 開発サーバー起動
+# 開発サーバ�E起勁E
 npm run dev
 \`\`\`
 
-### 7-2. Vercelデプロイ設定
+### 7-2. VercelチE�Eロイ設宁E
 1. **https://vercel.com にアクセス**
-2. **「Import Project」をクリック**
-3. **GitHubリポジトリを選択**
-4. **自動デプロイ設定完了**
+2. **「Import Project」をクリチE��**
+3. **GitHubリポジトリを選抁E*
+4. **自動デプロイ設定完亁E*
 
 ---
 
-## ✅ 完了チェックリスト
+## ✁E完亁E��ェチE��リスチE
 
-### 必須項目
-- [ ] 新しいGitHubリポジトリが作成された
-- [ ] 全ファイルが正常にアップロードされた
-- [ ] v0との連携が完了した
-- [ ] リポジトリ設定が適切に行われた
+### 忁E��頁E��
+- [ ] 新しいGitHubリポジトリが作�EされぁE
+- [ ] 全ファイルが正常にアチE�Eロードされた
+- [ ] v0との連携が完亁E��ぁE
+- [ ] リポジトリ設定が適刁E��行われた
 
-### 推奨項目
+### 推奨頁E��
 - [ ] GitHub Projectsが設定された
 - [ ] ブランチ保護ルールが設定された
 - [ ] GitHub Pagesが有効化された
-- [ ] Vercelデプロイが完了した
+- [ ] VercelチE�Eロイが完亁E��ぁE
 
 ---
 
-## 🆘 トラブルシューティング
+## �E トラブルシューチE��ング
 
-### よくある問題と解決策
+### よくある問題と解決筁E
 
-#### 1. ファイルアップロードが失敗する
+#### 1. ファイルアチE�Eロードが失敗すめE
 **原因:** ファイルサイズが大きすぎる
-**解決策:** 
-- `node_modules`フォルダを除外
-- `.next`フォルダを除外
-- 必要なソースファイルのみアップロード
+**解決筁E** 
+- `node_modules`フォルダを除夁E
+- `.next`フォルダを除夁E
+- 忁E��なソースファイルのみアチE�EローチE
 
-#### 2. v0連携が失敗する
-**原因:** リポジトリURLが間違っている
-**解決策:**
-- URLを再確認: `https://github.com/ユーザー名/リポジトリ名`
-- リポジトリがPublicに設定されているか確認
+#### 2. v0連携が失敗すめE
+**原因:** リポジトリURLが間違ってぁE��
+**解決筁E**
+- URLを�E確誁E `https://github.com/ユーザー吁Eリポジトリ名`
+- リポジトリがPublicに設定されてぁE��か確誁E
 
-#### 3. 権限エラーが発生する
-**原因:** GitHubの権限設定
-**解決策:**
-- Personal Access Tokenを生成
-- リポジトリの権限設定を確認
+#### 3. 権限エラーが発生すめE
+**原因:** GitHubの権限設宁E
+**解決筁E**
+- Personal Access Tokenを生戁E
+- リポジトリの権限設定を確誁E
 
 ---
 
-## 📞 サポート情報
+## 📞 サポ�Eト情報
 
 ### 参考URL
-- GitHub公式ドキュメント: https://docs.github.com
-- v0公式ヘルプ: https://vercel.com/help
-- Next.js公式ドキュメント: https://nextjs.org/docs
+- GitHub公式ドキュメンチE https://docs.github.com
+- v0公式�EルチE https://vercel.com/help
+- Next.js公式ドキュメンチE https://nextjs.org/docs
 
-### 緊急時の対応
-1. **v0サポートチケット作成:** https://vercel.com/help
+### 緊急時�E対忁E
+1. **v0サポ�EトチケチE��作�E:** https://vercel.com/help
 2. **GitHub Support:** https://support.github.com
 3. **コミュニティフォーラム:** https://github.com/discussions
 
 ---
 
-## 🎊 移行完了後の次のステップ
+## 🎊 移行完亁E���E次のスチE��チE
 
 ### 1. 開発再開
-- 新しいリポジトリで機能追加
-- バグ修正とパフォーマンス改善
-- ユーザーフィードバックの収集
+- 新しいリポジトリで機�E追加
+- バグ修正とパフォーマンス改喁E
+- ユーザーフィードバチE��の収集
 
-### 2. チーム開発
-- コラボレーターの招待
-- プルリクエストワークフローの確立
-- コードレビュープロセスの導入
+### 2. チ�Eム開発
+- コラボレーターの招征E
+- プルリクエストワークフローの確竁E
+- コードレビュープロセスの導�E
 
 ### 3. 本格運用
-- 本番環境へのデプロイ
-- 監視・ログ設定
-- バックアップ戦略の実装
+- 本番環墁E��のチE�Eロイ
+- 監視�Eログ設宁E
+- バックアチE�E戦略の実裁E
 
 ---
 
-**🎯 この手順に従えば、PC初心者でも安全に新しいGitHubプロジェクトへの移行が完了できます！**
+**🎯 こ�E手頁E��従えば、PC初忁E��E��も安�Eに新しいGitHubプロジェクトへの移行が完亁E��きます！E*
+

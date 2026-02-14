@@ -1,257 +1,157 @@
-# 重心ケアアプリ開発：先進機能統合プラン（v2025.11.01版）
+# 重忁E��アアプリ開発�E��E進機�E統合�Eラン�E�E2025.11.01版！E
+## 🚀 目皁E
+日本国冁E���E医療的ケア児老E��医ケア児）支援の最新動向を踏まえ、E��痁E��E��障がぁE�E老E��特化したケアアプリにおいて世界最高峰を目持E��先進機�Eを計画皁E��段階実裁E��るため�Eリファレンス斁E��、E
+## ✁E優先度付き導�Eロード�EチE�E
 
-## 🚀 目的
+### ✁ESTEP 1�E�即効性の高い業務効玁E��支援
 
-日本国内外の医療的ケア児者（医ケア児）支援の最新動向を踏まえ、重症心身障がい児者に特化したケアアプリにおいて世界最高峰を目指す先進機能を計画的に段階実装するためのリファレンス文書。
+**目樁E*: 日常業務�E記録・報告作業を大幁E��効玁E��し、スタチE��の負拁E��軽減すめE
+#### 実裁E��E��
 
-## ✅ 優先度付き導入ロードマップ
-
-### ✅ STEP 1：即効性の高い業務効率化支援
-
-**目標**: 日常業務の記録・報告作業を大幅に効率化し、スタッフの負担を軽減する
-
-#### 実装項目
-
-1. **音声入力による日誌記録 → 自動レポート生成機能（GPT）**
-   - 状態: 🚧 一部実装済み
-   - 既存実装: `components/VoiceRecorder.tsx`（Web Speech API）
-   - 次のアクション:
-     - [ ] OpenAI Whisper API連携（より高精度な文字起こし）
-     - [ ] 音声から構造化データへの自動変換（GPT-4によるパース）
-     - [ ] 記録カテゴリ自動推定（バイタル/発作/ケア/観察）
-
-2. **AI要約機能（LangChain + GPT）をPDF月次レポートと連携**
-   - 状態: ✅ 実装済み
-   - 実装済み:
-     - `services/langchain/agent.ts`: GPTベース要約関数
-     - `config/langchain.ts`: モデル設定の一元管理
-     - `tests/unit/langchain-agent.spec.ts`: ユニットテスト（3件）
-   - 次のアクション:
-     - [ ] 月次レポート生成フローへの統合（`reports/generateMonthlyReport.ts`）
-     - [ ] PDFコンポーネントへのAI要約表示（`components/pdf/monthly-report-doc.tsx`）
-     - [ ] キャッシング機構（同一月の再要約を避ける）
-
-3. **服薬リマインダー・与薬記録・相互作用警告（最低限実装）**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
-     - [ ] 服薬スケジュールデータ構造（Dexie DB拡張）
-     - [ ] リマインダー通知機能（Service Worker + Push API）
-     - [ ] 与薬記録フォーム（投薬時刻/薬剤名/用量）
-     - [ ] 相互作用チェック（薬剤マスタとの照合）
-
+1. **音声入力による日誌記録 ↁE自動レポ�Eト生成機�E�E�EPT�E�E*
+   - 状慁E 🚧 一部実裁E��み
+   - 既存実裁E `components/VoiceRecorder.tsx`�E�Eeb Speech API�E�E   - 次のアクション:
+     - [ ] OpenAI Whisper API連携�E�より高精度な斁E��起こし�E�E     - [ ] 音声から構造化データへの自動変換�E�EPT-4によるパ�Eス�E�E     - [ ] 記録カチE��リ自動推定（バイタル/発佁Eケア/観察！E
+2. **AI要紁E���E�E�EangChain + GPT�E�をPDF月次レポ�Eトと連携**
+   - 状慁E ✁E実裁E��み
+   - 実裁E��み:
+     - `services/langchain/agent.ts`: GPTベ�Eス要紁E��数
+     - `config/langchain.ts`: モチE��設定�E一允E��琁E     - `tests/unit/langchain-agent.spec.ts`: ユニットテスト！E件�E�E   - 次のアクション:
+     - [ ] 月次レポ�Eト生成フローへの統合！Ereports/generateMonthlyReport.ts`�E�E     - [ ] PDFコンポ�EネントへのAI要紁E��示�E�Ecomponents/pdf/monthly-report-doc.tsx`�E�E     - [ ] キャチE��ング機構（同一月�E再要紁E��避ける�E�E
+3. **服薬リマインダー・与薬記録・相互作用警告（最低限実裁E��E*
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
+     - [ ] 服薬スケジュールチE�Eタ構造�E�Eexie DB拡張�E�E     - [ ] リマインダー通知機�E�E�Eervice Worker + Push API�E�E     - [ ] 与薬記録フォーム�E�投薬時刻/薬剤吁E用量！E     - [ ] 相互作用チェチE���E�薬剤マスタとの照合！E
 ---
 
-### ✅ STEP 2：家族と多職種連携の強化
+### ✁ESTEP 2�E�家族と多�E種連携の強匁E
+**目樁E*: 家族�E医療老E�E福祉スタチE��間�E惁E��共有を冁E��化し、チームケアの質を向上させる
 
-**目標**: 家族・医療者・福祉スタッフ間の情報共有を円滑化し、チームケアの質を向上させる
+#### 実裁E��E��
 
-#### 実装項目
-
-1. **関係者限定チャット・メモ共有機能（HIPAA準拠）**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
-     - [ ] リアルタイムメッセージング（WebSocket or Firebase Realtime DB）
-     - [ ] ロールベースアクセス制御（家族/医師/看護師/スタッフ）
-     - [ ] エンドツーエンド暗号化（Web Crypto API）
-     - [ ] 監査ログ（誰がいつ何を閲覧/編集したか）
-
-2. **共有カレンダー／ToDo／ファイル（診療サマリー等）保管**
-   - 状態: 🚧 一部実装済み（家族ポータル仮ページ）
-   - 既存実装: `app/family/page.tsx`（共有コード生成・QR表示）
-   - 次のアクション:
-     - [ ] ToDoリストデータ構造（優先度/担当者/期限/完了状態）
-     - [ ] カレンダーUI（予定入力/通知設定）
-     - [ ] ファイルアップロード・プレビュー機能（PDF/画像）
-     - [ ] 共有範囲設定（全員/特定ユーザーのみ）
-
-3. **緊急通知機能（SpO₂・心拍アラート、SOS送信）**
-   - 状態: 🚧 一部実装済み（AI監視基盤）
-   - 既存実装:
-     - `services/ai-monitoring/index.ts`: 閾値ベース異常検知
+1. **関係老E��定チャチE��・メモ共有機�E�E�EIPAA準拠�E�E*
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
+     - [ ] リアルタイムメチE��ージング�E�EebSocket or Firebase Realtime DB�E�E     - [ ] ロールベ�Eスアクセス制御�E�家旁E医師/看護師/スタチE���E�E     - [ ] エンドツーエンド暗号化！Eeb Crypto API�E�E     - [ ] 監査ログ�E�誰がいつ何を閲覧/編雁E��たか�E�E
+2. **共有カレンダー�E�ToDo�E�ファイル�E�診療サマリー等）保管**
+   - 状慁E 🚧 一部実裁E��み�E�家族�Eータル仮ペ�Eジ�E�E   - 既存実裁E `app/family/page.tsx`�E��E有コード生成�EQR表示�E�E   - 次のアクション:
+     - [ ] ToDoリストデータ構造�E�優先度/拁E��老E期限/完亁E��態！E     - [ ] カレンダーUI�E�予定�E劁E通知設定！E     - [ ] ファイルアチE�Eロード�Eプレビュー機�E�E�EDF/画像！E     - [ ] 共有篁E��設定（�E員/特定ユーザーのみ�E�E
+3. **緊急通知機�E�E�EpO₂�E忁E��アラート、SOS送信�E�E*
+   - 状慁E 🚧 一部実裁E��み�E�EI監視基盤�E�E   - 既存実裁E
+     - `services/ai-monitoring/index.ts`: 閾値ベ�Eス異常検知
      - `app/settings/thresholds/page.tsx`: 閾値設定UI
    - 次のアクション:
-     - [ ] リアルタイム通知（Service Worker + Push通知）
-     - [ ] SMS/メール送信連携（Twilio/SendGrid）
-     - [ ] 緊急連絡先管理UI
-     - [ ] SOSボタン配置（ワンタップで全関係者へ通知）
-
+     - [ ] リアルタイム通知�E�Eervice Worker + Push通知�E�E     - [ ] SMS/メール送信連携�E�Ewilio/SendGrid�E�E     - [ ] 緊急連絡先管琁EI
+     - [ ] SOSボタン配置�E�ワンタチE�Eで全関係老E��通知�E�E
 ---
 
-### ✅ STEP 3：バイタル・排泄・生活支援データ連携
+### ✁ESTEP 3�E�バイタル・排況E�E生活支援チE�Eタ連携
 
-**目標**: IoTセンサー・ウェアラブルデバイスと連携し、客観的データに基づくケアを実現する
+**目樁E*: IoTセンサー・ウェアラブルチE��イスと連携し、客観皁E��ータに基づくケアを実現する
 
-#### 実装項目
+#### 実裁E��E��
 
-1. **DFree/ウェアラブル連携による排泄予測 → アプリ通知**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
+1. **DFree/ウェアラブル連携による排況E��測 ↁEアプリ通知**
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
      - [ ] Bluetooth Low Energy (BLE) 接続ライブラリ
-     - [ ] DFree SDK統合（排泄予測API）
-     - [ ] 予測通知UI（「20分以内に排泄の可能性」）
-     - [ ] 排泄記録との自動紐付け
+     - [ ] DFree SDK統合（排況E��測API�E�E     - [ ] 予測通知UI�E�、E0刁E��冁E��排況E�E可能性」！E     - [ ] 排況E��録との自動紐付け
 
-2. **SpO₂/心拍のBluetooth連携、状態変化を記録・警告**
-   - 状態: 🚧 一部実装済み（手動入力のみ）
-   - 既存実装: `components/forms/vitals-form.tsx`（手動バイタル入力）
-   - 次のアクション:
+2. **SpO₁E忁E��のBluetooth連携、状態変化を記録・警呁E*
+   - 状慁E 🚧 一部実裁E��み�E�手動�E力�Eみ�E�E   - 既存実裁E `components/forms/vitals-form.tsx`�E�手動バイタル入力！E   - 次のアクション:
      - [ ] BLE対応パルスオキシメータ連携
-     - [ ] 自動記録（バックグラウンドで定期取得）
-     - [ ] 異常値検知時の自動警告（AI監視と統合）
-
-3. **体位変換リマインダーとセンサー統合（褥瘡予防）**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
-     - [ ] 体位変換スケジュール管理
-     - [ ] 圧力センサー連携（ベッド埋込型/マット型）
-     - [ ] リマインダー通知（2時間ごと等）
-     - [ ] 体位変換記録フォーム（左側臥位/右側臥位/仰臥位）
-
+     - [ ] 自動記録�E�バチE��グラウンドで定期取得！E     - [ ] 異常値検知時�E自動警告！EI監視と統合！E
+3. **体位変換リマインダーとセンサー統合（褥瘡予防�E�E*
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
+     - [ ] 体位変換スケジュール管琁E     - [ ] 圧力センサー連携�E��EチE��埋込垁Eマット型�E�E     - [ ] リマインダー通知�E�E時間ごと等！E     - [ ] 体位変換記録フォーム�E�左側臥佁E右側臥佁E仰臥位！E
 ---
 
-### ✅ STEP 4：本人向け機能（インクルーシブ設計）
+### ✁ESTEP 4�E�本人向け機�E�E�インクルーシブ設計！E
+**目樁E*: 利用老E��人の自己決定�E表現・創作活動を支援し、QOLを向上させる
 
-**目標**: 利用者本人の自己決定・表現・創作活動を支援し、QOLを向上させる
+#### 実裁E��E��
 
-#### 実装項目
-
-1. **非言語コミュニケーション支援（意思伝達装置連携）**
-   - 状態: ⏳ 未着手
-   - 参考製品: 「いしん伝心」（視線入力/ジェスチャー認識）
-   - 必要な実装:
-     - [ ] Mediapipe統合（視線追跡/ジェスチャー検出）
-     - [ ] 意思表示ボタン配置（「はい/いいえ/痛い/嬉しい」等）
-     - [ ] 記録との連携（感情・意思表示を日誌に自動追加）
-
-2. **感覚刺激（Light Box等）や創作支援（ポティア連携）**
-   - 状態: ⏳ 未着手
-   - 参考製品: 「Poteer」（身体動作→アート/音楽生成）
-   - 必要な実装:
-     - [ ] 視覚刺激UI（色変化/パターン表示）
-     - [ ] 音声リズム検出→音楽生成
-     - [ ] 創作物ギャラリー（保存/共有機能）
-
-3. **音声読み上げ、視認性高いUI（高コントラスト対応）**
-   - 状態: 🚧 一部実装済み（ARIA属性）
-   - 既存実装: 各フォームコンポーネントでARIA対応済み
+1. **非言語コミュニケーション支援�E�意思伝達裁E��連携�E�E*
+   - 状慁E ⏳ 未着扁E   - 参老E��品E 「いしん伝忁E��（視線�E劁Eジェスチャー認識！E   - 忁E��な実裁E
+     - [ ] Mediapipe統合（視線追跡/ジェスチャー検�E�E�E     - [ ] 意思表示ボタン配置�E�「�EぁEぁE��ぁE痛い/嬉しぁE��等！E     - [ ] 記録との連携�E�感惁E�E意思表示を日誌に自動追加�E�E
+2. **感覚刺激�E�Eight Box等）や創作支援�E��EチE��ア連携�E�E*
+   - 状慁E ⏳ 未着扁E   - 参老E��品E 「Poteer」（身体動作�EアーチE音楽生�E�E�E   - 忁E��な実裁E
+     - [ ] 視覚刺激UI�E�色変化/パターン表示�E�E     - [ ] 音声リズム検�E→音楽生�E
+     - [ ] 創作物ギャラリー�E�保孁E共有機�E�E�E
+3. **音声読み上げ、視認性高いUI�E�高コントラスト対応！E*
+   - 状慁E 🚧 一部実裁E��み�E�ERIA属性�E�E   - 既存実裁E 吁E��ォームコンポ�EネントでARIA対応済み
    - 次のアクション:
-     - [ ] Web Speech API（読み上げ）全ページ実装
-     - [ ] ハイコントラストテーマ（白黒反転/大きな文字）
-     - [ ] キーボードナビゲーション完全対応
-
+     - [ ] Web Speech API�E�読み上げ�E��Eペ�Eジ実裁E     - [ ] ハイコントラストテーマ（白黒反転/大きな斁E��！E     - [ ] キーボ�Eドナビゲーション完�E対忁E
 ---
 
-### ✅ STEP 5：医療者・行政との連携
+### ✁ESTEP 5�E�医療老E�E行政との連携
 
-**目標**: 医療機関・行政との連携を強化し、シームレスな情報共有とエビデンスに基づくケアを実現する
+**目樁E*: 医療機関・行政との連携を強化し、シームレスな惁E��共有とエビデンスに基づくケアを実現する
 
-#### 実装項目
+#### 実裁E��E��
 
-1. **PHR（ケア記録 ⇔ 主治医）共有機能（FHIR準拠も視野）**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
-     - [ ] FHIR形式へのデータ変換（Observation/Condition/MedicationStatement）
-     - [ ] OAuth2認証（医療機関システムとの連携）
-     - [ ] 共有同意管理UI（本人/家族の明示的同意）
-
-2. **GPTチャットボットによるQ&A（親・スタッフ向け）**
-   - 状態: 🚧 基盤実装済み（LangChain Agent）
-   - 既存実装: `services/langchain/agent.ts`
+1. **PHR�E�ケア記録 ⇁E主治医�E��E有機�E�E�EHIR準拠も視野�E�E*
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
+     - [ ] FHIR形式へのチE�Eタ変換�E�Ebservation/Condition/MedicationStatement�E�E     - [ ] OAuth2認証�E�医療機関シスチE��との連携�E�E     - [ ] 共有同意管琁EI�E�本人/家族�E明示皁E��意！E
+2. **GPTチャチE��ボットによるQ&A�E�親・スタチE��向け�E�E*
+   - 状慁E 🚧 基盤実裁E��み�E�EangChain Agent�E�E   - 既存実裁E `services/langchain/agent.ts`
    - 次のアクション:
-     - [ ] FAQ機能の拡張（医ケア児特有の質問対応）
-     - [ ] チャットUIコンポーネント作成
-     - [ ] RAG（検索拡張生成）による専門知識ベース参照
+     - [ ] FAQ機�Eの拡張�E�医ケア児特有�E質問対応！E     - [ ] チャチE��UIコンポ�Eネント作�E
+     - [ ] RAG�E�検索拡張生�E�E�による専門知識�Eース参�E
 
-3. **感情分析・ストレス検知 → 自動リスクアラート提案**
-   - 状態: ⏳ 未着手
-   - 必要な実装:
-     - [ ] テキスト感情分析（日誌の記述内容から）
-     - [ ] バイタル変動パターン解析（ストレス指標）
-     - [ ] 自動アラート生成（「最近3日間のストレスレベル上昇」）
-     - [ ] 対処法提案（GPTによる推奨事項生成）
-
+3. **感情刁E��・ストレス検知 ↁE自動リスクアラート提桁E*
+   - 状慁E ⏳ 未着扁E   - 忁E��な実裁E
+     - [ ] チE��スト感惁E�E析（日誌�E記述冁E��から�E�E     - [ ] バイタル変動パターン解析（ストレス持E��！E     - [ ] 自動アラート生成（「最迁E日間�Eストレスレベル上�E」！E     - [ ] 対処法提案！EPTによる推奨事頁E��成！E
 ---
 
-## 🔁 LangChain Agent/AI Agent が実行時に参照すべき事項
-
+## 🔁 LangChain Agent/AI Agent が実行時に参�Eすべき事頁E
 ### 基本原則
 
-1. **このドキュメントの構成・優先順位を参照し、適切な段階でのみ先進機能を設計・実装・評価すること。**
-2. LangChain Agent や AI Assistant はこのファイルを事前に読み込み、対象タスクのレベル・依存関係・目的を確認すること。
-3. VSコード内のCoPilotへこのファイルへのリンク、またはmd内見出しの明示を含めた実行指示を送ること。
+1. **こ�Eドキュメント�E構�E・優先頁E��を参�Eし、E��刁E��段階でのみ先進機�Eを設計�E実裁E�E評価すること、E*
+2. LangChain Agent めEAI Assistant はこ�Eファイルを事前に読み込み、対象タスクのレベル・依存関係�E目皁E��確認すること、E3. VSコード�EのCoPilotへこ�Eファイルへのリンク、また�Emd冁E���Eし�E明示を含めた実行指示を送ること、E
+### 実裁E�E進め方
 
-### 実装の進め方
-
-#### 新機能追加時のチェックリスト
-
-- [ ] 該当するSTEPの目標と整合しているか
-- [ ] 既存実装との依存関係を確認したか
-- [ ] データ構造の拡張が必要な場合、`lib/db.ts`または`schemas/unified.ts`を更新したか
-- [ ] アクセシビリティ（ARIA属性、キーボード操作）を考慮したか
-- [ ] ユニットテストを追加したか（`tests/unit/`配下）
-- [ ] ビルド・テストが通過することを確認したか（`pnpm -s build && pnpm -s vitest run`）
-
-#### CoPilot用プロンプト例
-
-**例1: STEP 2のToDo機能実装**
+#### 新機�E追加時�EチェチE��リスチE
+- [ ] 該当するSTEPの目標と整合してぁE��ぁE- [ ] 既存実裁E��の依存関係を確認したか
+- [ ] チE�Eタ構造の拡張が忁E��な場合、`lib/db.ts`また�E`schemas/unified.ts`を更新したぁE- [ ] アクセシビリチE���E�ERIA属性、キーボ�Eド操作）を老E�EしたぁE- [ ] ユニットテストを追加したか！Etests/unit/`配下！E- [ ] ビルド�EチE��トが通過することを確認したか�E�Epnpm -s build && pnpm -s vitest run`�E�E
+#### CoPilot用プロンプト侁E
+**侁E: STEP 2のToDo機�E実裁E*
 
 ```
-以下の先進機能統合プラン（docs/advanced_features_plan.md）に基づき、STEP 2の連携機能強化を対象とする実装を行ってください。まずは「ToDoリスト機能」のデータ構造と保存先を定義し、仮UIを作成し、保存・一覧・完了トグル機能を段階実装してください。
-
-実装要件:
-- Dexie DBにtodosテーブルを追加
+以下�E先進機�E統合�Eラン�E�Eocs/advanced_features_plan.md�E�に基づき、STEP 2の連携機�E強化を対象とする実裁E��行ってください。まず�E「ToDoリスト機�E」�EチE�Eタ構造と保存�Eを定義し、仮UIを作�Eし、保存�E一覧・完亁E��グル機�Eを段階実裁E��てください、E
+実裁E��件:
+- Dexie DBにtodosチE�Eブルを追加
 - schemas/todo.ts でTodoEntryスキーマ定義
-- app/todos/page.tsx で一覧・追加・完了UI作成
-- 優先度（高/中/低）、担当者、期限、完了状態を管理
-- ARIA属性を適切に設定
-```
+- app/todos/page.tsx で一覧・追加・完亁EI作�E
+- 優先度�E�髁E中/低）、担当老E��期限、完亁E��態を管琁E- ARIA属性を適刁E��設宁E```
 
-**例2: STEP 3のBLE連携**
+**侁E: STEP 3のBLE連携**
 
 ```
-docs/advanced_features_plan.md の STEP 3「SpO₂/心拍のBluetooth連携」を実装してください。
-
-実装要件:
-- services/ble/pulse-oximeter.ts を作成
-- Web Bluetooth API を使用してBLE接続
-- 取得したSpO₂/心拍データを自動的にDexie DBへ保存
-- components/forms/vitals-form.tsx に「デバイス接続」ボタンを追加
-- 接続状態の表示とエラーハンドリング
+docs/advanced_features_plan.md の STEP 3「SpO₁E忁E��のBluetooth連携」を実裁E��てください、E
+実裁E��件:
+- services/ble/pulse-oximeter.ts を作�E
+- Web Bluetooth API を使用してBLE接綁E- 取得したSpO₁E忁E��チE�Eタを�E動的にDexie DBへ保孁E- components/forms/vitals-form.tsx に「デバイス接続」�Eタンを追加
+- 接続状態�E表示とエラーハンドリング
 ```
 
 ---
 
 ## 📊 進捗追跡
 
-### 実装済み機能（✅）
-
-- [x] 統一データモデル（`schemas/unified.ts`）
-- [x] AIモニタリング基盤（`services/ai-monitoring/`）
-- [x] LangChain Agentの基礎実装（`services/langchain/agent.ts`）
-- [x] 月次レポート生成（`reports/generateMonthlyReport.ts`）
-- [x] 家族ポータル仮ページ（共有コード生成）
-- [x] 音声記録コンポーネント（Web Speech API）
-
-### 次期実装候補（優先度順）
-
-1. **STEP 1-2**: AI要約の月次PDF統合（即効性大）
-2. **STEP 2-2**: ToDoリスト機能（多職種連携の基盤）
-3. **STEP 1-3**: 服薬リマインダー（業務効率化）
-4. **STEP 2-3**: 緊急通知機能（既存AI監視との統合）
-5. **STEP 3-2**: BLE連携（バイタル自動取得）
-
+### 実裁E��み機�E�E�✅�E�E
+- [x] 統一チE�EタモチE���E�Eschemas/unified.ts`�E�E- [x] AIモニタリング基盤�E�Eservices/ai-monitoring/`�E�E- [x] LangChain Agentの基礎実裁E��Eservices/langchain/agent.ts`�E�E- [x] 月次レポ�Eト生成！Ereports/generateMonthlyReport.ts`�E�E- [x] 家族�Eータル仮ペ�Eジ�E��E有コード生成！E- [x] 音声記録コンポ�Eネント！Eeb Speech API�E�E
+### 次期実裁E��補（優先度頁E��E
+1. **STEP 1-2**: AI要紁E�E月次PDF統合（即効性大�E�E2. **STEP 2-2**: ToDoリスト機�E�E�多�E種連携の基盤�E�E3. **STEP 1-3**: 服薬リマインダー�E�業務効玁E���E�E4. **STEP 2-3**: 緊急通知機�E�E�既存AI監視との統合！E5. **STEP 3-2**: BLE連携�E�バイタル自動取得！E
 ---
 
 ## 📝 変更履歴
 
-- **2025-11-01**: 初版作成。既存実装状況を反映し、5段階ロードマップを定義。
-
+- **2025-11-01**: 初版作�E。既存実裁E��況を反映し、E段階ロード�EチE�Eを定義、E
 ---
 
-## 📚 参考資料
+## 📚 参老E��E��
 
-- [FHIR日本実装仕様](https://jpfhir.jp/)
+- [FHIR日本実裁E��様](https://jpfhir.jp/)
 - [Web Bluetooth API仕様](https://webbluetoothcg.github.io/web-bluetooth/)
-- [WCAG 2.1（アクセシビリティガイドライン）](https://www.w3.org/WAI/WCAG21/quickref/)
-- [DFree公式サイト](https://dfree.biz/)
-- [Poteer公式サイト](https://www.poteer.net/)
+- [WCAG 2.1�E�アクセシビリチE��ガイドライン�E�](https://www.w3.org/WAI/WCAG21/quickref/)
+- [DFree公式サイチE(https://dfree.biz/)
+- [Poteer公式サイチE(https://www.poteer.net/)
+

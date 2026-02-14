@@ -24,7 +24,7 @@ gh pr checks <PR_NUMBER>
 
 ---
 
-## ⚠️ Emergency Procedures
+## ⚠�E�EEmergency Procedures
 
 ### Temporary Switch to Vercel-Only (SonarCloud Down)
 ```powershell
@@ -115,7 +115,7 @@ gh pr list --label "ux-ready" --state open
 
 ---
 
-## 🛠️ Configuration
+## 🛠�E�EConfiguration
 
 ### System Components
 - **Workflow**: `.github/workflows/ci-automerge.yml`
@@ -132,10 +132,10 @@ gh pr list --label "ux-ready" --state open
 - **Why**: Automatic and CI analysis conflict
 
 ### Safety Controls
-- ✅ Fork PR exclusion
-- ✅ `no-auto-merge` emergency stop
-- ✅ Per-PR concurrency control
-- ✅ 30-minute timeout
+- ✁EFork PR exclusion
+- ✁E`no-auto-merge` emergency stop
+- ✁EPer-PR concurrency control
+- ✁E30-minute timeout
 
 ---
 
@@ -150,3 +150,4 @@ gh pr list --label "ux-ready" --state open
 **Status**: 🟢 Production  
 **Success Rate**: 100% (7/7 PRs validated)  
 **Last Updated**: 2025-11-13
+

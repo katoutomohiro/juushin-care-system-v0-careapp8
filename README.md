@@ -16,7 +16,7 @@ pnpm install
 pnpm run reboot   # port free + clean + dev server
 ```
 
-Then open http://localhost:3000 and log in with the seeded Supabase users.
+Then open http://dev-app.local:3000 and log in with the seeded Supabase users.
 
 ## Environment Variables
 

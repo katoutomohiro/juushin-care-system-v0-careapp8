@@ -120,7 +120,7 @@ Response:
 
 ### 3.1 コード・インフラの事実
 - **ブランチ**: main（最新状態）
-- **Dev サーバ**: http://localhost:3002 で起動中 ✅
+- **Dev サーバ**: http://dev-app.local:3002 で起動中 ✅
 - **DB マイグレーション**: `is_active` 列追加済み ✅
 - **ビルド**: `pnpm build` 成功 ✅
 - **型チェック**: `pnpm typecheck` 成功 ✅
@@ -258,7 +258,7 @@ rg -n "case-records|ケース記録" app --type ts --type tsx
 **目的**: P-001（利用者消失）の原因特定、API 疎通確認  
 **手順**:
 ```
-1. http://localhost:3002 にアクセス
+1. http://dev-app.local:3002 にアクセス
 2. ログイン（登録済みユーザー）
 3. /services/life-care/users へ遷移
 4. DevTools (F12) → Network タブで以下を確認:
@@ -659,13 +659,13 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 **実装内容:**
 - `middleware.ts`: Supabase 公式 `@supabase/ssr` の `createServerClient` を使用し、request/response cookie ブリッジで session を管理
 - `lib/supabase/server.ts`: サーバー側用 Supabase クライアント factory を新規作成（cookies() 経由で cookie の get/set/remove を統一）
-- `.env.local`: `APP_URL=http://localhost:3002`, `SITE_URL=http://localhost:3002` を追加（ローカル URL 統一）
+- `.env.local`: `APP_URL=http://dev-app.local:3002`, `SITE_URL=http://dev-app.local:3002` を追加（ローカル URL 統一）
 - 認証フロー: ログイン成功 → cookie に sb-access-token/sb-refresh-token が自動設定 → middleware が session を認識 → 保護ページへ遷移
 
 **修正対象ファイル:**
 - `middleware.ts` (置き換え): 旧 `createClient` + 直 token 確認から、`createServerClient` + `getSession()` へ変更
 - `lib/supabase/server.ts` (NEW): サーバーコンポーネント・Route Handler から cookie ベースで Supabase を初期化できるファクトリ
-- `.env.local` (追加): APP_URL, SITE_URL を localhost:3002 に統一
+- `.env.local` (追加): APP_URL, SITE_URL を dev-app.local:3002 に統一
 
 **受け入れ条件:**
 - ✅ ログイン後、`/login?redirect=%2F` のループに戻らず、アプリ内部へ遷移
@@ -685,7 +685,7 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 - `pnpm-lock.yaml` (更新: lock ファイル再生成)
 
 **検証:**
-- `pnpm run dev` で localhost:3000 が起動し、middleware コンパイル成功
+- `pnpm run dev` で dev-app.local:3000 が起動し、middleware コンパイル成功
 - ブラウザで @supabase/ssr 関連エラーが消える
 
 **受け入れ条件:**
@@ -698,7 +698,7 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 ### 2026-01-27: サーバークラッシュ防止対策 + Next.js 15 cookies() 型エラー修正
 
 **問題:**
-- `/services/life-care/users` にアクセス/カードクリックで client-side exception → localhost が ERR_CONNECTION_REFUSED
+- `/services/life-care/users` にアクセス/カードクリックで client-side exception → dev サーバ URL が ERR_CONNECTION_REFUSED
 - `pnpm typecheck` で `lib/supabase/server.ts` の cookies() 周りに型エラー（TS2339: cookieStore.get/set が Promise に存在しない）
 - Next.js 15 では `cookies()` が Promise を返すため、`await` が必要
 
@@ -722,7 +722,7 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 
 **検証結果:**
 - ✅ `pnpm typecheck` 成功（型エラー 0 件）
-- ✅ devサーバー起動成功（localhost:3000）
+- ✅ devサーバー起動成功（dev-app.local:3000）
 - ✅ params/navigation エラーでのクラッシュを防止
 
 **受け入れ条件:**
@@ -779,10 +779,10 @@ A.T様のケース記録を基準に、全利用者に共通したケース記�
 pnpm tsx scripts/import-care-receivers.ts
 
 # 2. ブラウザ確認
-http://localhost:3000/services/life-care/users
+http://dev-app.local:3000/services/life-care/users
 # → 15名表示（既存A・T含む）
 
-http://localhost:3000/services/after-school/users
+http://dev-app.local:3000/services/after-school/users
 # → 10名表示
 ```
 

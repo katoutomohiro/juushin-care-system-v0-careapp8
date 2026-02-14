@@ -49,9 +49,9 @@ gh pr edit 125 --add-label "ux-ready"
 ```
 
 **Expected Behavior**:
-1. `ux-ready` label added → ci-automerge workflow triggered
+1. `ux-ready` label added ↁEci-automerge workflow triggered
 2. Workflow monitors both required checks
-3. When both reach SUCCESS → Auto squash merge + delete branch
+3. When both reach SUCCESS ↁEAuto squash merge + delete branch
 4. Merge time: ~15-20 seconds after checks complete
 
 ### Emergency Stop (Block Specific PR)
@@ -237,7 +237,7 @@ gh api -X PUT repos/katoutomohiro/juushin-care-system-v0-careapp8/branches/main/
 gh pr merge <PR_NUMBER> --squash --delete-branch --admin
 ```
 
-**⚠️ Warning**: Document reason in PR comment before using admin override.
+**⚠�E�EWarning**: Document reason in PR comment before using admin override.
 
 ### Disable Auto-Merge System
 
@@ -348,7 +348,7 @@ while ((Get-Date) -lt $deadline) {
     }).Count -eq 2
     
     if ($allSuccess) {
-        Write-Host "✅ All required checks passed for PR #$PrNumber"
+        Write-Host "✁EAll required checks passed for PR #$PrNumber"
         return $true
     }
     
@@ -356,7 +356,7 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 30
 }
 
-Write-Host "❌ Timeout waiting for checks"
+Write-Host "❁ETimeout waiting for checks"
 return $false
 ```
 
@@ -434,7 +434,7 @@ Body: { "contexts": ["Vercel Preview Comments", "SonarCloud Code Analysis"] }
 **When Needed**: Test coverage becomes critical gate
 
 **Steps**:
-1. SonarCloud.io → Project Settings → Analysis Method → Disable "Automatic Analysis"
+1. SonarCloud.io ↁEProject Settings ↁEAnalysis Method ↁEDisable "Automatic Analysis"
 2. Enable "GitHub Actions" method
 3. Re-enable workflow:
    ```powershell
@@ -454,10 +454,10 @@ Body: { "contexts": ["Vercel Preview Comments", "SonarCloud Code Analysis"] }
 7. Update required contexts if needed
 
 **Trade-offs**:
-- ✅ Full control over scan configuration
-- ✅ Coverage reporting and gating
-- ❌ More complex workflow maintenance
-- ❌ Longer analysis time
+- ✁EFull control over scan configuration
+- ✁ECoverage reporting and gating
+- ❁EMore complex workflow maintenance
+- ❁ELonger analysis time
 
 ### Option 2: Slack Notifications
 
@@ -476,7 +476,7 @@ Body: { "contexts": ["Vercel Preview Comments", "SonarCloud Code Analysis"] }
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "❌ *Auto-merge failed*\n<${{ github.event.pull_request.html_url }}|PR #${{ github.event.pull_request.number }}>: ${{ github.event.pull_request.title }}"
+              "text": "❁E*Auto-merge failed*\n<${{ github.event.pull_request.html_url }}|PR #${{ github.event.pull_request.number }}>: ${{ github.event.pull_request.title }}"
             }
           }
         ]
@@ -534,3 +534,4 @@ gh api -X PUT repos/katoutomohiro/juushin-care-system-v0-careapp8/branches/main/
 **Last Reviewed**: 2025-11-13  
 **System Status**: 🟢 Production Ready  
 **Auto-Merge Success Rate**: 100% (7/7 PRs)
+

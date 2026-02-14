@@ -1,121 +1,95 @@
-# 開発環境トラブルシューティング
+# 開発環墁E��ラブルシューチE��ング
 
-## 開発サーバー起動手順
-
-### 通常起動
-```powershell
+## 開発サーバ�E起動手頁E
+### 通常起勁E```powershell
 pnpm dev
 ```
 
-### クリーン起動（推奨：ChunkLoadError/Invalid token が頻発する場合）
-```powershell
+### クリーン起動（推奨�E�ChunkLoadError/Invalid token が頻発する場合！E```powershell
 pnpm dev:clean
 ```
 
-### ポート3000が使用中の場合
-```powershell
-# ポート3000を強制終了してから起動
-npx kill-port 3000
+### ポ�EチE000が使用中の場吁E```powershell
+# ポ�EチE000を強制終亁E��てから起勁Enpx kill-port 3000
 pnpm dev
 ```
 
-または、別のポートで起動：
-```powershell
+また�E、別のポ�Eトで起動！E```powershell
 pnpm dev -- -p 3001
 ```
 
-## よくあるエラーと対処法
-
+## よくあるエラーと対処況E
 ### 1. ChunkLoadError
-**症状**: ブラウザコンソールに `ChunkLoadError: Loading chunk xxx failed` が表示される
-
-**対処法**:
-1. **Ctrl+F5** でブラウザのハードリフレッシュ
-2. それでも解決しない場合は `.next` を削除して再起動：
-   ```powershell
+**痁E��**: ブラウザコンソールに `ChunkLoadError: Loading chunk xxx failed` が表示されめE
+**対処況E*:
+1. **Ctrl+F5** でブラウザのハ�EドリフレチE��ュ
+2. それでも解決しなぁE��合�E `.next` を削除して再起動！E   ```powershell
    pnpm dev:clean
    ```
 
 ### 2. Invalid token / Unexpected token エラー
-**症状**: ターミナルに `SyntaxError: Invalid or unexpected token` が表示される
-
-**対処法**:
-1. ターミナルのエラーメッセージで該当ファイル（例: `layout.tsx`）を確認
-2. 該当ファイルの構文エラーを修正
-3. 保存すると自動的に再コンパイルされる
-
+**痁E��**: ターミナルに `SyntaxError: Invalid or unexpected token` が表示されめE
+**対処況E*:
+1. ターミナルのエラーメチE��ージで該当ファイル�E�侁E `layout.tsx`�E�を確誁E2. 該当ファイルの構文エラーを修正
+3. 保存すると自動的に再コンパイルされめE
 ### 3. Port already in use (EADDRINUSE)
-**症状**: `Error: listen EADDRINUSE: address already in use :::3000`
+**痁E��**: `Error: listen EADDRINUSE: address already in use :::3000`
 
-**対処法**:
+**対処況E*:
 ```powershell
-# 方法1: ポートを強制終了
-npx kill-port 3000
+# 方況E: ポ�Eトを強制終亁Enpx kill-port 3000
 
-# 方法2: プロセスIDを確認して終了
-netstat -ano | findstr :3000
+# 方況E: プロセスIDを確認して終亁Enetstat -ano | findstr :3000
 taskkill /F /PID <プロセスID>
 
-# 方法3: 別のポートで起動
-pnpm dev -- -p 3001
+# 方況E: 別のポ�Eトで起勁Epnpm dev -- -p 3001
 ```
 
 ### 4. webpack cache エラー
-**症状**: `incorrect header check` などのキャッシュ関連エラー
+**痁E��**: `incorrect header check` などのキャチE��ュ関連エラー
 
-**対処法**:
+**対処況E*:
 ```powershell
-# .next ディレクトリを削除してクリーン起動
-pnpm dev:clean
+# .next チE��レクトリを削除してクリーン起勁Epnpm dev:clean
 ```
 
-## 開発サーバー運用のベストプラクティス
+## 開発サーバ�E運用のベスト�EラクチE��ス
 
-### 推奨起動手順
-```powershell
-# 1. 既存のポート3000プロセスを終了
-npx kill-port 3000
+### 推奨起動手頁E```powershell
+# 1. 既存�Eポ�EチE000プロセスを終亁Enpx kill-port 3000
 
-# 2. クリーン起動
-pnpm dev:clean
+# 2. クリーン起勁Epnpm dev:clean
 ```
 
-### コード変更時の注意点
-- **大規模な変更後**: `.next` を削除してから起動（`pnpm dev:clean`）
-- **依存関係の変更**: `pnpm install` 後に必ず `.next` を削除
-- **エラーが出た場合**: まず Ctrl+F5 でブラウザリフレッシュ、次に `pnpm dev:clean`
+### コード変更時�E注意点
+- **大規模な変更征E*: `.next` を削除してから起動！Epnpm dev:clean`�E�E- **依存関係�E変更**: `pnpm install` 後に忁E�� `.next` を削除
+- **エラーが�Eた場吁E*: まぁECtrl+F5 でブラウザリフレチE��ュ、次に `pnpm dev:clean`
 
-### TypeScript/ESLint エラーの確認
-```powershell
-# 型チェック
+### TypeScript/ESLint エラーの確誁E```powershell
+# 型チェチE��
 pnpm typecheck
 
-# Lint チェック
+# Lint チェチE��
 pnpm lint --max-warnings=0
 
-# ビルド確認
-pnpm build
+# ビルド確誁Epnpm build
 ```
 
-## 緊急時の完全リセット手順
-
-すべてがうまくいかない場合：
-
+## 緊急時�E完�EリセチE��手頁E
+すべてがうまくいかなぁE��合！E
 ```powershell
-# 1. 開発サーバーを停止（Ctrl+C）
-
-# 2. ビルドキャッシュとnode_modulesを削除
+# 1. 開発サーバ�Eを停止�E�Etrl+C�E�E
+# 2. ビルドキャチE��ュとnode_modulesを削除
 Remove-Item -Recurse -Force .next, node_modules
 
-# 3. 依存関係を再インストール
+# 3. 依存関係を再インスト�Eル
 pnpm install
 
-# 4. クリーン起動
-pnpm dev:clean
+# 4. クリーン起勁Epnpm dev:clean
 ```
 
-## 参考情報
+## 参老E��報
 
-- **Next.js キャッシュ**: `.next/cache` にwebpackキャッシュが保存される
-- **ポート変更**: 環境変数 `PORT=3001 pnpm dev` でもポート指定可能
-- **ログ確認**: ターミナル出力に `[webpack.cache]` や `Compiling` などのメッセージを確認
+- **Next.js キャチE��ュ**: `.next/cache` にwebpackキャチE��ュが保存される
+- **ポ�Eト変更**: 環墁E��数 `PORT=3001 pnpm dev` でも�Eート指定可能
+- **ログ確誁E*: ターミナル出力に `[webpack.cache]` めE`Compiling` などのメチE��ージを確誁E

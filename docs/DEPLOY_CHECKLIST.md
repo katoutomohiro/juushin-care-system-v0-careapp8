@@ -1,87 +1,87 @@
-# Vercel 本番デプロイ チェックリスト
+# Vercel 本番チE�Eロイ チェチE��リスチE
 
-> **📌 対象読者**: デプロイ担当者、運用担当者  
+> **📌 対象読老E*: チE�Eロイ拁E��老E��E��用拁E��老E 
 > **前提**: `docs/PLAN_DEPLOY.md` を確認済みであること  
-> **重要**: シークレット（API キー）を GitHub にコミットしないこと
+> **重要E*: シークレチE���E�EPI キー�E�を GitHub にコミットしなぁE��と
 
 ---
 
-## A. デプロイ前（ローカル）
+## A. チE�Eロイ前（ローカル�E�E
 
-### コード品質確認
+### コード品質確誁E
 
 - [ ] `pnpm build` がローカルで成功する
-- [ ] `pnpm lint` でエラーが 0 件
-- [ ] `pnpm typecheck` でエラーが 0 件
-- [ ] `.env.local` が `.gitignore` に含まれている
-- [ ] シークレット（API キー）がコード内にハードコードされていない
+- [ ] `pnpm lint` でエラーぁE0 件
+- [ ] `pnpm typecheck` でエラーぁE0 件
+- [ ] `.env.local` ぁE`.gitignore` に含まれてぁE��
+- [ ] シークレチE���E�EPI キー�E�がコード�Eにハ�EドコードされてぁE��ぁE
 
-**確認コマンド**:
+**確認コマンチE*:
 ```bash
 pnpm build
 pnpm lint
 pnpm typecheck
 grep -E "(SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY)" src/**/*.ts app/**/*.ts
-# → シークレットが直接書かれていないこと確認
+# ↁEシークレチE��が直接書かれてぁE��ぁE��と確誁E
 ```
 
 ---
 
-## B. Supabase（本番）準備
+## B. Supabase�E�本番�E�準備
 
-### 本番プロジェクト構築
+### 本番プロジェクト構篁E
 
-- [ ] 本番用 Supabase プロジェクト作成済み
-- [ ] `case_records` テーブルに `version` カラム追加済み（migration 適用済み）
-- [ ] RLS ポリシーが有効化されている
-- [ ] 開発用シードデータ（ATさん・匿名）投入済み
+- [ ] 本番用 Supabase プロジェクト作�E済み
+- [ ] `case_records` チE�Eブルに `version` カラム追加済み�E�Eigration 適用済み�E�E
+- [ ] RLS ポリシーが有効化されてぁE��
+- [ ] 開発用シードデータ�E�ETさん・匿名）投入済み
 
-**確認方法**:
+**確認方況E*:
 ```bash
 # 本番 Supabase にリンク
 npx supabase link --project-ref <your-project-id>
 
-# case_records テーブル確認
-# Supabase Dashboard → Table Editor → case_records → Columns で version 列確認
+# case_records チE�Eブル確誁E
+# Supabase Dashboard ↁETable Editor ↁEcase_records ↁEColumns で version 列確誁E
 ```
 
 ---
 
-## C. Vercel 準備（環境変数）
+## C. Vercel 準備�E�環墁E��数�E�E
 
-### アカウント・リポジトリ連携
+### アカウント�Eリポジトリ連携
 
-- [ ] Vercel アカウント作成済み
+- [ ] Vercel アカウント作�E済み
 - [ ] GitHub リポジトリと連携済み
-- [ ] リポジトリが Vercel Project として登録済み
+- [ ] リポジトリぁEVercel Project として登録済み
 
-### 環境変数設定
+### 環墁E��数設宁E
 
 以下を **Production / Preview / Development 全てに設定済み**:
 
 - [ ] `NEXT_PUBLIC_SUPABASE_URL`
   - 値: `https://xxx.supabase.co`
-  - 取得元: Supabase Dashboard → Project Settings → API → Project URL
+  - 取得�E: Supabase Dashboard ↁEProject Settings ↁEAPI ↁEProject URL
 
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - 値: `eyJhbGciOi...`（anon キー）
-  - 取得元: Supabase Dashboard → Project Settings → API → anon public
+  - 値: `eyJhbGciOi...`�E�Enon キー�E�E
+  - 取得�E: Supabase Dashboard ↁEProject Settings ↁEAPI ↁEanon public
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`
-  - 値: `eyJhbGciOi...`（service_role キー）
-  - 取得元: Supabase Dashboard → Project Settings → API → service_role
-  - ⚠️ **絶対に公開しないこと**
+  - 値: `eyJhbGciOi...`�E�Eervice_role キー�E�E
+  - 取得�E: Supabase Dashboard ↁEProject Settings ↁEAPI ↁEservice_role
+  - ⚠�E�E**絶対に公開しなぁE��と**
 
-- [ ] `NEXT_PUBLIC_APP_URL`（Production のみ推奨）
-  - 値: `https://juushin-care-xxx.vercel.app`（デプロイ後に確定）
-  - 用途: 絶対 URL 生成、OGP タグ、メール確認リンク
+- [ ] `NEXT_PUBLIC_APP_URL`�E�Eroduction のみ推奨�E�E
+  - 値: `https://juushin-care-xxx.vercel.app`�E�デプロイ後に確定！E
+  - 用送E 絶対 URL 生�E、OGP タグ、メール確認リンク
 
-**確認方法**:
+**確認方況E*:
 ```bash
-# CLI で設定確認
+# CLI で設定確誁E
 vercel env ls
 
-# 期待結果:
+# 期征E��果:
 # NEXT_PUBLIC_SUPABASE_URL
 # NEXT_PUBLIC_SUPABASE_ANON_KEY
 # SUPABASE_SERVICE_ROLE_KEY
@@ -90,44 +90,44 @@ vercel env ls
 
 ---
 
-## D. デプロイ（Vercel CLI 推奨）
+## D. チE�Eロイ�E�Eercel CLI 推奨�E�E
 
-### 方法1: Vercel CLI（推奨）
+### 方況E: Vercel CLI�E�推奨�E�E
 
 ```bash
-# 1. Vercel CLI インストール
+# 1. Vercel CLI インスト�Eル
 npm install -g vercel
 
 # 2. Vercel にログイン
 vercel login
 
-# 3. プロジェクトリンク（初回のみ）
+# 3. プロジェクトリンク�E��E回�Eみ�E�E
 cd c:\dev\juushin-care-system-v0-careapp8
 vercel link
 
-# 4. 本番デプロイ
+# 4. 本番チE�Eロイ
 vercel --prod
 ```
 
-**チェックリスト**:
-- [ ] Vercel CLI が正常にインストールされている
+**チェチE��リスチE*:
+- [ ] Vercel CLI が正常にインスト�EルされてぁE��
 - [ ] Vercel にログイン済み
-- [ ] プロジェクトリンク完了
-- [ ] デプロイ成功（URL が表示される）
+- [ ] プロジェクトリンク完亁E
+- [ ] チE�Eロイ成功�E�ERL が表示される！E
 
-### 方法2: GitHub 連携デプロイ（代替）
+### 方況E: GitHub 連携チE�Eロイ�E�代替�E�E
 
-- [ ] Vercel Dashboard で "Add New Project" をクリック
-- [ ] GitHub リポジトリを選択
-- [ ] Framework Preset が "Next.js" であることを確認
-- [ ] 環境変数を全て設定（C. を参照）
-- [ ] "Deploy" ボタンをクリック
+- [ ] Vercel Dashboard で "Add New Project" をクリチE��
+- [ ] GitHub リポジトリを選抁E
+- [ ] Framework Preset ぁE"Next.js" であることを確誁E
+- [ ] 環墁E��数を�Eて設定！E. を参照�E�E
+- [ ] "Deploy" ボタンをクリチE��
 
 ---
 
 ## E. 本番 Supabase に Migration 適用
 
-### Migration 実行
+### Migration 実衁E
 
 ```bash
 # 本番 Supabase にリンク
@@ -137,55 +137,55 @@ npx supabase link --project-ref <your-project-id>
 npx supabase db push
 ```
 
-**チェックリスト**:
-- [ ] Migration 実行成功
-- [ ] エラーメッセージなし
+**チェチE��リスチE*:
+- [ ] Migration 実行�E劁E
+- [ ] エラーメチE��ージなぁE
 - [ ] Supabase Dashboard で `case_records.version` カラム確認済み
 
 ---
 
-## F. セキュリティ確認（個人情報）
+## F. セキュリチE��確認（個人惁E���E�E
 
-### RLS ポリシー確認
+### RLS ポリシー確誁E
 
-Supabase SQL Editor で以下を実行:
+Supabase SQL Editor で以下を実衁E
 
 ```sql
 SET ROLE anon;
 SELECT full_name, address, phone FROM care_receivers LIMIT 1;
 ```
 
-**期待結果**:
-- [ ] 0 件返却（RLS で個人情報がマスクされている）
-- [ ] エラーメッセージなし
+**期征E��果**:
+- [ ] 0 件返却�E�ELS で個人惁E��が�EスクされてぁE���E�E
+- [ ] エラーメチE��ージなぁE
 
-### ログ出力確認
+### ログ出力確誁E
 
-本番デプロイ後、利用者情報編集画面を開く:
+本番チE�Eロイ後、利用老E��報編雁E��面を開ぁE
 
-- [ ] ブラウザ Console に `full_name`, `address`, `phone` が出力されていない
-- [ ] API レスポンスが sanitized されている
-- [ ] 個人情報がログに含まれていない
+- [ ] ブラウザ Console に `full_name`, `address`, `phone` が�E力されてぁE��ぁE
+- [ ] API レスポンスぁEsanitized されてぁE��
+- [ ] 個人惁E��がログに含まれてぁE��ぁE
 
-### シードデータ確認
+### シードデータ確誁E
 
-- [ ] seed ファイルに実名・住所・電話番号が含まれていない
-- [ ] 開発用シードデータは匿名のみ（例: `display_name: AT`, `display_name: User-001`）
-- [ ] 本番環境でのみ実データを入力
+- [ ] seed ファイルに実名・住所・電話番号が含まれてぁE��ぁE
+- [ ] 開発用シードデータは匿名�Eみ�E�侁E `display_name: AT`, `display_name: User-001`�E�E
+- [ ] 本番環墁E��のみ実データを�E劁E
 
 ---
 
-## G. デプロイ後の動作確認（最短チェック）
+## G. チE�Eロイ後�E動作確認（最短チェチE���E�E
 
-### 1. トップページ表示
+### 1. トップ�Eージ表示
 
 ```
 URL: https://juushin-care-xxx.vercel.app/
 ```
 
-- [ ] ホーム画面が表示される
-- [ ] ローディングエラーなし
-- [ ] Tailwind CSS が適用されている
+- [ ] ホ�Eム画面が表示されめE
+- [ ] ローチE��ングエラーなぁE
+- [ ] Tailwind CSS が適用されてぁE��
 
 ### 2. ログイン
 
@@ -194,10 +194,10 @@ URL: https://juushin-care-xxx.vercel.app/login
 ```
 
 - [ ] ログインフォーム表示
-- [ ] テストアカウントでログイン成功
-- [ ] ログイン後、ホームにリダイレクト
+- [ ] チE��トアカウントでログイン成功
+- [ ] ログイン後、�EームにリダイレクチE
 
-### 3. ATさんページ
+### 3. ATさんペ�Eジ
 
 ```
 URL: https://juushin-care-xxx.vercel.app/services/life-care/users/AT
@@ -213,64 +213,64 @@ URL: https://juushin-care-xxx.vercel.app/services/life-care/users/AT/case-record
 ```
 
 - [ ] ケース記録フォーム表示
-- [ ] 職員選択ドロップダウン動作
-- [ ] フォーム入力・保存成功
+- [ ] 職員選択ドロチE�Eダウン動佁E
+- [ ] フォーム入力�E保存�E劁E
 
-### 5. 同時編集制御（409 Conflict）
+### 5. 同時編雁E��御�E�E09 Conflict�E�E
 
-**手順**:
-1. 同じケース記録を 2 つのタブで開く
-2. タブ 1 で編集・保存（version: 1 → 2）
-3. タブ 2 で古い version のまま保存試行
+**手頁E*:
+1. 同じケース記録めE2 つのタブで開く
+2. タチE1 で編雁E�E保存！Eersion: 1 ↁE2�E�E
+3. タチE2 で古ぁEversion のまま保存試衁E
 
-**期待動作**:
+**期征E��佁E*:
 - [ ] 409 Conflict ダイアログ表示
-- [ ] "最新データを再読み込み" ボタンで更新
-- [ ] タブ 2 のフォームが最新データにリフレッシュ
+- [ ] "最新チE�Eタを�E読み込み" ボタンで更新
+- [ ] タチE2 のフォームが最新チE�EタにリフレチE��ュ
 
 ---
 
-## H. 監視・ログ
+## H. 監視�Eログ
 
-### Vercel ログ確認
+### Vercel ログ確誁E
 
 ```bash
 # リアルタイムログ
 vercel logs --follow
 
-# 最近のログ
+# 最近�Eログ
 vercel logs
 ```
 
-**チェックリスト**:
-- [ ] エラーログなし
-- [ ] ビルド成功
-- [ ] デプロイ完了
+**チェチE��リスチE*:
+- [ ] エラーログなぁE
+- [ ] ビルド�E劁E
+- [ ] チE�Eロイ完亁E
 
-### Supabase ログ確認
+### Supabase ログ確誁E
 
-1. Supabase Dashboard → Logs
-2. 「Postgres Logs」でクエリエラー確認
-3. 「API Logs」でリクエストエラー確認
+1. Supabase Dashboard ↁELogs
+2. 「Postgres Logs」でクエリエラー確誁E
+3. 「API Logs」でリクエストエラー確誁E
 
-**チェックリスト**:
-- [ ] クエリエラーなし
-- [ ] API エラーなし
-- [ ] RLS エラーなし
+**チェチE��リスチE*:
+- [ ] クエリエラーなぁE
+- [ ] API エラーなぁE
+- [ ] RLS エラーなぁE
 
 ---
 
-## I. トラブル時（最小手順）
+## I. トラブル時（最小手頁E��E
 
 ### エラー: "Supabase client error"
 
-**確認**:
+**確誁E*:
 ```bash
 vercel env ls
 ```
 
 **修正**:
-1. Vercel Dashboard で環境変数を再確認
+1. Vercel Dashboard で環墁E��数を�E確誁E
 2. 値を修正
 3. `vercel --prod` で再デプロイ
 
@@ -284,73 +284,74 @@ npx supabase db push
 
 ### エラー: "RLS policy violation"
 
-**確認**:
-1. Supabase Dashboard → Authentication で テストユーザー確認
-2. Table Editor → Policies で RLS ポリシー確認
+**確誁E*:
+1. Supabase Dashboard ↁEAuthentication で チE��トユーザー確誁E
+2. Table Editor ↁEPolicies で RLS ポリシー確誁E
 
 **解決**:
-- 開発環境では RLS を一時無効化してテスト
-- 本番では適切な RLS ポリシーを設定
+- 開発環墁E��は RLS を一時無効化してチE��チE
+- 本番では適刁E�� RLS ポリシーを設宁E
 
-### エラー: "409 Conflict が常に発生する"
+### エラー: "409 Conflict が常に発生すめE
 
-**確認**:
+**確誁E*:
 ```sql
 SELECT id, version, updated_at FROM case_records ORDER BY updated_at DESC LIMIT 10;
 ```
 
 **修正**:
-- トリガー `increment_version()` が正しく作成されているか確認
-- migration ファイルを再実行
+- トリガー `increment_version()` が正しく作�EされてぁE��か確誁E
+- migration ファイルを�E実衁E
 
 ---
 
-## J. ロールバック（緊急時のみ）
+## J. ロールバック�E�緊急時�Eみ�E�E
 
 ### Vercel ロールバック
 
 ```bash
-# 最近のデプロイ一覧
+# 最近�EチE�Eロイ一覧
 vercel ls
 
-# 前のデプロイに戻す
+# 前�EチE�Eロイに戻ぁE
 vercel rollback <deployment-url>
 ```
 
-**チェックリスト**:
-- [ ] デプロイ一覧表示成功
-- [ ] ロールバック実行成功
-- [ ] 前の URL で動作確認
+**チェチE��リスチE*:
+- [ ] チE�Eロイ一覧表示成功
+- [ ] ロールバック実行�E劁E
+- [ ] 前�E URL で動作確誁E
 
-### Supabase ロールバック（慎重に）
+### Supabase ロールバック�E��E重に�E�E
 
 ```bash
-# ローカルで migration を削除後、再度 push
+# ローカルで migration を削除後、�E度 push
 npx supabase db reset
 ```
 
-**チェックリスト**:
-- [ ] ロールバック実行前にバックアップ確認
-- [ ] 本番データへの影響を最小化
+**チェチE��リスチE*:
+- [ ] ロールバック実行前にバックアチE�E確誁E
+- [ ] 本番チE�Eタへの影響を最小化
 
 ---
 
-## 📝 最終チェック
+## 📝 最終チェチE��
 
-- [ ] すべてのセクション A～J が完了
-- [ ] 本番環境で期待動作を確認
-- [ ] ログにエラーがない
-- [ ] シークレットが GitHub にコミットされていない
+- [ ] すべてのセクション A�E�J が完亁E
+- [ ] 本番環墁E��期征E��作を確誁E
+- [ ] ログにエラーがなぁE
+- [ ] シークレチE��ぁEGitHub にコミットされてぁE��ぁE
 
 ---
 
-**デプロイ完了日**: _______________  
-**デプロイ担当者**: _______________  
+**チE�Eロイ完亁E��**: _______________  
+**チE�Eロイ拁E��老E*: _______________  
 **URL**: https://_______________  
 
 ---
 
-関連ドキュメント:
+関連ドキュメンチE
 - [PLAN_DEPLOY.md](PLAN_DEPLOY.md)
 - [API_ROUTE_EXAMPLE_RLS.md](API_ROUTE_EXAMPLE_RLS.md)
 - [SETUP_LOCAL.md](../SETUP_LOCAL.md)
+
