@@ -12,7 +12,7 @@ export type SupabaseAdminEnv = {
 }
 
 function resolveSupabaseAdminEnv(): SupabaseAdminEnv {
-  const serverUrl = process.env.SUPABASE_URL || ""
+  const serverUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
   const serverKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
   const hasServer = !!serverUrl && !!serverKey
@@ -21,7 +21,7 @@ function resolveSupabaseAdminEnv(): SupabaseAdminEnv {
     return {
       url: serverUrl,
       key: serverKey,
-      urlSource: "SUPABASE_URL",
+      urlSource: "NEXT_PUBLIC_SUPABASE_URL",
       keySource: "SUPABASE_SERVICE_ROLE_KEY",
       branch: "server",
       missingKeys: [],
@@ -29,13 +29,17 @@ function resolveSupabaseAdminEnv(): SupabaseAdminEnv {
   }
 
   const missingKeys: string[] = []
-  if (!serverUrl) missingKeys.push("SUPABASE_URL")
+  if (!serverUrl) missingKeys.push("NEXT_PUBLIC_SUPABASE_URL")
   if (!serverKey) missingKeys.push("SUPABASE_SERVICE_ROLE_KEY")
+
+  if (missingKeys.length > 0) {
+    console.error("[Supabase admin] Missing required env:", missingKeys.join(", "))
+  }
 
   return {
     url: serverUrl || "",
     key: serverKey || "",
-    urlSource: serverUrl ? "SUPABASE_URL" : "",
+    urlSource: serverUrl ? "NEXT_PUBLIC_SUPABASE_URL" : "",
     keySource: serverKey ? "SUPABASE_SERVICE_ROLE_KEY" : "",
     branch: "missing",
     missingKeys,

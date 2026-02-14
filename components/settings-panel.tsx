@@ -20,6 +20,7 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [supabaseRef, setSupabaseRef] = useState<string | null>(null)
   const [newProfile, setNewProfile] = useState({
     name: "",
     dateOfBirth: "",
@@ -37,6 +38,18 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
   useEffect(() => {
     loadSettings()
     loadUserProfiles()
+  }, [])
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+    if (!url) return
+    try {
+      const ref = new URL(url).host.split(".")[0]
+      setSupabaseRef(ref || null)
+    } catch {
+      setSupabaseRef(null)
+    }
   }, [])
 
   useEffect(() => {
@@ -117,7 +130,14 @@ export function SettingsPanel({ selectedUser, onUserChange: _onUserChange }: Set
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">⚙️ 設定</h2>
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-2xl font-bold">⚙️ 設定</h2>
+        {supabaseRef && (
+          <span className="text-xs text-muted-foreground">
+            Supabase ref: {supabaseRef}
+          </span>
+        )}
+      </div>
 
       {message && (
         <Alert className={message.type === "error" ? "border-red-500 bg-red-50" : "border-green-500 bg-green-50"}>
