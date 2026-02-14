@@ -1,124 +1,51 @@
-import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
-import { 
-  requireApiUser, 
-  unauthorizedResponse,
-  ensureSupabaseAdmin,
-  unexpectedErrorResponse,
-  supabaseErrorResponse,
-  jsonError
-} from "@/lib/api/route-helpers"
-import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
-export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-/**
- * GET /api/care-receivers
- * Query params:
- *   - id: uuid (single record lookup)
- *   - code: care_receivers.code (single record lookup)
- *   - serviceId: uuid (list all receivers for this service)
- *
- * Returns:
- *   - List mode: { ok: true, careReceivers: [...] }
- *   - Single mode: { ok: true, careReceiver: {...} }
- *   - Error: { ok: false, error: "message" } (200 status)
- */
-export async function GET(req: NextRequest) {
+export async function GET() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+
+  const missingEnv = [] as string[]
+  if (!url) missingEnv.push("NEXT_PUBLIC_SUPABASE_URL")
+  if (!anonKey) missingEnv.push("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+  if (!serviceKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY")
+
+  if (missingEnv.length > 0) {
+    console.error("[health] Missing required env:", missingEnv.join(", "))
+    return NextResponse.json(
+      { ok: false, status: "missing_env", missing_env: missingEnv, supabase_error: null },
+      { status: 500 }
+    )
+  }
+
   try {
-    const user = await requireApiUser()
-    if (!user) {
-      return unauthorizedResponse(true)
-    }
-
-    const { searchParams } = new URL(req.url)
-    const id = searchParams.get("id")
-    const codeInput = searchParams.get("code")
-    const serviceId = searchParams.get("serviceId")
-
-    // No required parameters provided
-    if (!id && !codeInput && !serviceId) {
-      return jsonError("id or code or serviceId is required", 400, { ok: false })
-    }
-
-    const clientError = ensureSupabaseAdmin(supabaseAdmin)
-    if (clientError) {
-      return jsonError("Database connection not available", 503, { ok: false })
-    }
-
-    // LIST MODE: Get all care receivers for a service
-    if (serviceId) {
-      let query = supabaseAdmin!
-        .from("care_receivers")
-        .select("id, code, name, age, gender, care_level, condition, medical_care")
-
-      query = query.eq("service_id", serviceId)
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error("[care-receivers list] Query failed for serviceId:", serviceId, "Error:", error.message)
-        return supabaseErrorResponse('care-receivers GET (list)', error)
-      }
-
-      const count = data?.length || 0
-      console.log(`[care-receivers list] Fetched ${count} records for serviceId: ${serviceId}`)
-      
-      return NextResponse.json({
-        ok: true,
-        careReceivers: (data || []).map((row: any) => ({
-          id: row.id,
-          code: row.code,
-          name: row.name,
-          age: row.age,
-          gender: row.gender,
-          careLevel: row.care_level,
-          condition: row.condition,
-          medicalCare: row.medical_care,
-        })),
-      })
-    }
-
-    // SINGLE MODE: Get care receiver by id or code
-    const normalizedCode = codeInput ? normalizeUserId(codeInput) : null
-
-    let query = supabaseAdmin!
-      .from("care_receivers")
-      .select("id, code, name, age, gender, care_level, condition, medical_care")
-
-    if (id) {
-      query = query.eq("id", id)
-    } else if (normalizedCode) {
-      query = query.eq("code", normalizedCode)
-    } else {
-      return jsonError("Invalid code", 400, { ok: false })
-    }
-
-    const { data, error } = await query.maybeSingle()
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+    const { error } = await admin.from("staff_profiles").select("id").limit(1)
 
     if (error) {
-      return supabaseErrorResponse('care-receivers GET (single)', error)
+      console.error("[health] Supabase query failed:", error.message)
+      return NextResponse.json(
+        { ok: false, status: "database_error", missing_env: [], supabase_error: error.message },
+        { status: 502 }
+      )
     }
 
-    if (!data) {
-      return jsonError("care_receiver not found", 404, { ok: false })
-    }
-
+    console.log("[health] Health check passed")
     return NextResponse.json({
       ok: true,
-      careReceiver: {
-        id: data.id,
-        code: data.code,
-        name: data.name,
-        age: data.age,
-        gender: data.gender,
-        careLevel: data.care_level,
-        condition: data.condition,
-        medicalCare: data.medical_care,
-      },
+      status: "healthy",
+      missing_env: [],
+      supabase_error: null
     })
-  } catch (error) {
-    return unexpectedErrorResponse('care-receivers GET', error)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error"
+    console.error("[health] Supabase connection failed:", message)
+    return NextResponse.json(
+      { ok: false, status: "connection_error", missing_env: [], supabase_error: message },
+      { status: 500 }
+    )
   }
 }
