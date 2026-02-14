@@ -15,7 +15,7 @@ export const runtime = 'nodejs'
 /**
  * POST /api/voice/save
  * JSON { text, durationMs, avgLevel, device? } を受け取り、Supabase の voice_notes に挿入。
- * SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 未設定時は DRY-RUN を返す（安全フォールバック）。
+ * NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 未設定時は DRY-RUN を返す（安全フォールバック）。
  */
 export async function POST(req: NextRequest) {
   try {
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           id: 'dry-run-id',
-          message: '[DRY-RUN] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
+          message: '[DRY-RUN] NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set',
         },
         { status: 201 }
       )
