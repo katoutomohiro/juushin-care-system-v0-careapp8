@@ -254,11 +254,14 @@ export default function ServiceUsersPage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/care-receivers/list?serviceCode=${encodeURIComponent(serviceId)}`, { cache: 'no-store' })
+      console.log('[ServiceUsersPage] Fetching care receivers for serviceId:', serviceId)
+      const response = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, { cache: 'no-store' })
       const data = await response.json()
 
       if (data.ok) {
-        setUsers(data.users || [])
+        const count = data.careReceivers?.length || 0
+        console.log('[ServiceUsersPage] Successfully fetched', count, 'care receivers')
+        setUsers(data.careReceivers || [])
       } else {
         console.warn('[ServiceUsersPage] API returned ok:false:', data.error)
         setUsers([])

@@ -43,28 +43,32 @@ export default function UsersPage() {
         setLoading(true)
         setError(null)
         
-        const res = await fetch(`/api/care-receivers/list?serviceCode=${encodeURIComponent(serviceId)}`, {
+        console.log('[UsersPage] Fetching care receivers for serviceId:', serviceId)
+        const res = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, {
           cache: 'no-store',
         })
         
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
+          const status = res.status
+          console.error('[UsersPage] API returned error status:', status)
+          throw new Error(`HTTP ${status}`)
         }
         
         const json = await res.json()
-        console.log('[UsersPage] API response:', { ok: json.ok, count: json.count, usersLength: json.users?.length })
+        console.log('[UsersPage] API response:', { ok: json.ok, count: json.careReceivers?.length })
         
         // どんな形で返ってきても落ちない
-        const list = Array.isArray(json?.users) ? json.users : []
+        const list = Array.isArray(json?.careReceivers) ? json.careReceivers : []
         
         if (mounted) {
           setUsers(list)
           setLoading(false)
         }
       } catch (e: any) {
-        console.error('[UsersPage] Fetch error:', e)
+        const errorMsg = e?.message ?? 'データ取得に失敗しました'
+        console.error('[UsersPage] Fetch error:', errorMsg)
         if (mounted) {
-          setError(e?.message ?? 'Failed to load')
+          setError(errorMsg)
           setUsers([])
           setLoading(false)
         }
