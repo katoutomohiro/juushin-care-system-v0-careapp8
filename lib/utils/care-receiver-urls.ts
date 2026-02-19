@@ -44,3 +44,26 @@ export function getDailyLogsHref(
   const normalizedUserId = userId || 'AT'
   return `/services/${serviceId}/users/${encodeURIComponent(normalizedUserId)}/daily-logs`
 }
+
+/**
+ * 利用者APIのURLを生成
+ * @param serviceId サービスID（必須）
+ * @param code 利用者コード（任意）
+ * @returns APIの相対URL（serviceIdが無ければnull）
+ */
+export function buildCareReceiversUrl(
+  serviceId: string,
+  code?: string | null
+): string | null {
+  const normalizedServiceId = serviceId.trim()
+  if (!normalizedServiceId) return null
+
+  const normalizedCode = code?.trim()
+  if (code !== undefined && !normalizedCode) return null
+
+  const params = new URLSearchParams()
+  params.set('serviceId', normalizedServiceId)
+  if (normalizedCode) params.set('code', normalizedCode)
+
+  return `/api/care-receivers?${params.toString()}`
+}

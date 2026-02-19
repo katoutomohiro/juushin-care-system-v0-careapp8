@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { normalizeUserId } from "@/lib/ids/normalizeUserId"
+import { buildCareReceiversUrl } from "@/lib/utils/care-receiver-urls"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -257,7 +258,13 @@ export default function ServiceUsersPage() {
 
     setIsLoading(true)
     try {
-      const url = `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`
+      const url = buildCareReceiversUrl(serviceId)
+      if (!url) {
+        console.warn('[ServiceUsersPage] serviceId not available after trim:', serviceId)
+        setUsers([])
+        setIsLoading(false)
+        return
+      }
       console.log('[ServiceUsersPage] Fetching care receivers from:', url)
       const response = await fetch(url, { cache: 'no-store' })
 
