@@ -43,15 +43,24 @@ export default function UsersPage() {
         setLoading(true)
         setError(null)
         
+        // Guard: only fetch if serviceId is a non-empty string
+        if (typeof serviceId !== 'string' || !serviceId.trim()) {
+          console.warn('[UsersPage] serviceId is missing or empty:', serviceId)
+          setError('Service ID is missing')
+          setUsers([])
+          setLoading(false)
+          return
+        }
+        
         console.log('[UsersPage] Fetching care receivers for serviceId:', serviceId)
         const res = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, {
           cache: 'no-store',
         })
         
         if (!res.ok) {
-          const status = res.status
-          console.error('[UsersPage] API returned error status:', status)
-          throw new Error(`HTTP ${status}`)
+          const bodyText = await res.text()
+          console.error('[UsersPage] API returned error status:', res.status, 'body:', bodyText)
+          throw new Error(`HTTP ${res.status}: ${bodyText}`)
         }
         
         const json = await res.json()
@@ -65,8 +74,8 @@ export default function UsersPage() {
           setLoading(false)
         }
       } catch (e: any) {
-        const errorMsg = e?.message ?? 'データ取得に失敗しました'
-        console.error('[UsersPage] Fetch error:', errorMsg)
+        const errorMsg = e instanceof Error ? e.message : String(e)
+        console.error('[UsersPage] Fetch error:', { error: errorMsg, fullError: e })
         if (mounted) {
           setError(errorMsg)
           setUsers([])

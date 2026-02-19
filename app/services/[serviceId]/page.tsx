@@ -256,6 +256,15 @@ export default function ServiceUsersPage() {
     try {
       console.log('[ServiceUsersPage] Fetching care receivers for serviceId:', serviceId)
       const response = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, { cache: 'no-store' })
+
+      if (!response.ok) {
+        const bodyText = await response.text()
+        console.error('[ServiceUsersPage] API returned error status:', response.status, 'body:', bodyText)
+        setUsers([])
+        setIsLoading(false)
+        return
+      }
+
       const data = await response.json()
 
       if (data.ok) {
@@ -263,11 +272,13 @@ export default function ServiceUsersPage() {
         console.log('[ServiceUsersPage] Successfully fetched', count, 'care receivers')
         setUsers(data.careReceivers || [])
       } else {
-        console.warn('[ServiceUsersPage] API returned ok:false:', data.error)
+        console.warn('[ServiceUsersPage] API returned ok:false:', { error: data.error, responseData: data })
         setUsers([])
       }
     } catch (error) {
-      console.error('[ServiceUsersPage] Failed to fetch users:', error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      console.error('[ServiceUsersPage] Failed to fetch users:', { error: errorMsg, fullError: error })
+      setUsers([])
     } finally {
       setIsLoading(false)
     }
