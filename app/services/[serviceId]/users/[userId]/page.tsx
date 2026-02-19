@@ -317,20 +317,32 @@ export default function UserDetailPage() {
       })
 
       if (!response.ok) {
-        console.warn("[UserDetailPage] Failed to fetch full care receiver data", response.status)
+        const bodyText = await response.text()
+        console.warn("[UserDetailPage] Failed to fetch full care receiver data", {
+          status: response.status,
+          statusText: response.statusText,
+          body: bodyText,
+        })
         return null
       }
 
       const result = await response.json()
 
       if (!result?.ok || !result?.careReceiver) {
-        console.warn("[UserDetailPage] Care receiver API returned ok:false", result?.error)
+        console.warn("[UserDetailPage] Care receiver API returned ok:false", {
+          error: result?.error,
+          detail: result?.detail,
+        })
         return null
       }
 
       return result.careReceiver
     } catch (error) {
-      console.warn("[UserDetailPage] Unexpected error fetching full care receiver data", error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      console.warn("[UserDetailPage] Unexpected error fetching full care receiver data", {
+        error: errorMsg,
+        fullError: error,
+      })
       return null
     }
   }, [normalizedUserId])
@@ -408,10 +420,12 @@ export default function UserDetailPage() {
 
       // If HTTP response is not ok, treat as failure
       if (!response.ok) {
+        const bodyText = await response.text()
         if (!fetchWarnedRef.current) {
           console.warn("[UserDetailPage] HTTP error fetching care receiver name", {
             status: response.status,
             statusText: response.statusText,
+            body: bodyText,
           })
           fetchWarnedRef.current = true
         }
@@ -442,7 +456,11 @@ export default function UserDetailPage() {
     } catch (error) {
       // Only log actual exceptions (network errors, JSON parse errors, etc.)
       if (!fetchWarnedRef.current) {
-        console.warn("[UserDetailPage] Unexpected error fetching care receiver name", error)
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        console.warn("[UserDetailPage] Unexpected error fetching care receiver name", {
+          error: errorMsg,
+          fullError: error,
+        })
         fetchWarnedRef.current = true
       }
       return userId // Return fallback name
