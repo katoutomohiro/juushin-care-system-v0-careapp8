@@ -247,24 +247,35 @@ export default function ServiceUsersPage() {
   })
 
   const fetchUsers = async () => {
-    if (!serviceId) {
-      console.warn('[ServiceUsersPage] serviceId not available')
+    // Guard: trim and check serviceId once
+    if (typeof serviceId !== 'string' || !serviceId.trim()) {
+      console.warn('[ServiceUsersPage] serviceId not available or empty:', serviceId)
+      setUsers([])
+      setIsLoading(false)
       return
     }
 
     setIsLoading(true)
     try {
-      console.log('[ServiceUsersPage] Fetching care receivers for serviceId:', serviceId)
-      const response = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, { cache: 'no-store' })
+      const url = `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`
+      console.log('[ServiceUsersPage] Fetching care receivers from:', url)
+      const response = await fetch(url, { cache: 'no-store' })
 
+      // If HTTP error, log details but show generic UI message
       if (!response.ok) {
         const bodyText = await response.text()
-        console.error('[ServiceUsersPage] API returned error status:', response.status, 'body:', bodyText)
+        console.error('[ServiceUsersPage] HTTP error', {
+          status: response.status,
+          statusText: response.statusText,
+          url,
+          responseBody: bodyText,
+        })
         setUsers([])
         setIsLoading(false)
         return
       }
 
+      // Parse JSON only if response.ok
       const data = await response.json()
 
       if (data.ok) {
@@ -272,12 +283,15 @@ export default function ServiceUsersPage() {
         console.log('[ServiceUsersPage] Successfully fetched', count, 'care receivers')
         setUsers(data.careReceivers || [])
       } else {
-        console.warn('[ServiceUsersPage] API returned ok:false:', { error: data.error, responseData: data })
+        console.warn('[ServiceUsersPage] API returned ok:false:', { error: data.error })
         setUsers([])
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      console.error('[ServiceUsersPage] Failed to fetch users:', { error: errorMsg, fullError: error })
+      console.error('[ServiceUsersPage] Exception during fetch', {
+        message: errorMsg,
+        error: error instanceof Error ? error.stack : String(error),
+      })
       setUsers([])
     } finally {
       setIsLoading(false)
