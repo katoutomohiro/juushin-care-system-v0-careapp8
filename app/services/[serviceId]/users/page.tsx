@@ -46,23 +46,34 @@ export default function UsersPage() {
         // Guard: only fetch if serviceId is a non-empty string
         if (typeof serviceId !== 'string' || !serviceId.trim()) {
           console.warn('[UsersPage] serviceId is missing or empty:', serviceId)
-          setError('Service ID is missing')
           setUsers([])
           setLoading(false)
           return
         }
         
-        console.log('[UsersPage] Fetching care receivers for serviceId:', serviceId)
-        const res = await fetch(`/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`, {
+        const url = `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`
+        console.log('[UsersPage] Fetching care receivers from:', url)
+        const res = await fetch(url, {
           cache: 'no-store',
         })
         
+        // If HTTP error, log details but do NOT set error state (caller sees nothing)
         if (!res.ok) {
           const bodyText = await res.text()
-          console.error('[UsersPage] API returned error status:', res.status, 'body:', bodyText)
-          throw new Error(`HTTP ${res.status}: ${bodyText}`)
+          console.error('[UsersPage] HTTP error', {
+            status: res.status,
+            statusText: res.statusText,
+            url,
+            responseBody: bodyText,
+          })
+          if (mounted) {
+            setUsers([])
+            setLoading(false)
+          }
+          return
         }
         
+        // Parse JSON only if response.ok
         const json = await res.json()
         console.log('[UsersPage] API response:', { ok: json.ok, count: json.careReceivers?.length })
         
@@ -75,9 +86,11 @@ export default function UsersPage() {
         }
       } catch (e: any) {
         const errorMsg = e instanceof Error ? e.message : String(e)
-        console.error('[UsersPage] Fetch error:', { error: errorMsg, fullError: e })
+        console.error('[UsersPage] Exception during fetch', {
+          message: errorMsg,
+          error: e instanceof Error ? e.stack : String(e),
+        })
         if (mounted) {
-          setError(errorMsg)
           setUsers([])
           setLoading(false)
         }
