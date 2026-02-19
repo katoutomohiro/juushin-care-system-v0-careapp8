@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { buildCareReceiversUrl } from '@/lib/utils/care-receiver-urls'
 
 type User = {
   id: string
@@ -50,8 +51,14 @@ export default function UsersPage() {
           setLoading(false)
           return
         }
-        
-        const url = `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}`
+
+        const url = buildCareReceiversUrl(serviceId)
+        if (!url) {
+          console.warn('[UsersPage] serviceId is missing after trim:', serviceId)
+          setUsers([])
+          setLoading(false)
+          return
+        }
         console.log('[UsersPage] Fetching care receivers from:', url)
         const res = await fetch(url, {
           cache: 'no-store',

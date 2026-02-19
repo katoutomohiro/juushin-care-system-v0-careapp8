@@ -16,7 +16,7 @@ import { normalizeUserId } from "@/lib/ids/normalizeUserId"
 import { updateCareReceiverName } from "@/lib/actions/careReceiversActions"
 import { EditCareReceiverDialog } from "@/components/edit-care-receiver-dialog"
 import { useToast } from "@/components/ui/use-toast"
-import { getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
+import { buildCareReceiversUrl, getCaseRecordsHref } from "@/lib/utils/care-receiver-urls"
 
 const welfareServices: { [key: string]: { name: string; icon: string; color: string } } = {
   "life-care": { name: "生活介護", icon: "🏥", color: "bg-blue-50" },
@@ -311,13 +311,13 @@ export default function UserDetailPage() {
   // useCallback MUST be declared before any early returns
   const fetchFullCareReceiverData = useCallback(async () => {
     if (!normalizedUserId) return null
+    if (!serviceId?.trim()) return null
+    const url = buildCareReceiversUrl(serviceId, normalizedUserId)
+    if (!url) return null
     try {
-      const response = await fetch(
-        `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}&code=${encodeURIComponent(normalizedUserId)}`,
-        {
-          cache: "no-store",
-        }
-      )
+      const response = await fetch(url, {
+        cache: "no-store",
+      })
 
       if (!response.ok) {
         const bodyText = await response.text()
@@ -348,7 +348,7 @@ export default function UserDetailPage() {
       })
       return null
     }
-  }, [normalizedUserId])
+  }, [normalizedUserId, serviceId])
 
   // Initialize state values when userId/serviceId change
   useEffect(() => {
@@ -416,13 +416,14 @@ export default function UserDetailPage() {
    * Never throws - always returns a string
    */
   const fetchCareReceiverName = useCallback(async (): Promise<string> => {
+    if (!normalizedUserId) return userId
+    if (!serviceId?.trim()) return userId
+    const url = buildCareReceiversUrl(serviceId, normalizedUserId)
+    if (!url) return userId
     try {
-      const response = await fetch(
-        `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}&code=${encodeURIComponent(normalizedUserId)}`,
-        {
-          cache: "no-store",
-        }
-      )
+      const response = await fetch(url, {
+        cache: "no-store",
+      })
 
       // If HTTP response is not ok, treat as failure
       if (!response.ok) {
@@ -471,7 +472,7 @@ export default function UserDetailPage() {
       }
       return userId // Return fallback name
     }
-  }, [normalizedUserId, userId])
+  }, [normalizedUserId, serviceId, userId])
 
   useEffect(() => {
     ;(async () => {
