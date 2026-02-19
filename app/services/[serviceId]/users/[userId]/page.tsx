@@ -312,9 +312,12 @@ export default function UserDetailPage() {
   const fetchFullCareReceiverData = useCallback(async () => {
     if (!normalizedUserId) return null
     try {
-      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
-        cache: "no-store",
-      })
+      const response = await fetch(
+        `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}&code=${encodeURIComponent(normalizedUserId)}`,
+        {
+          cache: "no-store",
+        }
+      )
 
       if (!response.ok) {
         const bodyText = await response.text()
@@ -414,9 +417,12 @@ export default function UserDetailPage() {
    */
   const fetchCareReceiverName = useCallback(async (): Promise<string> => {
     try {
-      const response = await fetch(`/api/care-receivers?code=${encodeURIComponent(normalizedUserId)}`, {
-        cache: "no-store",
-      })
+      const response = await fetch(
+        `/api/care-receivers?serviceId=${encodeURIComponent(serviceId)}&code=${encodeURIComponent(normalizedUserId)}`,
+        {
+          cache: "no-store",
+        }
+      )
 
       // If HTTP response is not ok, treat as failure
       if (!response.ok) {
