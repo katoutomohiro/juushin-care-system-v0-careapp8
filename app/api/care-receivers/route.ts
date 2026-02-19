@@ -46,10 +46,11 @@ export async function GET(req: NextRequest) {
 
     const { data: careReceivers, error } = await supabaseAdmin!
       .from("care_receivers")
-      .select("*")
+      .select("id, code, name, service_code, created_at")
       .eq("service_code", serviceId)
       .eq("is_active", true)
       .order("name")
+      .order("code")
 
     if (error) {
       return supabaseErrorResponse("care-receivers GET", error, {
@@ -66,9 +67,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         ok: true,
-        serviceCode: serviceId,
         careReceivers: filteredCareReceivers,
         count: filteredCareReceivers.length,
+        serviceCode: serviceId,
       },
       { status: 200 }
     )
