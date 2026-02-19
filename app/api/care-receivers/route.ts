@@ -3,12 +3,12 @@ import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
 import {
   ensureSupabaseAdmin,
   isRealPiiEnabled,
-  jsonError,
   missingFieldsResponse,
   omitPii,
   requireApiUser,
   supabaseErrorResponse,
   unauthorizedResponse,
+  unexpectedErrorResponse,
   validateRequiredFields,
 } from "@/lib/api/route-helpers"
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await requireApiUser()
     if (!user) {
-      return unauthorizedResponse(false)
+      return unauthorizedResponse(true)
     }
 
     const clientError = ensureSupabaseAdmin(supabaseAdmin)
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
       .select("id, code, name, service_code, created_at")
       .eq("service_code", serviceId)
       .eq("is_active", true)
+      .order("name")
       .order("code")
 
     if (error) {
@@ -73,6 +74,6 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    return jsonError("UnexpectedError", 500, { ok: false })
+    return unexpectedErrorResponse("care-receivers GET", error)
   }
 }
