@@ -1,51 +1,78 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextRequest, NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabase/serverAdmin"
+import {
+  ensureSupabaseAdmin,
+  isRealPiiEnabled,
+  missingFieldsResponse,
+  omitPii,
+  requireApiUser,
+  supabaseErrorResponse,
+  unauthorizedResponse,
+  unexpectedErrorResponse,
+  validateRequiredFields,
+} from "@/lib/api/route-helpers"
 
+export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function GET() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-
-  const missingEnv = [] as string[]
-  if (!url) missingEnv.push("NEXT_PUBLIC_SUPABASE_URL")
-  if (!anonKey) missingEnv.push("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-  if (!serviceKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY")
-
-  if (missingEnv.length > 0) {
-    console.error("[health] Missing required env:", missingEnv.join(", "))
-    return NextResponse.json(
-      { ok: false, status: "missing_env", missing_env: missingEnv, supabase_error: null },
-      { status: 500 }
-    )
-  }
-
+/**
+ * GET /api/care-receivers?serviceId=life-care
+ *
+ * Response:
+ *   { ok: true, careReceivers: [...], count: number, serviceCode: string }
+ *   { ok: false, careReceivers: [], count: 0, error: string }
+ */
+export async function GET(req: NextRequest) {
   try {
-    const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
-    const { error } = await admin.from("staff_profiles").select("id").limit(1)
-
-    if (error) {
-      console.error("[health] Supabase query failed:", error.message)
-      return NextResponse.json(
-        { ok: false, status: "database_error", missing_env: [], supabase_error: error.message },
-        { status: 502 }
-      )
+    const user = await requireApiUser()
+    if (!user) {
+      return unauthorizedResponse(true)
     }
 
-    console.log("[health] Health check passed")
-    return NextResponse.json({
-      ok: true,
-      status: "healthy",
-      missing_env: [],
-      supabase_error: null
-    })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error"
-    console.error("[health] Supabase connection failed:", message)
+    const clientError = ensureSupabaseAdmin(supabaseAdmin)
+    if (clientError) {
+      return clientError
+    }
+
+    const { searchParams } = new URL(req.url)
+    const serviceId = searchParams.get("serviceId")
+
+    const validation = validateRequiredFields({ serviceId }, ["serviceId"])
+    if (!validation.valid) {
+      return missingFieldsResponse(validation.missingFields.map(String))
+    }
+
+    const allowRealPii = isRealPiiEnabled()
+
+    const { data: careReceivers, error } = await supabaseAdmin!
+      .from("care_receivers")
+      .select("*")
+      .eq("service_code", serviceId)
+      .eq("is_active", true)
+      .order("name")
+
+    if (error) {
+      return supabaseErrorResponse("care-receivers GET", error, {
+        serviceCode: serviceId,
+        careReceivers: [],
+        count: 0,
+      })
+    }
+
+    const filteredCareReceivers = allowRealPii
+      ? (careReceivers ?? [])
+      : (careReceivers ?? []).map((row: Record<string, unknown>) => omitPii(row))
+
     return NextResponse.json(
-      { ok: false, status: "connection_error", missing_env: [], supabase_error: message },
-      { status: 500 }
+      {
+        ok: true,
+        serviceCode: serviceId,
+        careReceivers: filteredCareReceivers,
+        count: filteredCareReceivers.length,
+      },
+      { status: 200 }
     )
+  } catch (error) {
+    return unexpectedErrorResponse("care-receivers GET", error)
   }
 }
