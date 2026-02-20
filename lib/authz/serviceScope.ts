@@ -79,8 +79,9 @@ export async function resolveServiceIdToUuid(
         .eq("id", serviceId)
         .single()
 
-      // If facilities table not found, fallback to services table
-      if (error && error.code?.includes("PGRST")) {
+      // If facilities table error (not found), fallback to services table
+      // Check for both "table not found" and "no rows" errors
+      if (error && ((error as any).code?.includes("PGRST") || (error as any).code === "PGRST116")) {
         const { data: servicesData, error: servicesError } = await supabase
           .from("services")
           .select("id, slug")
@@ -91,16 +92,27 @@ export async function resolveServiceIdToUuid(
         error = servicesError
       }
 
-      if (error && (error as any).code !== "PGRST116") {
-        throw error
-      }
-
+      // PGRST116 = no rows → 404 (service not found)
       if (!data || (error as any)?.code === "PGRST116") {
         return jsonError(
           "Service not found",
           404,
           { ok: false, detail: "The requested service does not exist" }
         )
+      }
+
+      // Other PGRST errors (table not found, etc) → also 404
+      if (error && (error as any).code?.includes("PGRST")) {
+        return jsonError(
+          "Service not found",
+          404,
+          { ok: false, detail: "The requested service does not exist" }
+        )
+      }
+
+      // Non-PGRST error (unexpected DB error) → throw for 500
+      if (error) {
+        throw error
       }
 
       return {
@@ -117,8 +129,8 @@ export async function resolveServiceIdToUuid(
       .eq("slug", serviceId)
       .single()
 
-    // If facilities table not found or slug not found, fallback to services table
-    if (error && error.code?.includes("PGRST")) {
+    // If facilities table error, fallback to services table
+    if (error && ((error as any).code?.includes("PGRST") || (error as any).code === "PGRST116")) {
       const { data: servicesData, error: servicesError } = await supabase
         .from("services")
         .select("id, slug")
@@ -129,16 +141,27 @@ export async function resolveServiceIdToUuid(
       error = servicesError
     }
 
-    if (error && (error as any).code !== "PGRST116") {
-      throw error
-    }
-
+    // PGRST116 = no rows → 404
     if (!data || (error as any)?.code === "PGRST116") {
       return jsonError(
         "Service not found",
         404,
         { ok: false, detail: "The requested service does not exist" }
       )
+    }
+
+    // Other PGRST errors → also 404
+    if (error && (error as any).code?.includes("PGRST")) {
+      return jsonError(
+        "Service not found",
+        404,
+        { ok: false, detail: "The requested service does not exist" }
+      )
+    }
+
+    // Non-PGRST error → throw for 500
+    if (error) {
+      throw error
     }
 
     return {
@@ -256,11 +279,19 @@ export async function assertServiceAssignment(
     // ✓ Authorization passed
     return null
   } catch (dbError) {
-    console.error("[authz] Database error in assertServiceAssignment:", {
+    // Structured logging for database errors
+    const anyError = dbError as Record<string, any>
+    const errorLog = {
+      message: anyError?.message || String(dbError),
+      code: anyError?.code || "UNKNOWN",
+      details: anyError?.details || null,
+      hint: anyError?.hint || null,
+      stack: anyError?.stack || null,
       userId,
       serviceUuid,
-      error: dbError instanceof Error ? dbError.message : String(dbError)
-    })
+      route: "/api/care-receivers"
+    }
+    console.error("[authz] Database error in assertServiceAssignment", JSON.stringify(errorLog))
 
     return jsonError(
       "Authorization check failed",
