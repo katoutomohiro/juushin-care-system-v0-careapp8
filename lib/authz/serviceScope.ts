@@ -264,17 +264,17 @@ export async function assertServiceAssignment(
 
       if ((serviceStaffError as any).code === "PGRST116") {
         return jsonError(
-          "Access denied",
-          403,
-          { ok: false, detail: "User not assigned to this service" }
+          "Service not found",
+          404,
+          { ok: false, detail: "The requested service does not exist" }
         )
       }
 
       if ((serviceStaffError as any).code?.includes("PGRST")) {
         return jsonError(
-          "Access denied",
-          403,
-          { ok: false, detail: "User not assigned to this service" }
+          "Service not found",
+          404,
+          { ok: false, detail: "The requested service does not exist" }
         )
       }
 
@@ -294,12 +294,15 @@ export async function assertServiceAssignment(
   } catch (dbError) {
     // Structured logging for database errors
     const anyError = dbError as Record<string, any>
+    const errorDetails = {
+      code: anyError?.code,
+      message: anyError?.message,
+      details: anyError?.details,
+      hint: anyError?.hint,
+      stack: anyError?.stack,
+    }
     const errorLog = {
-      message: anyError?.message || String(dbError),
-      code: anyError?.code || "UNKNOWN",
-      details: anyError?.details || null,
-      hint: anyError?.hint || null,
-      stack: anyError?.stack || null,
+      error: errorDetails,
       userId,
       serviceUuid,
       function: "assertServiceAssignment",
@@ -310,9 +313,9 @@ export async function assertServiceAssignment(
     return jsonError(
       "Authorization check failed",
       500,
-      { 
-        ok: false, 
-        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` 
+      {
+        ok: false,
+        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}`
       }
     )
   }
