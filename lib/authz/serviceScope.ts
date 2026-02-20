@@ -79,11 +79,11 @@ export async function resolveServiceIdToUuid(
         .eq("id", serviceId)
         .single()
 
-      if (error && error.code !== "PGRST116") {
+      if (error && (error as any).code !== "PGRST116") {
         throw error
       }
 
-      if (!data || error?.code === "PGRST116") {
+      if (!data || (error as any)?.code === "PGRST116") {
         return jsonError(
           "Service not found",
           404,
@@ -104,11 +104,11 @@ export async function resolveServiceIdToUuid(
       .eq("slug", serviceId)
       .single()
 
-    if (error && error.code !== "PGRST116") {
+    if (error && (error as any).code !== "PGRST116") {
       throw error
     }
 
-    if (!data || error?.code === "PGRST116") {
+    if (!data || (error as any)?.code === "PGRST116") {
       return jsonError(
         "Service not found",
         404,
@@ -121,9 +121,18 @@ export async function resolveServiceIdToUuid(
       serviceSlug: data.slug
     }
   } catch (dbError) {
-    console.error("[authz] Database error in resolveServiceIdToUuid:", {
-      error: dbError instanceof Error ? dbError.message : String(dbError)
-    })
+    // Structured logging for database errors
+    const anyError = dbError as Record<string, any>
+    const errorLog = {
+      message: dbError instanceof Error ? dbError.message : String(dbError),
+      code: anyError?.code || "UNKNOWN",
+      details: anyError?.details || null,
+      hint: anyError?.hint || null,
+      stack: dbError instanceof Error ? dbError.stack : null,
+      serviceId,
+      route: "/api/care-receivers"
+    }
+    console.error("[authz] Database error in resolveServiceIdToUuid", JSON.stringify(errorLog))
 
     return jsonError(
       "Service lookup failed",
@@ -184,12 +193,12 @@ export async function assertServiceAssignment(
       // This will be refined once service_staff mapping is created
       .single()
 
-    if (error && error.code !== "PGRST116") {
+    if (error && (error as any).code !== "PGRST116") {
       // PGRST116 = "not found", which is a valid authorization failure
       throw error
     }
 
-    if (!assignment || error?.code === "PGRST116") {
+    if (!assignment || (error as any)?.code === "PGRST116") {
       // User not found in staff_profiles = not authorized
       return jsonError(
         "Access denied",
@@ -201,11 +210,19 @@ export async function assertServiceAssignment(
     // ✓ Authorization passed
     return null
   } catch (dbError) {
-    console.error("[authz] Database error in assertServiceAssignment:", {
+    // Structured logging for database errors
+    const anyError = dbError as Record<string, any>
+    const errorLog = {
+      message: dbError instanceof Error ? dbError.message : String(dbError),
+      code: anyError?.code || "UNKNOWN",
+      details: anyError?.details || null,
+      hint: anyError?.hint || null,
+      stack: dbError instanceof Error ? dbError.stack : null,
       userId,
       serviceUuid,
-      error: dbError instanceof Error ? dbError.message : String(dbError)
-    })
+      route: "/api/care-receivers"
+    }
+    console.error("[authz] Database error in assertServiceAssignment", JSON.stringify(errorLog))
 
     return jsonError(
       "Authorization check failed",
