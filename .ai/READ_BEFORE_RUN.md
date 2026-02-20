@@ -1,7 +1,127 @@
 # This file is mandatory to read aloud before any change. Version: 2025-10-16
 タイトル: AGENT-SAFETY-PROTOCOL: Always confirm latest files & cross-agent sync before any change
 
-指示:
+## ⭐ 重要補足（2026-02-20 追加）
+
+**このプロジェクトのセキュリティドキュメント確認必須**
+
+コード実装前に**必ず** 以下を読んでください：
+
+1. `docs/SECURITY_MODEL.md` - 認証→認可→処理→監査の API 強制フロー
+   - service_id スコープの重要性
+   - SUPABASE_SERVICE_ROLE_KEY 使用時も認可省略禁止
+   - 詳細: [SECURITY_MODEL.md](../docs/SECURITY_MODEL.md)
+
+2. `docs/AUDIT_LOGGING.md` - PII/PHI 禁止ルール
+   - ログに full_name, address, phone を含めない
+   - 詳細: [AUDIT_LOGGING.md](../docs/AUDIT_LOGGING.md)
+
+3. `docs/DATA_RETENTION.md` - PII 削除・バックアップポリシー
+   - 利用終了後の自動削除フロー
+   - 詳細: [DATA_RETENTION.md](../docs/DATA_RETENTION.md)
+
+4. `docs/HANDOFF_PROMPT.md` - この AI 引き継ぎガイド
+   - 読む順番・確認チェックリスト
+   - 詳細: [HANDOFF_PROMPT.md](../docs/HANDOFF_PROMPT.md)
+
+---
+
+## 指示:
+
+あなた（Codex）は以後、katoutomohiro/juushin-care-system-v0-careapp8 でいかなる編集/実行を行う前に、次のプロトコルを厳守してください。
+初回実行時に以下を自動セットアップし、以後の全タスクで再利用します。
+
+0) セットアップ（初回のみ）
+
+リポジトリ直下に .ai/ ディレクトリを作成し、次の2ファイルを管理します。
+
+.ai/READ_BEFORE_RUN.md … 本プロトコル本文（この指示を保存）
+
+.ai/RUN_BOOK.md … 毎タスクのチェック結果ログ（時刻つき）
+
+すでに存在する場合は上書きせず追記。以後の全タスク開始時に .ai/READ_BEFORE_RUN.md を音読→遵守宣言 してから作業を始めます。
+
+1) ユーザー保存の確認（ローカル → GitHub）
+
+必ず毎回、実行を開始する前にあなたが行うこと：
+
+ユーザーに保存確認の問いかけ（必須）
+次をそのまま表示して、ユーザーの明示回答を待ってください。
+
+【保存確認】VS Codeで最新の編集を保存しましたか？
+- Auto Save は ON ですか？（[ファイル] > [自動保存]）
+- 直近で変更したファイルを [Ctrl+K, S] または [すべて保存] しましたか？
+保存を完了したら「OK-保存」と返信してください。未保存なら「保留」と返信してください。
+
+
+返信が 「OK-保存」 でなければ、作業を開始しないで待機。
+
+GitHub への反映確認
+
+GitHub上の main もしくは作業ブランチに最新コミットが存在するか確認する。
+
+次の情報を表示してユーザーに確認を求める（Codex は自動で取得・表示してよい）：
+
+HEAD の コミットSHA/日時/著者/件名
+
+git status（クリーンかどうか）
+
+直近変更ファイルの一覧（git diff --name-only HEAD~1..HEAD）
+
+表示後にユーザーへ確認：
+
+【同期確認】このコミットが、あなたの意図した「最新編集」を含んでいますか？  
+はい＝「OK-同期」／ いいえ＝「再同期」
+
+
+「OK-同期」以外では作業を開始しない。必要なら git fetch --all --prune → git pull --rebase を実施し再確認。
+
+目的：ユーザーのローカル保存 → GitHub反映 → 私（Codex）も同じHEADを見ていることを、毎回二重に担保。
+
+2) 変更対象の実ファイルを特定して照合
+
+実行対象（例：components/ui/chart.tsx など）をファイルパスで列挙。
+
+各ファイルについて以下を表示し、ユーザーに可視化：
+
+最終コミット（SHA/日時/著者/件名）
+
+差分の有無（git diff --stat）
+
+ファイルハッシュ（SHA-256）
+
+そのうえでユーザーに再確認：
+
+【対象確認】このファイル一覧と状態で間違いありませんか？
+はい＝「OK-対象」／ いいえ＝「修正対象の差替」
+
+
+「OK-対象」以外なら作業を開始しない。
+
+目的：Codexが触るファイルが本当に最新で、あなたの意図と一致していることを、開始前にゼロ距離で確認。
+
+3) クロスエージェントの実行前アク知
+
+Copilot（実装担当）・v0（UI自動生成担当）が誤読しないよう、以下のアク知テンプレを .ai/RUN_BOOK.md に追記し、ログとしても表示：
+
+[RUN-ID: {日時-連番}]
+TARGET HEAD : {コミットSHA}
+BRANCH      : {ブランチ名}
+FILES       : {今回対象ファイルの一覧}
+USER-OK     : 保存=OK-保存 / 同期=OK-同期 / 対象=OK-対象
+TASK        : {今回の作業要約（1～2行）}
+
+
+Copilot/v0 へ共有メッセージ（Codex内コメントでOK。Jules未連携のためJulesは除外）：
+
+【実行前確認】必ずこのRUN-IDの HEAD（{SHA}）を read-only でロードしてから開始してください。
+- ユーザー編集の反映確認済み（OK-保存／OK-同期）
+- 対象ファイルは {…}
+- 以後、diffはこのHEAD基準で作成
+- 作業後は lint/typecheck/build の結果サマリと差分件数を提出
+
+
+目的：他エージェントが"今のHEAD"を見ないまま走り出す事故を防止。
 
 あなた（Codex）は以後、katoutomohiro/juushin-care-system-v0-careapp8 でいかなる編集/実行を行う前に、次のプロトコルを厳守してください。
 初回実行時に以下を自動セットアップし、以後の全タスクで再利用します。
