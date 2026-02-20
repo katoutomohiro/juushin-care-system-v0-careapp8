@@ -1008,9 +1008,9 @@ git reset --hard <target-commit>
 
 - ✅ **Task A**: lib/authz/serviceScope.ts 修正完了
 - ✅ **Task B**: app/api/care-receivers/route.ts 修正完了
-- ⏳ **Task C**: plan.md に「10️⃣」セクション追記（現在進行中）
-- ⏳ **Task D**: lint/typecheck 検証
-- ⏳ **Task E**: コミット & GitHub push
+- ✅ **Task C**: plan.md に「10️⃣」セクション追記
+- ✅ **Task D**: lint/typecheck 検証（既存警告のみ）
+- ✅ **Task E**: コミット & GitHub push
 
 
 
