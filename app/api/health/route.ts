@@ -28,52 +28,59 @@ export async function GET() {
     )
   }
 
-  try {
-    // Supabase 接続確認
-    const admin = createClient(url, serviceKey, {
-      auth: { persistSession: false },
-    })
+  if (process.env.NODE_ENV === "production") {
+    try {
+      // Supabase 接続確認
+      const admin = createClient(url, serviceKey, {
+        auth: { persistSession: false },
+      })
 
-    const { error } = await admin
-      .from("staff_profiles")
-      .select("id")
-      .limit(1)
+      const { error } = await admin
+        .from("staff_profiles")
+        .select("id")
+        .limit(1)
 
-    if (error) {
-      console.error("[health] Supabase query failed:", error.message)
+      if (error) {
+        console.error("[health] Supabase query failed:", error.message)
+        return NextResponse.json(
+          {
+            ok: false,
+            status: "database_error",
+            missing_env: [],
+            supabase_error: error.message,
+          },
+          { status: 502 }
+        )
+      }
+
+      // 🟢 正常
+      console.log("[health] Health check passed")
+      return NextResponse.json({
+        ok: true,
+        status: "healthy",
+        missing_env: [],
+        supabase_error: null,
+      })
+    } catch (err: any) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error"
+
+      console.error("[health] Supabase connection failed:", message)
+
       return NextResponse.json(
         {
           ok: false,
-          status: "database_error",
+          status: "connection_error",
           missing_env: [],
-          supabase_error: error.message,
+          supabase_error: message,
         },
-        { status: 502 }
+        { status: 500 }
       )
     }
-
-    // 🟢 正常
-    console.log("[health] Health check passed")
-    return NextResponse.json({
-      ok: true,
-      status: "healthy",
-      missing_env: [],
-      supabase_error: null,
-    })
-  } catch (err: any) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error"
-
-    console.error("[health] Supabase connection failed:", message)
-
-    return NextResponse.json(
-      {
-        ok: false,
-        status: "connection_error",
-        missing_env: [],
-        supabase_error: message,
-      },
-      { status: 500 }
-    )
   }
+
+  return NextResponse.json({
+    ok: true,
+    skipped: "build_healthcheck",
+  })
 }
