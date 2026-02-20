@@ -83,8 +83,8 @@ export async function GET(req: NextRequest) {
     if (careReceiverColumnsError) {
       const anyError = careReceiverColumnsError as Record<string, any>
       const errorLog = {
-        message: anyError?.message || String(careReceiverColumnsError),
         code: anyError?.code || "UNKNOWN",
+        message: anyError?.message || "Unknown error",
         details: anyError?.details || null,
         hint: anyError?.hint || null,
         stack: anyError?.stack || null,
@@ -122,8 +122,8 @@ export async function GET(req: NextRequest) {
       if (servicesColumnsError) {
         const anyError = servicesColumnsError as Record<string, any>
         const errorLog = {
-          message: anyError?.message || String(servicesColumnsError),
           code: anyError?.code || "UNKNOWN",
+          message: anyError?.message || "Unknown error",
           details: anyError?.details || null,
           hint: anyError?.hint || null,
           stack: anyError?.stack || null,
@@ -172,8 +172,8 @@ export async function GET(req: NextRequest) {
 
         const anyError = serviceRowError as Record<string, any>
         const errorLog = {
-          message: anyError?.message || String(serviceRowError),
           code: anyError?.code || "UNKNOWN",
+          message: anyError?.message || "Unknown error",
           details: anyError?.details || null,
           hint: anyError?.hint || null,
           stack: anyError?.stack || null,
@@ -255,8 +255,8 @@ export async function GET(req: NextRequest) {
       // Other DB errors → 500 with structured log
       const anyError = error as Record<string, any>
       const errorLog = {
-        message: anyError?.message || String(error),
         code: anyError?.code || "UNKNOWN",
+        message: anyError?.message || "Unknown error",
         details: anyError?.details || null,
         hint: anyError?.hint || null,
         stack: anyError?.stack || null,
