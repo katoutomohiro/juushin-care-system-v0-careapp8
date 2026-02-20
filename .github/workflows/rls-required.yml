@@ -1,0 +1,22 @@
+name: Require RLS on new tables
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*.sql'
+
+jobs:
+  check-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fail if CREATE TABLE without RLS
+        run: |
+          for file in supabase/migrations/*.sql; do
+            if grep -i "create table" "$file" | grep -vi "audit_events"; then
+              if ! grep -i "enable row level security" "$file"; then
+                echo "RLS missing in $file"
+                exit 1
+              fi
+            fi
+          done
