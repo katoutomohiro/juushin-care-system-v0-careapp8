@@ -108,9 +108,9 @@ export async function GET(req: NextRequest) {
     )
     const hasServiceCode = careReceiverColumnSet.has("service_code")
     const hasServiceId = careReceiverColumnSet.has("service_id")
-    const hasFacilityId = careReceiverColumnSet.has("facility_id")
     const hasIsActive = careReceiverColumnSet.has("is_active")
 
+    // Fetch services.code for filtering care_receivers
     let serviceCode = resolvedSlug
     if (hasServiceCode) {
       const { data: servicesColumns, error: servicesColumnsError } = await supabaseAdmin!
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
 
       const { data: serviceRow, error: serviceRowError } = await supabaseAdmin!
         .from("services")
-        .select(hasServicesCode ? "code, slug" : "slug")
+        .select(hasServicesCode ? "code" : "slug")
         .eq("id", serviceUuid)
         .single()
 
@@ -197,6 +197,7 @@ export async function GET(req: NextRequest) {
         ?? resolvedSlug
     }
 
+    // Build select fields list (no facility_id)
     const selectFields = ["id", "code", "name", "created_at"]
     if (hasServiceCode) {
       selectFields.push("service_code")
@@ -204,13 +205,11 @@ export async function GET(req: NextRequest) {
     if (hasServiceId) {
       selectFields.push("service_id")
     }
-    if (hasFacilityId) {
-      selectFields.push("facility_id")
-    }
     if (hasIsActive) {
       selectFields.push("is_active")
     }
 
+    // Query care_receivers filtered by service_code or service_id
     let careReceiversQuery = supabaseAdmin!
       .from("care_receivers")
       .select(selectFields.join(", "))
@@ -221,13 +220,11 @@ export async function GET(req: NextRequest) {
       careReceiversQuery = careReceiversQuery.eq("service_code", serviceCode)
     } else if (hasServiceId) {
       careReceiversQuery = careReceiversQuery.eq("service_id", serviceUuid)
-    } else if (hasFacilityId) {
-      careReceiversQuery = careReceiversQuery.eq("facility_id", serviceUuid)
     } else {
       return jsonError(
         "Failed to fetch care receivers",
         500,
-        { ok: false, detail: "Schema mismatch: no service_code/service_id/facility_id column" }
+        { ok: false, detail: "Schema mismatch: no service_code or service_id column" }
       )
     }
 
@@ -247,6 +244,7 @@ export async function GET(req: NextRequest) {
             careReceivers: [],
             count: 0,
             serviceSlug: resolvedSlug,
+            serviceCode,
           },
           { status: 200 }
         )
@@ -295,6 +293,7 @@ export async function GET(req: NextRequest) {
         careReceivers: filteredCareReceivers,
         count,
         serviceSlug: resolvedSlug,
+        serviceCode,
       },
       { status: 200 }
     )
