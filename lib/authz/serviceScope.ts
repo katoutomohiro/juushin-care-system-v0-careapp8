@@ -79,9 +79,14 @@ export async function resolveServiceIdToUuid(
         .eq("id", serviceId)
         .single()
 
-      // If facilities table error (not found), fallback to services table
-      // Check for both "table not found" and "no rows" errors
-      if (error && ((error as any).code?.includes("PGRST") || (error as any).code === "PGRST116")) {
+      // If facilities table error (not found or doesn't exist), fallback to services table
+      // Check for 42P01 (undefined_table), PGRST errors, and "no rows" errors
+      if (error && (
+        (error as any).code === "42P01" ||
+        (error as any).message?.includes('relation "public.facilities" does not exist') ||
+        (error as any).code?.includes("PGRST") ||
+        (error as any).code === "PGRST116"
+      )) {
         const { data: servicesData, error: servicesError } = await supabase
           .from("services")
           .select("id, slug")
@@ -130,7 +135,13 @@ export async function resolveServiceIdToUuid(
       .single()
 
     // If facilities table error, fallback to services table
-    if (error && ((error as any).code?.includes("PGRST") || (error as any).code === "PGRST116")) {
+    // Check for 42P01 (undefined_table), PGRST errors, and "no rows" errors
+    if (error && (
+      (error as any).code === "42P01" ||
+      (error as any).message?.includes('relation "public.facilities" does not exist') ||
+      (error as any).code?.includes("PGRST") ||
+      (error as any).code === "PGRST116"
+    )) {
       const { data: servicesData, error: servicesError } = await supabase
         .from("services")
         .select("id, slug")
@@ -178,6 +189,7 @@ export async function resolveServiceIdToUuid(
       hint: anyError?.hint || null,
       stack: anyError?.stack || null,
       serviceId,
+      function: "resolveServiceIdToUuid",
       route: "/api/care-receivers"
     }
     console.error("[authz] Database error in resolveServiceIdToUuid", JSON.stringify(errorLog))
@@ -185,7 +197,10 @@ export async function resolveServiceIdToUuid(
     return jsonError(
       "Service lookup failed",
       500,
-      { ok: false, detail: "Database error while resolving service" }
+      { 
+        ok: false, 
+        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` 
+      }
     )
   }
 }
@@ -256,14 +271,34 @@ export async function assertServiceAssignment(
       if (staffProfile && !staffError) {
         // Verify the facility matches the service UUID
         // (service UUID should correspond to a facility record)
-        const { data: facilitiesMatch, error: facilitiesError } = await supabase
+        let { data: facilitiesMatch, error: facilitiesError } = await supabase
           .from("facilities")
           .select("id")
           .eq("id", serviceUuid)
           .eq("id", staffProfile.facility_id)
           .single()
         
-        hasAssignment = !!facilitiesMatch && !facilitiesError
+        // If facilities table doesn't exist (42P01), fallback to services table
+        if (facilitiesError && (
+          (facilitiesError as any).code === "42P01" ||
+          (facilitiesError as any).message?.includes('relation "public.facilities" does not exist')
+        )) {
+          const { data: servicesMatch, error: servicesError } = await supabase
+            .from("services")
+            .select("id")
+            .eq("id", serviceUuid)
+            .single()
+
+          if (servicesError && (servicesError as any).code?.includes("PGRST")) {
+            hasAssignment = false
+          } else if (servicesError) {
+            throw servicesError
+          } else {
+            hasAssignment = !!servicesMatch && staffProfile.facility_id === serviceUuid
+          }
+        } else {
+          hasAssignment = !!facilitiesMatch && !facilitiesError
+        }
       }
     }
     
@@ -289,6 +324,7 @@ export async function assertServiceAssignment(
       stack: anyError?.stack || null,
       userId,
       serviceUuid,
+      function: "assertServiceAssignment",
       route: "/api/care-receivers"
     }
     console.error("[authz] Database error in assertServiceAssignment", JSON.stringify(errorLog))
@@ -296,7 +332,10 @@ export async function assertServiceAssignment(
     return jsonError(
       "Authorization check failed",
       500,
-      { ok: false, detail: "Database error during authorization" }
+      { 
+        ok: false, 
+        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` 
+      }
     )
   }
 }

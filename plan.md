@@ -1016,6 +1016,30 @@ git reset --hard <target-commit>
 
 ---
 
+## 🔟 Phase 3: Preview 500 継続の原因と対応（2026-02-20）
+
+### 原因
+- Preview 環境に public.facilities が存在せず、Supabase が 42P01（undefined_table）を返していた
+- resolveServiceIdToUuid と assertServiceAssignment が facilities を参照して 500 になっていた
+
+### 対応
+- facilities 参照時に 42P01 または message に relation "public.facilities" does not exist を検知したら services テーブルへフォールバック
+- not found（PGRST116）は 404、割当なしは 403、入力不正は 400、予期せぬ DB 例外のみ 500
+- 500 の structured log に必ず error.code と error.message を含める
+
+### 検証手順
+1. Preview で /services/life-care/users が 500 にならないことを確認
+2. /api/care-receivers?serviceId=life-care が 200 を返すことを確認
+3. 存在しない serviceId が 404、割当なしが 403、serviceId 欠如が 400 を返すことを確認
+4. Vercel Logs で 500 時に error.code と error.message が出力されることを確認
+
+### ロールバック
+- facilities フォールバック導入前の commit に戻して再デプロイ
+- 42P01 が出る環境では services テーブルのみを参照する暫定版に切り替え
+
+
+---
+
 ## 棚卸し用 rg コマンド出力（2026-01-28）
 
 ### 「ケース記録」リンク出現箇所（全出力）
