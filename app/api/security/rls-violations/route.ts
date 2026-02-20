@@ -1,49 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 /**
  * GET /api/security/rls-violations
  * 
- * Compares required RLS tables (from DOMAIN_MODEL.md) with audited tables.
- * Returns tables that must have RLS but are missing audit entries.
- * Read-only endpoint (no database access).
+ * Reads docs/DOMAIN_MODEL.md from filesystem and analyzes RLS configuration.
+ * Returns tables that require RLS protection and any violations (tables missing RLS).
+ * Read-only endpoint (no database access, no network calls).
+ * 
+ * Fixes CodeQL SSRF warning by removing req.nextUrl.origin and fetch() calls.
+ * Parses documentation directly instead of calling internal APIs.
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    // Call internal APIs
-    const baseUrl = req.nextUrl.origin || 'http://localhost:3000';
-    
-    const [requiredRes, auditedRes] = await Promise.all([
-      fetch(`${baseUrl}/api/security/rls-required`, { cache: 'no-store' }),
-      fetch(`${baseUrl}/api/security/rls-audit`, { cache: 'no-store' }),
-    ]);
+    // Read DOMAIN_MODEL.md from filesystem
+    const docsPath = join(process.cwd(), 'docs', 'DOMAIN_MODEL.md');
+    const content = await readFile(docsPath, 'utf-8');
 
-    if (!requiredRes.ok || !auditedRes.ok) {
-      console.error('Failed to fetch RLS data:', {
-        requiredStatus: requiredRes.status,
-        auditedStatus: auditedRes.status,
-      });
-      return NextResponse.json(
-        { ok: false, error: 'rls_violation_check_failed' },
-        { status: 500 }
+    // Parse table names from markdown headings: ### <table_name>
+    const tableMatches = content.matchAll(/^### ([a-z_]+)$/gm);
+    const allTables = Array.from(tableMatches, m => m[1]);
+
+    // Filter out audit_events; remaining are required tables
+    const requiredTables = allTables.filter(table => table !== 'audit_events');
+
+    // For each required table, check if RLS is enabled by finding "**RLS**: Enabled"
+    const rlsEnabledTables: string[] = [];
+
+    for (const table of requiredTables) {
+      // Find the section for this table: from "### tablename" until next "###" or EOF
+      const tableSectionRegex = new RegExp(
+        `^### ${table}$[\\s\\S]*?(?=^###|\\Z)`,
+        'm'
       );
+      const match = content.match(tableSectionRegex);
+
+      if (match && /\*\*RLS\*\*:\s*Enabled/i.test(match[0])) {
+        rlsEnabledTables.push(table);
+      }
     }
 
-    const requiredData = await requiredRes.json();
-    const auditedData = await auditedRes.json();
-
-    const requiredTables: string[] = requiredData.required_rls_tables || [];
-    const auditedTables: string[] = (auditedData.audited_tables || []).map(
-      (table: any) => typeof table === 'string' ? table : table.name
-    );
-
-    // Calculate violations: tables in required but not in audited
-    const auditedSet = new Set(auditedTables);
-    const violations = requiredTables.filter(table => !auditedSet.has(table));
+    // Calculate violations: tables in required but not in rls_enabled
+    const enabledSet = new Set(rlsEnabledTables);
+    const violations = requiredTables.filter(table => !enabledSet.has(table));
 
     return NextResponse.json({
-      required: requiredTables,
-      audited: auditedTables,
+      required_tables: requiredTables,
+      rls_enabled_tables: rlsEnabledTables,
       violations: violations,
+      source: 'docs/DOMAIN_MODEL.md',
+      mode: 'documentation-only',
     });
   } catch (error) {
     console.error('RLS violation check failed:', error);
