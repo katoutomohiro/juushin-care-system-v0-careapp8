@@ -1021,17 +1021,20 @@ git reset --hard <target-commit>
 ### 原因
 - Preview 環境に public.facilities が存在せず、Supabase が 42P01（undefined_table）を返していた
 - resolveServiceIdToUuid と assertServiceAssignment が facilities を参照して 500 になっていた
+- care_receivers の実カラムが環境差分（service_code / service_id / facility_id）で異なり、固定の絞り込みが 500 を誘発していた
 
 ### 対応
 - facilities 参照時に 42P01 または message に relation "public.facilities" does not exist を検知したら services テーブルへフォールバック
 - not found（PGRST116）は 404、割当なしは 403、入力不正は 400、予期せぬ DB 例外のみ 500
 - 500 の structured log に必ず error.code と error.message を含める
+- information_schema で care_receivers / services の実カラムを確認し、service_code → services.code（なければ slug）または service_id/facility_id で絞り込み
 
 ### 検証手順
 1. Preview で /services/life-care/users が 500 にならないことを確認
 2. /api/care-receivers?serviceId=life-care が 200 を返すことを確認
 3. 存在しない serviceId が 404、割当なしが 403、serviceId 欠如が 400 を返すことを確認
 4. Vercel Logs で 500 時に error.code と error.message が出力されることを確認
+5. information_schema の結果に応じて絞り込みキーが変わることを確認
 
 ### ロールバック
 - facilities フォールバック導入前の commit に戻して再デプロイ

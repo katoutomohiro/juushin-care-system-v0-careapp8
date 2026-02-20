@@ -210,9 +210,9 @@ export async function resolveServiceIdToUuid(
  * 
  * CRITICAL: Accepts UUID only (call resolveServiceIdToUuid first if needed)
  * 
- * INTERIM LOGIC (service_staff not yet created):
- * - Checks if user exists in staff_profiles (indicates facility/service membership)
- * - Once service_staff table exists, migrate to: WHERE user_id = userId AND service_id = serviceUuid
+ * Assignment logic:
+ * - Uses service_staff mapping (user_id + service_id)
+ * - No facilities/staff_profiles fallback (Preview has no facilities table)
  * 
  * @param supabase - Supabase admin client
  * @param userId - auth.users.id (UUID)
@@ -242,75 +242,53 @@ export async function assertServiceAssignment(
   }
 
   try {
-    // Priority 1: Check service_staff table (if it exists)
-    // This provides explicit user-service mapping
-    let hasAssignment = false
-    
-    // First try service_staff table
+    // Check service_staff table for explicit mapping
     const { data: serviceStaffAssignment, error: serviceStaffError } = await supabase
       .from("service_staff")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("service_id", serviceUuid)
       .single()
-    
-    // If table exists and assignment found, allow
-    if (serviceStaffAssignment && !(serviceStaffError as any)?.code?.includes("PGRST")) {
-      hasAssignment = true
-    }
-    
-    // Priority 2: Fallback to staff_profiles + facilities mapping
-    // Check if user is assigned to the facility that matches the service UUID
-    if (!hasAssignment) {
-      const { data: staffProfile, error: staffError } = await supabase
-        .from("staff_profiles")
-        .select("facility_id")
-        .eq("id", userId)
-        .single()
-      
-      if (staffProfile && !staffError) {
-        // Verify the facility matches the service UUID
-        // (service UUID should correspond to a facility record)
-        let { data: facilitiesMatch, error: facilitiesError } = await supabase
-          .from("facilities")
-          .select("id")
-          .eq("id", serviceUuid)
-          .eq("id", staffProfile.facility_id)
-          .single()
-        
-        // If facilities table doesn't exist (42P01), fallback to services table
-        if (facilitiesError && (
-          (facilitiesError as any).code === "42P01" ||
-          (facilitiesError as any).message?.includes('relation "public.facilities" does not exist')
-        )) {
-          const { data: servicesMatch, error: servicesError } = await supabase
-            .from("services")
-            .select("id")
-            .eq("id", serviceUuid)
-            .single()
 
-          if (servicesError && (servicesError as any).code?.includes("PGRST")) {
-            hasAssignment = false
-          } else if (servicesError) {
-            throw servicesError
-          } else {
-            hasAssignment = !!servicesMatch && staffProfile.facility_id === serviceUuid
-          }
-        } else {
-          hasAssignment = !!facilitiesMatch && !facilitiesError
-        }
+    if (serviceStaffError) {
+      if (
+        (serviceStaffError as any).code === "42P01" ||
+        (serviceStaffError as any).message?.includes('relation "public.service_staff" does not exist')
+      ) {
+        return jsonError(
+          "Access denied",
+          403,
+          { ok: false, detail: "User not assigned to this service" }
+        )
       }
+
+      if ((serviceStaffError as any).code === "PGRST116") {
+        return jsonError(
+          "Access denied",
+          403,
+          { ok: false, detail: "User not assigned to this service" }
+        )
+      }
+
+      if ((serviceStaffError as any).code?.includes("PGRST")) {
+        return jsonError(
+          "Access denied",
+          403,
+          { ok: false, detail: "User not assigned to this service" }
+        )
+      }
+
+      throw serviceStaffError
     }
-    
-    // If neither route succeeded, user is not assigned
-    if (!hasAssignment) {
+
+    if (!serviceStaffAssignment) {
       return jsonError(
         "Access denied",
         403,
         { ok: false, detail: "User not assigned to this service" }
       )
     }
-
+    
     // ✓ Authorization passed
     return null
   } catch (dbError) {

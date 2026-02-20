@@ -73,15 +73,169 @@ export async function GET(req: NextRequest) {
 
     const allowRealPii = isRealPiiEnabled()
 
-    // STEP 5: Query database scoped by facility_id (UUID)
-    // care_receivers table is structured with facility_id foreign key
-    const { data: careReceivers, error } = await supabaseAdmin!
+    // STEP 5: Query database based on actual care_receivers schema
+    const { data: careReceiverColumns, error: careReceiverColumnsError } = await supabaseAdmin!
+      .from("information_schema.columns")
+      .select("column_name")
+      .eq("table_schema", "public")
+      .eq("table_name", "care_receivers")
+
+    if (careReceiverColumnsError) {
+      const anyError = careReceiverColumnsError as Record<string, any>
+      const errorLog = {
+        message: anyError?.message || String(careReceiverColumnsError),
+        code: anyError?.code || "UNKNOWN",
+        details: anyError?.details || null,
+        hint: anyError?.hint || null,
+        stack: anyError?.stack || null,
+        userId: user.id,
+        serviceUuid,
+        serviceSlug: resolvedSlug,
+        route: "/api/care-receivers",
+        step: "schema-check"
+      }
+      console.error("[api/care-receivers] Schema lookup error", JSON.stringify(errorLog))
+
+      return jsonError(
+        "Failed to fetch care receivers",
+        500,
+        { ok: false, detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` }
+      )
+    }
+
+    const careReceiverColumnSet = new Set(
+      (careReceiverColumns ?? []).map((row: { column_name: string }) => row.column_name)
+    )
+    const hasServiceCode = careReceiverColumnSet.has("service_code")
+    const hasServiceId = careReceiverColumnSet.has("service_id")
+    const hasFacilityId = careReceiverColumnSet.has("facility_id")
+    const hasIsActive = careReceiverColumnSet.has("is_active")
+
+    let serviceCode = resolvedSlug
+    if (hasServiceCode) {
+      const { data: servicesColumns, error: servicesColumnsError } = await supabaseAdmin!
+        .from("information_schema.columns")
+        .select("column_name")
+        .eq("table_schema", "public")
+        .eq("table_name", "services")
+
+      if (servicesColumnsError) {
+        const anyError = servicesColumnsError as Record<string, any>
+        const errorLog = {
+          message: anyError?.message || String(servicesColumnsError),
+          code: anyError?.code || "UNKNOWN",
+          details: anyError?.details || null,
+          hint: anyError?.hint || null,
+          stack: anyError?.stack || null,
+          userId: user.id,
+          serviceUuid,
+          serviceSlug: resolvedSlug,
+          route: "/api/care-receivers",
+          step: "services-schema-check"
+        }
+        console.error("[api/care-receivers] Schema lookup error", JSON.stringify(errorLog))
+
+        return jsonError(
+          "Failed to fetch care receivers",
+          500,
+          { ok: false, detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` }
+        )
+      }
+
+      const servicesColumnSet = new Set(
+        (servicesColumns ?? []).map((row: { column_name: string }) => row.column_name)
+      )
+      const hasServicesCode = servicesColumnSet.has("code")
+
+      const { data: serviceRow, error: serviceRowError } = await supabaseAdmin!
+        .from("services")
+        .select(hasServicesCode ? "code, slug" : "slug")
+        .eq("id", serviceUuid)
+        .single()
+
+      if (serviceRowError) {
+        if ((serviceRowError as any).code === "PGRST116") {
+          return jsonError(
+            "Service not found",
+            404,
+            { ok: false, detail: "The requested service does not exist" }
+          )
+        }
+
+        if ((serviceRowError as any).code?.includes("PGRST")) {
+          return jsonError(
+            "Service not found",
+            404,
+            { ok: false, detail: "The requested service does not exist" }
+          )
+        }
+
+        const anyError = serviceRowError as Record<string, any>
+        const errorLog = {
+          message: anyError?.message || String(serviceRowError),
+          code: anyError?.code || "UNKNOWN",
+          details: anyError?.details || null,
+          hint: anyError?.hint || null,
+          stack: anyError?.stack || null,
+          userId: user.id,
+          serviceUuid,
+          serviceSlug: resolvedSlug,
+          route: "/api/care-receivers",
+          step: "service-code-lookup"
+        }
+        console.error("[api/care-receivers] Service lookup error", JSON.stringify(errorLog))
+
+        return jsonError(
+          "Failed to fetch care receivers",
+          500,
+          { ok: false, detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` }
+        )
+      }
+
+      serviceCode = (serviceRow as { code?: string; slug?: string } | null)?.code
+        ?? (serviceRow as { code?: string; slug?: string } | null)?.slug
+        ?? resolvedSlug
+    }
+
+    const selectFields = ["id", "code", "name", "created_at"]
+    if (hasServiceCode) {
+      selectFields.push("service_code")
+    }
+    if (hasServiceId) {
+      selectFields.push("service_id")
+    }
+    if (hasFacilityId) {
+      selectFields.push("facility_id")
+    }
+    if (hasIsActive) {
+      selectFields.push("is_active")
+    }
+
+    let careReceiversQuery = supabaseAdmin!
       .from("care_receivers")
-      .select("id, code, name, facility_id, service_code, created_at, is_active")
-      .eq("facility_id", serviceUuid)
-      .eq("is_active", true)
+      .select(selectFields.join(", "))
       .order("name")
       .order("code")
+
+    if (hasServiceCode) {
+      careReceiversQuery = careReceiversQuery.eq("service_code", serviceCode)
+    } else if (hasServiceId) {
+      careReceiversQuery = careReceiversQuery.eq("service_id", serviceUuid)
+    } else if (hasFacilityId) {
+      careReceiversQuery = careReceiversQuery.eq("facility_id", serviceUuid)
+    } else {
+      return jsonError(
+        "Failed to fetch care receivers",
+        500,
+        { ok: false, detail: "Schema mismatch: no service_code/service_id/facility_id column" }
+      )
+    }
+
+    if (hasIsActive) {
+      careReceiversQuery = careReceiversQuery.eq("is_active", true)
+    }
+
+    const { data: careReceivers, error } = await careReceiversQuery
 
     // Handle specific database errors
     if (error) {
@@ -120,9 +274,10 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    const careReceiverRows = (careReceivers ?? []) as unknown as Record<string, unknown>[]
     const filteredCareReceivers = allowRealPii
-      ? (careReceivers ?? [])
-      : (careReceivers ?? []).map((row: Record<string, unknown>) => omitPii(row))
+      ? careReceiverRows
+      : careReceiverRows.map((row) => omitPii(row))
 
     // STEP 6: Log the operation (async, non-blocking)
     const count = filteredCareReceivers.length
