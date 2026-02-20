@@ -72,18 +72,30 @@ export async function resolveServiceIdToUuid(
   try {
     // Case 1: UUID format
     if (isValidUUID(serviceId)) {
-      // Verify the UUID exists in services table
-      const { data, error } = await supabase
-        .from("services")
+      // Try facilities table first (primary)
+      let { data, error } = await supabase
+        .from("facilities")
         .select("id, slug")
         .eq("id", serviceId)
         .single()
 
-      if (error && error.code !== "PGRST116") {
+      // If facilities table not found, fallback to services table
+      if (error && error.code?.includes("PGRST")) {
+        const { data: servicesData, error: servicesError } = await supabase
+          .from("services")
+          .select("id, slug")
+          .eq("id", serviceId)
+          .single()
+        
+        data = servicesData
+        error = servicesError
+      }
+
+      if (error && (error as any).code !== "PGRST116") {
         throw error
       }
 
-      if (!data || error?.code === "PGRST116") {
+      if (!data || (error as any)?.code === "PGRST116") {
         return jsonError(
           "Service not found",
           404,
@@ -98,17 +110,30 @@ export async function resolveServiceIdToUuid(
     }
 
     // Case 2: Slug format (non-UUID string)
-    const { data, error } = await supabase
-      .from("services")
+    // Try facilities table first
+    let { data, error } = await supabase
+      .from("facilities")
       .select("id, slug")
       .eq("slug", serviceId)
       .single()
 
-    if (error && error.code !== "PGRST116") {
+    // If facilities table not found or slug not found, fallback to services table
+    if (error && error.code?.includes("PGRST")) {
+      const { data: servicesData, error: servicesError } = await supabase
+        .from("services")
+        .select("id, slug")
+        .eq("slug", serviceId)
+        .single()
+      
+      data = servicesData
+      error = servicesError
+    }
+
+    if (error && (error as any).code !== "PGRST116") {
       throw error
     }
 
-    if (!data || error?.code === "PGRST116") {
+    if (!data || (error as any)?.code === "PGRST116") {
       return jsonError(
         "Service not found",
         404,
@@ -121,9 +146,18 @@ export async function resolveServiceIdToUuid(
       serviceSlug: data.slug
     }
   } catch (dbError) {
-    console.error("[authz] Database error in resolveServiceIdToUuid:", {
-      error: dbError instanceof Error ? dbError.message : String(dbError)
-    })
+    // Structured logging for database errors
+    const anyError = dbError as Record<string, any>
+    const errorLog = {
+      message: anyError?.message || String(dbError),
+      code: anyError?.code || "UNKNOWN",
+      details: anyError?.details || null,
+      hint: anyError?.hint || null,
+      stack: anyError?.stack || null,
+      serviceId,
+      route: "/api/care-receivers"
+    }
+    console.error("[authz] Database error in resolveServiceIdToUuid", JSON.stringify(errorLog))
 
     return jsonError(
       "Service lookup failed",
@@ -170,27 +204,48 @@ export async function assertServiceAssignment(
   }
 
   try {
-    // INTERIM: Check if user has staff_profiles entry
-    // This validates that the user is assigned to at least one facility
-    // Once service_staff exists, change this query to:
-    //   FROM public.service_staff 
-    //   WHERE user_id = $1 AND service_id = $2
+    // Priority 1: Check service_staff table (if it exists)
+    // This provides explicit user-service mapping
+    let hasAssignment = false
     
-    const { data: assignment, error } = await supabase
-      .from("staff_profiles")
+    // First try service_staff table
+    const { data: serviceStaffAssignment, error: serviceStaffError } = await supabase
+      .from("service_staff")
       .select("id", { count: "exact", head: true })
-      .eq("id", userId)
-      // INTERIM: All staff_profiles users are assumed to have access
-      // This will be refined once service_staff mapping is created
+      .eq("user_id", userId)
+      .eq("service_id", serviceUuid)
       .single()
-
-    if (error && error.code !== "PGRST116") {
-      // PGRST116 = "not found", which is a valid authorization failure
-      throw error
+    
+    // If table exists and assignment found, allow
+    if (serviceStaffAssignment && !(serviceStaffError as any)?.code?.includes("PGRST")) {
+      hasAssignment = true
     }
-
-    if (!assignment || error?.code === "PGRST116") {
-      // User not found in staff_profiles = not authorized
+    
+    // Priority 2: Fallback to staff_profiles + facilities mapping
+    // Check if user is assigned to the facility that matches the service UUID
+    if (!hasAssignment) {
+      const { data: staffProfile, error: staffError } = await supabase
+        .from("staff_profiles")
+        .select("facility_id")
+        .eq("id", userId)
+        .single()
+      
+      if (staffProfile && !staffError) {
+        // Verify the facility matches the service UUID
+        // (service UUID should correspond to a facility record)
+        const { data: facilitiesMatch, error: facilitiesError } = await supabase
+          .from("facilities")
+          .select("id")
+          .eq("id", serviceUuid)
+          .eq("id", staffProfile.facility_id)
+          .single()
+        
+        hasAssignment = !!facilitiesMatch && !facilitiesError
+      }
+    }
+    
+    // If neither route succeeded, user is not assigned
+    if (!hasAssignment) {
       return jsonError(
         "Access denied",
         403,

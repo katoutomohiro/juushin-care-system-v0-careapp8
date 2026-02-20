@@ -860,6 +860,162 @@ http://dev-app.local:3000/services/after-school/users
 
 ---
 
+## 🔟 2026-02-20: HTTP エラー分岐整備 + 仕様適合性強化（care-receivers 本丸対応）
+
+### 🔴 症状（Symptom）
+
+**GET /api/care-receivers?serviceId=life-care が予期しない 500 / "Authorization check failed" を返す**
+
+- サービスID同定失敗（404であるべき）を 500 で返す
+- ユーザー割当なし（403であるべき）を 500 で返す
+- 予期せぬDB例外と仕様上の分岐が混在した状態
+
+### 🔎 根本原因分析（Root Cause）
+
+1. **serviceId （slug または UUID） の解決流程不完全**
+   - facilities テーブルが存在する場合の優先検索がない
+   -Services テーブルのみ検索 → facilities テーブルがあれば、そこを先に見るべき
+   - Slug/UUID解決失敗を 404 にしたがい、その他エラーを 500 にしきっていない
+
+2. **ユーザー割当判定ロジックの甘さ**
+   - service_staff テーブルが存在する場合、そこでの明示的な user_id + service_id マッピングをチェックしていない
+   - Interim として staff_profiles だけを見ているが、serviceUuid (facility_id) との関連性チェックが不十分
+   - 割当なしを登録エラー（DB例外）扱いにしてしまう可能性
+
+3. **Supabase エラーコード（PGRST116など）の不適切な扱い**
+   - PGRST116 は "not found / no rows" の意 → 404 にすべき
+   - 予期せぬDB エラー（code != PGRST116）のみ 500 に分岐すべき
+   - 割当なし（意図的な 0 件結果）を例外扱いにしていない
+
+### ✅ 対応内容（Solution）
+
+#### **A. lib/authz/serviceScope.ts 修正**
+
+**1. assertServiceAssignment() 改善**:
+- Priority 1: service_staff テーブルがあれば、そこで user_id + service_id で判定
+- Priority 2: Fallback として staff_profiles + facilities のマッピングで判定
+- 結果: 割当あり → null（認可OK）、割当なし → 403、エラー → 500
+
+**2. resolveServiceIdToUuid() 改善**:
+- Case 1: serviceId が UUID形式 → facilities> サーチ → 失敗なら services テーブル
+- Case 2: serviceId が Slug形式 → 同様に facilities → services
+- Supabase エラーコード判定: PGRST116 → 404、その他 → 500（structured log）
+
+#### **B. app/api/care-receivers/route.ts 改善**
+
+- serviceSlug パラメータの命名統一（slug ↔ UUID を明確に分離）
+- DB query エラー処理: PGRST116 → 200 with empty list、その他 → 500 with structured log
+- Supabase のエラーコード抽出 & マッピング実装
+
+#### **C. エラーレスポンス本文の統一**
+
+すべてのエラーレスポンスを以下の形式に統一：
+```json
+{
+  "ok": false,
+  "detail": "開発者が判断できる最低限のエラーコード/メッセージ"
+}
+```
+
+- Example 404: `{ ok: false, detail: "The requested service does not exist" }`
+- Example 403: `{ ok: false, detail: "User not assigned to this service" }`
+- Example 500: `{ ok: false, detail: "Database error while querying care receivers" }`
+
+### 📊 検証手順（Verification）
+
+**1. Build & Lint チェック**:
+```bash
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+**2. HTTP ステータス分岐テスト（curl）**:
+```bash
+# ケース A: serviceId 省略 → 400
+curl -s "http://localhost:3000/api/care-receivers" | jq .
+
+# ケース B: serviceId が存在しない UUID → 404
+curl -s "http://localhost:3000/api/care-receivers?serviceId=00000000-0000-0000-0000-000000000000" | jq .
+
+# ケース C: serviceId が存在するスラッグ → 200
+curl -s "http://localhost:3000/api/care-receivers?serviceId=life-care" | jq .
+
+# ケース D: ユーザー割当なし（未割当ユーザーで実行） → 403
+# （認証トークンで未割当ユーザーで実行）
+```
+
+**3. ブラウザ Network 確認**:
+- `/services/life-care/users` 開く
+- Network タブで GET /api/care-receivers?serviceId=life-care が 200 OK
+- DevTools Console: "[api/care-receivers]" ログなし（エラー時のみ出力）
+
+**4. エラーログ確認**:
+- 500 エラー時: `[api/care-receivers] Database query error` と JSON.stringify ログが出力される
+- コード、詳細、ヒント、スタック が含まれることを確認
+
+### 🎯 HTTP ステータスコード マッピング
+
+| 入力条件 | 期待値 | 修正内容 |
+|---------|--------|---------|
+| serviceId 省略 | 400 | ✅ 既存で OK（requireServiceIdFromRequest） |
+| serviceId が無効な UUID | 400 | 需要に応じて新規追加 |
+| serviceId が見つからない | 404 | ✅ 修正: resolveServiceIdToUuid で PGRST116 → 404 |
+| ユーザー割当なし | 403 | ✅ 修正: assertServiceAssignment で割当判定を強化 |
+| 有効なリクエスト、0 件結果 | 200 | ✅ 修正: PGRST116 を意図的な 0 件として 200 で返す |
+| DB 予期せぬエラー | 500 | ✅ 修正: structured log で詳細記録 |
+
+### 📝 変更ファイル
+
+| ファイル | 変更内容 | 影響度 |
+|---------|---------|--------|
+| `lib/authz/serviceScope.ts` | assertServiceAssignment と resolveServiceIdToUuid を改善 | 中（authorize ロジック） |
+| `app/api/care-receivers/route.ts` | serviceSlug 命名、エラーハンドリング、Supabase エラーコード判定 | 中（API ハンドラ） |
+| `plan.md` | 本セクション（10️⃣）追記 | 低（ドキュメント） |
+
+### ↩️ ロールバック手順（Rollback）
+
+万が一の際:
+```bash
+# ブランチ前戻し
+git revert <commit-sha>
+
+# または強制リセット（未push の場合のみ）
+git reset --hard <target-commit>
+```
+
+### 🔄 影響範囲・後方互換性
+
+- **API レスポンス形状**: 変更なし（既存クライアント互換）
+- **パラメータ名**: serviceId → serviceSlug への内部命名変更のみ（外部影響なし）
+- **エラーメッセージ**: より詳細化（クライアント側が処理している場合は確認推奨）
+- **HTTP ステータスコード**: 200/400/403/404/500 分岐を明確化（既存テストが必要なら更新）
+
+### 🎓 学習・再発防止
+
+**今回の教訓**:
+1. Supabase エラーコード（PGRST116など）を理解して、適切なHTTPステータスに マップする
+2. データベース例外（予期せぬ error） と ビジネスロジック上の正常結果（割当なし） を区別する
+3. 構造化ログ（JSON.stringify）で、実際のエラー詳細（code, details, hint）を記録する
+
+**今後の設計原則**:
+- 404: リソースが見つからない、クエリ結果が 0 件（意図的）
+- 403: 認可失敗（ユーザーに権限がない）
+- 400: リクエスト不正（パラメータ形式エラー等）
+- 500: 予期せぬパレベルエラー（DB接続失敗、ネットワークエラー など）
+
+### 📋 実装状況（2026-02-20）
+
+- ✅ **Task A**: lib/authz/serviceScope.ts 修正完了
+- ✅ **Task B**: app/api/care-receivers/route.ts 修正完了
+- ⏳ **Task C**: plan.md に「10️⃣」セクション追記（現在進行中）
+- ⏳ **Task D**: lint/typecheck 検証
+- ⏳ **Task E**: コミット & GitHub push
+
+
+
+---
+
 ## 棚卸し用 rg コマンド出力（2026-01-28）
 
 ### 「ケース記録」リンク出現箇所（全出力）

@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
   unexpectedErrorResponse,
   validateRequiredFields,
+  jsonError,
 } from "@/lib/api/route-helpers"
 import { requireServiceIdFromRequest, resolveServiceIdToUuid, assertServiceAssignment } from "@/lib/authz/serviceScope"
 import { auditRead } from "@/lib/audit/writeAuditLog"
@@ -45,25 +46,24 @@ export async function GET(req: NextRequest) {
       return clientError
     }
 
-    // STEP 2: Extract and validate serviceId parameter
-    let serviceId: string
+    // STEP 2: Extract and validate serviceSlug parameter (can be slug or UUID)
+    let serviceSlug: string
     try {
-      serviceId = requireServiceIdFromRequest(req)
+      serviceSlug = requireServiceIdFromRequest(req)
     } catch (err) {
-      // requireServiceIdFromRequest throws NextResponse with 400
       if (err instanceof NextResponse) {
         return err
       }
       throw err
     }
 
-    // STEP 3: Resolve serviceId (slug or UUID) to canonical service UUID
-    const resolveResult = await resolveServiceIdToUuid(supabaseAdmin!, serviceId)
+    // STEP 3: Resolve serviceSlug (slug or UUID) to canonical service UUID
+    const resolveResult = await resolveServiceIdToUuid(supabaseAdmin!, serviceSlug)
     if (resolveResult instanceof NextResponse) {
       return resolveResult
     }
 
-    const { serviceUuid, serviceSlug } = resolveResult
+    const { serviceUuid, serviceSlug: resolvedSlug } = resolveResult
 
     // STEP 4: Verify user has authorization to access this service
     const authzError = await assertServiceAssignment(supabaseAdmin!, user.id, serviceUuid)
@@ -73,22 +73,51 @@ export async function GET(req: NextRequest) {
 
     const allowRealPii = isRealPiiEnabled()
 
-    // STEP 5: Query database (scoped by service UUID)
-    // Use facility_id (UUID) when available, fall back to service_code for backward compatibility
+    // STEP 5: Query database scoped by facility_id (UUID)
+    // care_receivers table is structured with facility_id foreign key
     const { data: careReceivers, error } = await supabaseAdmin!
       .from("care_receivers")
-      .select("id, code, name, facility_id, service_code, created_at")
+      .select("id, code, name, facility_id, service_code, created_at, is_active")
       .eq("facility_id", serviceUuid)
       .eq("is_active", true)
       .order("name")
       .order("code")
 
+    // Handle specific database errors
     if (error) {
-      return supabaseErrorResponse("care-receivers GET", error, {
-        serviceCode: serviceSlug,
-        careReceivers: [],
-        count: 0,
-      })
+      // PGRST116 = "no rows returned from the query" → 200 with empty list
+      if ((error as any).code === "PGRST116") {
+        return NextResponse.json(
+          {
+            ok: true,
+            careReceivers: [],
+            count: 0,
+            serviceSlug: resolvedSlug,
+          },
+          { status: 200 }
+        )
+      }
+      
+      // Other DB errors → 500 with structured log
+      const anyError = error as Record<string, any>
+      const errorLog = {
+        message: anyError?.message || String(error),
+        code: anyError?.code || "UNKNOWN",
+        details: anyError?.details || null,
+        hint: anyError?.hint || null,
+        stack: anyError?.stack || null,
+        userId: user.id,
+        serviceUuid,
+        serviceSlug: resolvedSlug,
+        route: "/api/care-receivers"
+      }
+      console.error("[api/care-receivers] Database query error", JSON.stringify(errorLog))
+      
+      return jsonError(
+        "Failed to fetch care receivers",
+        500,
+        { ok: false, detail: "Database error while querying care receivers" }
+      )
     }
 
     const filteredCareReceivers = allowRealPii
@@ -96,7 +125,6 @@ export async function GET(req: NextRequest) {
       : (careReceivers ?? []).map((row: Record<string, unknown>) => omitPii(row))
 
     // STEP 6: Log the operation (async, non-blocking)
-    // Note: writeAuditLog handles interim state gracefully if audit_logs table doesn't exist
     const count = filteredCareReceivers.length
     void auditRead(supabaseAdmin!, {
       actor_id: user.id,
@@ -111,7 +139,7 @@ export async function GET(req: NextRequest) {
         ok: true,
         careReceivers: filteredCareReceivers,
         count,
-        serviceCode: serviceSlug,  // Return slug, not UUID
+        serviceSlug: resolvedSlug,
       },
       { status: 200 }
     )
