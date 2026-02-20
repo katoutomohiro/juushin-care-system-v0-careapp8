@@ -860,6 +860,163 @@ http://dev-app.local:3000/services/after-school/users
 
 ---
 
+## 9️⃣ 2026-01-29: 構造化エラーログ実装（care-receivers 500エラー対応）
+
+### 🔴 問題（Symptom）
+**GET /api/care-receivers?serviceId=life-care が 500 を返す**
+- ブラウザ: Network タブで Status 500
+- サーバーログ: `[authz] Database error in assertServiceAssignment: { error: [object Object] }`
+  - `String(dbError)` で "[object Object]" に変換される
+  - 実際の DB エラー（code, details, hint）が隠れている
+
+### 🔎 原因分析（Root Cause）
+1. **lib/authz/serviceScope.ts** の 2つの catch ブロック:
+   - `assertServiceAssignment()` L210-218: `console.error()` が `String(dbError)` を使用
+   - `resolveServiceIdToUuid()` L125-133: 同じパターン
+
+2. **エラー対象化の問題**:
+   - Supabase クライアントが返すエラーは複雑なオブジェクト（code, details, hint, stack など）
+   - `String()` 変換でこれらフィールドが全て失われる
+   - デバッグ時に「何が失敗していたのか」が分からない
+
+3. **DB スキーマ との確認**:
+   - `care_receivers` テーブルは `facility_id` (UUID) を主フィルタ使用
+   - `service_code` (text) は冗長カラム
+   - RLS ポリシーで `facility_id = get_current_facility_id()` により承認制御
+
+### ✅ 対応（Solution）
+
+#### ステップ 1: JSON.stringify で構造化ログ実装
+**ファイル**: `lib/authz/serviceScope.ts`
+
+**修正箇所 A**: `assertServiceAssignment()` の catch ブロック
+```typescript
+// OLD (悪):
+} catch (dbError) {
+  console.error("[authz] Database error in assertServiceAssignment:", {
+    userId,
+    serviceUuid,
+    error: dbError instanceof Error ? dbError.message : String(dbError)
+  })
+  // → console に "[object Object]" が出力される
+
+// NEW (良):
+} catch (dbError) {
+  const errorLog = {
+    message: dbError instanceof Error ? dbError.message : String(dbError),
+    code: (dbError as any)?.code || "UNKNOWN",
+    details: (dbError as any)?.details || null,
+    hint: (dbError as any)?.hint || null,
+    stack: dbError instanceof Error ? dbError.stack : null,
+    userId,
+    serviceUuid,
+    route: "/api/care-receivers"
+  }
+  console.error("[authz] Database error in assertServiceAssignment", JSON.stringify(errorLog))
+  // → JSON形式として code, details, hint を含め記録
+```
+
+**修正箇所 B**: `resolveServiceIdToUuid()` の catch ブロック
+```typescript
+// OLD (悪):
+} catch (dbError) {
+  console.error("[authz] Database error in resolveServiceIdToUuid:", {
+    error: dbError instanceof Error ? dbError.message : String(dbError)
+  })
+
+// NEW (良):
+} catch (dbError) {
+  const errorLog = {
+    message: dbError instanceof Error ? dbError.message : String(dbError),
+    code: (dbError as any)?.code || "UNKNOWN",
+    details: (dbError as any)?.details || null,
+    hint: (dbError as any)?.hint || null,
+    stack: dbError instanceof Error ? dbError.stack : null,
+    serviceId,
+    route: "/api/care-receivers"
+  }
+  console.error("[authz] Database error in resolveServiceIdToUuid", JSON.stringify(errorLog))
+```
+
+#### ステップ 2: エラーハンドリングの明確化
+すでに実装済み ✅:
+- `PGRST116` (not found) → 404 ✓
+- その他の DB エラー → 500 with structured log ✓
+- 入力値エラー → 400 ✓
+
+#### ステップ 3: /api/care-receivers ルートの確認
+既に実装済み ✅:
+- facility_id で正しくフィルタリング
+- service_code は戻り値に含める（slug）
+- RLS ポリシーで多テナント分離
+
+### 📊 検証手順（Verification）
+
+**1. Build & Lint チェック**:
+```bash
+pnpm lint --fix
+pnpm typecheck
+pnpm build
+```
+
+**2. ブラウザ Network 確認**:
+- `GET /api/care-receivers?serviceId=life-care`
+- Expected: Status 200 OK，`{ ok: true, careReceivers: [...], count: N }`
+- If 500: DevTools Console 確認 → `[authz]` で始まる JSON ログを検査
+
+**3. エラーケース確認**（curl で手動テスト）:
+```bash
+# Case A: serviceId を省略 → 400
+curl -X GET "http://localhost:3000/api/care-receivers" \
+  -H "Authorization: Bearer $TOKEN"
+# Expected: 400, { ok: false, detail: "Service ID required" }
+
+# Case B: serviceId が無効な UUID → 404
+curl -X GET "http://localhost:3000/api/care-receivers?serviceId=00000000-0000-0000-0000-000000000000" \
+  -H "Authorization: Bearer $TOKEN"
+# Expected: 404, { ok: false, detail: "The requested service does not exist" }
+
+# Case C: serviceId が存在するスラッグ → 200
+curl -X GET "http://localhost:3000/api/care-receivers?serviceId=life-care" \
+  -H "Authorization: Bearer $TOKEN"
+# Expected: 200, { ok: true, careReceivers: [...], count: 15 }
+```
+
+**4. Server ログ確認**:
+- 500 エラーが発生した場合、`console.error` に JSON形式のエラー情報が出力される
+- Example: `{"message": "...", "code": "...", "details": {...}, "hint": "{...}", "stack": "...", "userId": "...", "serviceUuid": "...", "route": "/api/care-receivers"}`
+
+### 🔄 影響範囲（Impact）
+
+| ファイル | 変更内容 | 影響 |
+|---------|---------|------|
+| `lib/authz/serviceScope.ts` | 2つの catch ブロックに JSON.stringify 追加 | ✅ 後方互換（API レスポンス変更なし） |
+| `console.error` 出力形式 | "[object Object]" → JSON 文字列 | ✅ デバッグ利便性向上 |
+| エラーハンドリング ロジック | 変更なし（404/403/500 の判定は同じ） | ✅ 既存テスト互換 |
+
+### ↩️ ロールバック手順（Rollback）
+
+万が一の際:
+```bash
+# コミット前の場合
+git restore lib/authz/serviceScope.ts
+
+# コミット済みの場合
+git revert <commit-sha>
+```
+
+### 📝 実装状況
+
+- ✅ **Task 1**: `assertServiceAssignment()` の catch ブロック修正完了
+- ✅ **Task 2**: `resolveServiceIdToUuid()` の catch ブロック修正完了
+- ⏳ **Task 3**: plan.md に「9️⃣」セクション追記（現在進行中）
+- ⏳ **Task 4**: コミット & GitHub push
+- ⏳ **Task 5**: ブラウザでの実機確認
+
+
+
+---
+
 ## 棚卸し用 rg コマンド出力（2026-01-28）
 
 ### 「ケース記録」リンク出現箇所（全出力）
