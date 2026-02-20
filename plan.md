@@ -1085,3 +1085,53 @@ git reset --hard <target-commit>
 | **404åˆ¤å®š** | ãƒ«ãƒ¼ãƒˆå´ã¯ 404 ãªã—ã€‚ãŸã ã— AT ãƒ¦ãƒ¼ã‚¶ãƒ¼æœªç™»éŒ²æ™‚ã« API 404 | âš ï¸ |
 | **ä¿®æ­£å¿…è¦** | æ¬¡ PR: AT ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ç¢ºèª / ãƒ›ãƒ¼ãƒ ç”»é¢ã‚’å‹•çš„åŒ– | ğŸ”´ A |
 
+
+---
+
+## ?? C³ƒƒOiPhase 3 HTTP ƒGƒ‰[ƒnƒ“ƒhƒŠƒ“ƒO‰ü‘Pj
+
+### Fix: PGRST116 ƒ}ƒbƒsƒ“ƒO + service_code QÆC³
+
+**Çó**  
+- `/services/life-care/users` GET `/api/care-receivers?serviceId=life-care` ‚ª 404 ‚ğ•Ô‚·
+- care_receivers ƒe[ƒuƒ‹‚ª facility_id ‚Å‚È‚­ service_code ‚Åi‚è‚Ş•K—v‚ª‚ ‚é
+- ƒGƒ‰[ƒƒO‚É `[object Object]` ‚ª•\¦‚³‚ê‚éiString(err) ‚Ìg—pj
+
+**Œ´ˆö**  
+1. **HTTP ƒ}ƒbƒsƒ“ƒOŒë‚è**: service_staff.single() ‚Å "no rows" (PGRST116) ‚ğ 404 ‚Å•Ô‚µ‚Ä‚¢‚½
+   - ÀÛ‚É‚ÍuŠ„“–‚È‚µv‚ğ¦‚·˜_—“IƒGƒ‰[ ¨ 403 ‚ª³‚µ‚¢
+   - 404 ‚Í resolveServiceiservice Œ©‚Â‚©‚ç‚È‚¢j‚Å•Ô‚·‚×‚«
+2. **care_receivers ƒtƒBƒ‹ƒ^ƒŠƒ“ƒOŒë‚è**: facility_id ‚Åi‚è‚ñ‚Å‚¢‚½
+   - ³‚µ‚­‚Í services.code ‚ğæ“¾‚µ‚Ä care_receivers.service_code ‚Åi‚è‚İ
+   - hasFacilityId ƒtƒH[ƒ‹ƒoƒbƒN‚ª‘¶İ‚·‚é—]’n‚ª‚ ‚Á‚½
+3. **ƒƒOƒŒƒxƒ‹–â‘è**: String(err) ‚É‚æ‚è Vercel Logs ‚É `[object Object]` ‚ª•\¦
+
+**‘Î‰Ï**  
+1. **assertServiceAssignment() ‚ÌC³** [commit: f8d9850]
+   - PGRST116ino rowsj¨ 403 "Access denied"iŠ„“–‚È‚µj
+   - ‚»‚Ì‘¼ PGRST ¨ 404 "Service not found"iservice Œ©‚Â‚©‚ç‚È‚¢j
+   - ‘S catch ‚Å structured JSON: `{ code, message, details, hint, stack }`
+
+2. **care-receivers endpoint ‚ÌC³** [commit: 07f9381]
+   - service_code QÆ‚É“ˆêiresolvedSlug ‚Å‚Í‚È‚­ services.code ‚ğæ“¾j
+   - facility_id ŠÖ˜A‚Ìˆ—‚ğŠ®‘Síœiselect, where ğŒj
+   - •Ô‹pƒŒƒXƒ|ƒ“ƒX‚É serviceCode ‚ğ’Ç‰ÁiserviceSlug ‚Æ‚Ì•¹—pj
+
+3. **ƒƒO‘S”p~**
+   - String(err) ‚ğ‚·‚×‚Ä”p~
+   - resolveServiceIdToUuid, assertServiceAssignment, care-receivers ‘Sƒnƒ“ƒhƒ‰[‚Å structured logging
+
+**ŒŸØiPreviewj**  
+- `/services/life-care/users` ‚ÉƒAƒNƒZƒX ?
+- GET `/api/care-receivers?serviceId=life-care` ƒXƒe[ƒ^ƒX: 200 ?
+- ƒŒƒXƒ|ƒ“ƒX: `{ ok: true, careReceivers: [...], count, serviceSlug, serviceCode }`  
+
+**‰e‹¿”ÍˆÍ**
+- `/api/care-receivers` ƒGƒ“ƒhƒ|ƒCƒ“ƒgicare receivers ˆê——æ“¾j
+- lib/authz/serviceScope.tsi‘S API ‚Åg—pj
+- Vercel Logs ‚Ì‰Â“Ç«Œüãi[object Object] ”p~j
+
+**ƒ[ƒ‹ƒoƒbƒNŒv‰æ**  
+1. `git revert f8d9850` + `git revert 07f9381`
+2. ‚Ü‚½‚Í `git reset --hard HEAD~2`  
+3. Preview: `/services/life-care/users` ‚ª 404/403 ‚É–ß‚é‘z’è
