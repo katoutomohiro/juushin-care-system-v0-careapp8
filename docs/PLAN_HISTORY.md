@@ -98,6 +98,134 @@ CodeQL セキュリティスキャンで SSRF 警告が検出された（`app/ap
 
 ---
 
+## 2026-02-20: API 認可強制実装フェーズ2 完成
+
+### 背景
+
+フェーズ 1 で確立した SECURITY_MODEL (`docs/SECURITY_MODEL.md`) に基づき、API 層の認可チェックを全エンドポイントに統一化。サービス境界（service_id）を超えたアクセスを 403 で拒否する仕組みを実装。
+
+### 実装内容（コード）
+
+#### 新規作成ファイル（2 ファイル）
+
+1. **lib/authz/serviceScope.ts** (136 行)
+   - `requireServiceIdFromRequest(req)` → query param から serviceId 抽出、なければ 400
+   - `assertServiceAssignment(supabase, userId, serviceId)` → ユーザーが service に割り当てられているか確認、なければ 403
+   - `requireServiceIdAndAssignment()` → 2 つの合成関数
+   - **根拠**: docs/SECURITY_MODEL.md で定義された「認可フロー（auth → authz → process → audit）」を実装
+
+2. **lib/audit/writeAuditLog.ts** (155 行)
+   - `writeAuditLog(supabase, entry)` → audit_logs テーブルに記録（非ブロッキング）
+   - `auditRead()` / `auditMutation()` → 便利ラッパー
+   - PII/PHI フィルタリング（名前/住所/電話/医療情報禁止）
+   - **根拠**: docs/AUDIT_LOGGING.md で定義されたスキーマと禁止ルール
+
+3. **IMPLEMENTATION_NOTES_API_AUTHZ.md** (165 行、本ファイル）
+   - 実装完了した API パターンのドキュメント
+   - API 認可フロー（5 ステップ図）
+   - 検証シナリオ表（401/400/403/200）
+   - 確認タスク表（service_staff/audit_logs 実装待ち）
+
+#### 修正ファイル（1 ファイル）
+
+4. **app/api/care-receivers/route.ts** (GET エンドポイント)
+   ```
+   STEP 1: Authentication (requireApiUser) → 401
+   STEP 2: Parameter validation (requireServiceIdFromRequest) → 400
+   STEP 3: Authorization check (assertServiceAssignment) → 403
+   STEP 4: Database query (scoped by serviceId)
+   STEP 5: Audit logging (auditRead, async non-blocking)
+   ```
+   - `requireServiceIdFromRequest()` 導入 → serviceId なければ 400 で応答停止
+     - **削除**: 従来の `validateRequiredField()` + if(!validation.valid) パターン
+     - **理由**: より明示的で、ガード関数パターンの一貫性
+   - `assertServiceAssignment()` 導入 → 割り当てなければ 403 で応答停止
+   - `auditRead()` 呼び出し → 読み取り操作をログ（async, void で非ブロッキング）
+
+### 割り当てテーブル根拠（interim state）
+
+#### 現状：service_staff テーブル未実装
+- **参照**: docs/DOMAIN_MODEL.md#156 - 「service_staff (REFERENCED BUT NOT CREATED)」
+- **RLS ポリシー定義**: supabase/migrations/20260128110000_extend_rls_role_separation.sql
+  - RLS では `service_staff.user_id`, `service_staff.service_id`, `service_staff.role` を参照
+  - **実際の create table ステートメント未検出**（grep 3300+ マッチ内に CREATE なし）
+- **決定**: Phase 2 では **staff_profiles テーブル** を interim として使用
+  - 根拠: staff_profiles.id = auth.users(id), staff_profiles.facility_id
+  - 制限: 現在の実装は "ユーザーが auth 内に存在するか" を確認するのみ
+  - 計画: Phase 4 で service_staff 実装後に lib/authz/serviceScope.ts を更新
+
+### 監査ログテーブル根拠
+
+#### 現状：audit_logs テーブル未実装
+- **スキーマ定義**: docs/AUDIT_LOGGING.md#28-90
+  ```sql
+  CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY, actor_id UUID, service_id UUID,
+    action text, resource_type text, resource_id text, metadata jsonb, created_at timestamptz
+  )
+  ```
+- **PII 禁止ルール**: docs/AUDIT_LOGGING.md#115
+  - 禁止項目: full_name, address, phone, emergency_contact, medical_care_detail, field values
+  - 許可項目: action, resource_type, resource_id, count, timestamp
+- **決定**: writeAuditLog() は非ブロッキング＆graceful degradation
+  - audit_logs テーブル未実装 → PGRST116(not found) を detect して console.debug() で記録
+  - API 応答はブロックしない
+  - 計画: Phase 3 で audit_logs 実装後に自動記録へ変更
+
+### 検証内容
+
+✅ **コード検証**
+- lib/authz/serviceScope.ts: 400/403 エラー応答パターン確認
+- lib/audit/writeAuditLog.ts: PII フィルタリング確認（名前等 禁止）
+- app/api/care-receivers/route.ts: 5 ステップフロー実装確認
+
+✅ **パターンテスト** (想定シナリオ)
+| シナリオ | リクエスト | 期待値 | 実装状 |
+|--------|----------|-------|--------|
+| 未認証 | no auth | 401 | ✓ middleware + requireApiUser |
+| serviceId 無し | ?serviceId= | 400 | ✓ requireServiceIdFromRequest throws |
+| 割り当て無し | serviceId=other | 403 | ✓ assertServiceAssignment check |
+| 正常系 | ?serviceId=life-care | 200 | ✓ DB query + audit |
+
+### 技術的決定・トレードオフ
+
+| 項目 | 決定 | 根拠 |
+|------|------|------|
+| **serviceId 型** | string（query param） | care_receivers.service_code が text，UUID ではなく slug ベース |
+| **割り当てロジック** | staff_profiles.facility_id（interim） | service_staff 未実装。Phase 4 で切り替え予定。本ファイル確認タスク #CT-1 参照 |
+| **監査ログ失敗** | 非ブロッキング | API は 200 返却，ログは best-effort。ユーザー影響最小化 |
+| **エラーメッセージ** | 汎用（PII 非公開） | "Service ID required" など detail 非開示 |
+| **RLS 並行実行** | RLS + API 層認可 | SUPABASE_SERVICE_ROLE_KEY 盗用時も API 層で検証（二重防御） |
+
+### 実装予定（フェーズ3～5）
+
+| フェーズ | タイムライン | 内容 |
+|---------|-------------|------|
+| **フェーズ 3** | 2026年3月 | audit_logs テーブル実装 + API 全スコープでの監査ログ統合 |
+| **フェーズ 4** | 2026年4月 | service_staff テーブル実装 + lib/authz/serviceScope.ts マイグレーション |
+| **フェーズ 5** | 2026年5月～ | 定期削除 cron・オフサイトバックアップ・監査レポート |
+
+### 残留確認事項（ブロッキング）
+
+| # | タスク | ファイル/テーブル | 優先度 | 根拠 | 状態 |
+|----|--------|-----------------|--------|------|------|
+| CT-1 | service_staff テーブル実装 (user_id, service_id, role) | supabase/migrations/ | HIGH | docs/DOMAIN_MODEL.md#215: Phase 2 仕様 | ❌ 計画中 |
+| CT-2 | service_staff 初期化（staff_profiles から seed） | migration + seed | HIGH | 既存ユーザーの割り当て確保 | ❌ 計画中 |
+| CT-3 | audit_logs テーブル実装 (schema migration) | supabase/migrations/ | HIGH | docs/AUDIT_LOGGING.md#28 スキーマ定義済 | ❌ 計画中 |
+| CT-4 | audit_logs RLS ポリシー有効化 | migration | MEDIUM | docs/AUDIT_LOGGING.md#93-112 ポリシー定義済 | ❌ 計画中 |
+| CT-5 | 他 API へ横展開 (staff, case-records等) | app/api/**/route.ts | MEDIUM | 実装パターン: lib/authz + lib/audit ラッパー | 延期 |
+| CT-6 | service_staff → lib/authz 切り替え | lib/authz/serviceScope.ts | MEDIUM | CT-1 実装後 | 延期 |
+
+### 参考資料
+
+- [docs/SECURITY_MODEL.md](./SECURITY_MODEL.md) - API 認可フロー定義
+- [docs/AUDIT_LOGGING.md](./AUDIT_LOGGING.md) - PII 禁止ルール
+- [docs/DOMAIN_MODEL.md](./DOMAIN_MODEL.md#215) - service_staff 設計案
+- [supabase/migrations/20260128110000_extend_rls_role_separation.sql](../supabase/migrations/20260128110000_extend_rls_role_separation.sql) - RLS ポリシー（service_staff 参照）
+- [IMPLEMENTATION_NOTES_API_AUTHZ.md](./IMPLEMENTATION_NOTES_API_AUTHZ.md) - 実装パターン記録
+
+---
+
 ## 📅 時系列イベント
 ### 2026年1月8日（最新）: Vercel build fix → 機能統合完成
 #### タスク: Vercel Build Failed 最終解決 + URL生成関数統一化
