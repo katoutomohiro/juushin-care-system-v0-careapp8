@@ -5,7 +5,75 @@
 
 ---
 
-## 2026-02-20: セキュリティドキュメント整備フェーズ1 完成
+## 2026-02-20: serviceId Slug/UUID 正規化 Hotfix
+
+### 背景
+
+フェーズ 2 で実装した API 要認可ガードで、serviceId として slug 形式（`life-care`）を受け付けるとき、内部で UUID 形式（`550e8400-...`) が必要となり、型の不一致から 500 エラーが発生する可能性があった。
+
+抜本対応：serviceId を受け取った直後に UUID に正規化し、以降は UUID ベースで認可・クエリを実行。
+
+### 実装内容（コード）
+
+#### 修正ファイル（2 個）
+
+1. **lib/authz/serviceScope.ts**
+   - `isValidUUID()` インポート追加（route-helpers から）
+   - **新規関数**: `resolveServiceIdToUuid(supabase, serviceId)`
+     - UUID 形式なら `services.id` で検証→UUID 返却
+     - slug 形式なら `services.slug` で lookup→UUID 返却
+     - 見つからなければ 404 エラー
+     - 形式不正なら 400 エラー
+   - **修正**: `assertServiceAssignment(userId, serviceUuid)`
+     - 引数を `serviceId` → `serviceUuid` に変更（UUID 前提）
+     - UUID 形式チェック追加（`isValidUUID()`）
+   - **修正**: `requireServiceIdAndAssignment()`
+     - 戻り値を `[serviceId, error]` → `[serviceUuid, serviceSlug, error]` に変更
+     - `resolveServiceIdToUuid()` 呼び出し追加
+
+2. **app/api/care-receivers/route.ts**
+   - インポート: `resolveServiceIdToUuid` 追加
+   - **STEP 2.5 追加**: `resolveServiceIdToUuid()` で slug/UUID 正規化
+   - **STEP 3 修正**: `assertServiceAssignment(userId, serviceUuid)` で UUID を渡す
+   - **STEP 4 修正**: クエリを `service_code` → `facility_id` (UUID) でスコープ
+     - care_receivers には facility_id カラムが必要（確認）
+   - **レスポンス修正**: `serviceCode` に slug を返す（UUID ではなく）
+
+### テーブル構造確認
+
+**care_receivers テーブル** (確認):
+- `facility_id` (UUID) ← このカラムで services テーブルと紐付け
+- `service_code` (text) ← 従来のスラッグ相当（廃止予定？）
+
+**services テーブル**:
+- `id` (UUID) - PRIMARY KEY
+- `slug` (text, UNIQUE) - e.g., "life-care", "after-school"
+
+### 動作シナリオ（想定）
+
+| リクエスト | flow | 期待値 | 実装状 |
+|----------|------|--------|--------|
+| `?serviceId=life-care` | resolve(life-care)→UUID | 200 | ✓ STEP 2.5 resolve |
+| `?serviceId=550e...` (UUID) | resolve(550e...)→UUID | 200 | ✓ STEP 2.5 resolve |
+| （なし） | requireServiceIdFromRequest | 400 | ✓ STEP 2 |
+| `?serviceId=invalid` | resolve(invalid)→404 | 404 | ✓ STEP 2.5 resolve |
+| `?serviceId=life-care` (割当無し) | assertServiceAssignment | 403 | ✓ STEP 3 |
+
+### 確認タスク
+
+| # | 項目 | ファイル | 優先度 | 状態 |
+|----|------|---------|--------|------|
+| CT-7 | care_receivers.facility_id の存在確認 | DB schema | HIGH | ⏳ |
+| CT-8 | services.slug/id ペアが完全に設定されているか確認 | DB seed | HIGH | ⏳ |
+| CT-9 | /api/care-receivers 動作テスト（slug+UUID 両形式） | integration test | HIGH | ⏳ |
+
+### 参考資料
+
+- フェーズ 2 実装: [docs/PLAN_HISTORY.md#2026-02-20-API-認可強制実装フェーズ2-完成](./PLAN_HISTORY.md)
+
+---
+
+## 2026-02-20: API 認可強制実装フェーズ2 完成
 
 ### 背景
 
