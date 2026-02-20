@@ -17,4 +17,4 @@ WHERE
     table_schema = 'public'
     AND table_name = 'care_receivers'
 ORDER BY
-    ordinal_position;
+    

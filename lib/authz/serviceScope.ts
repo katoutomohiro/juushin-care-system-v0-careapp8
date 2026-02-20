@@ -292,30 +292,24 @@ export async function assertServiceAssignment(
     
     // ✓ Authorization passed
     return null
-  } catch (dbError) {
-    // Structured logging for database errors
-    const anyError = dbError as Record<string, any>
-    const errorLog = {
-      code: anyError?.code || "UNKNOWN",
-      message: anyError?.message || "Unknown error",
-      details: anyError?.details || null,
-      hint: anyError?.hint || null,
-      stack: anyError?.stack || null,
+  } catch (dbError: any) {
+    const raw = dbError?.error ?? dbError?.cause ?? dbError;
+
+    const errorDetails = {
+      code: raw?.code ?? raw?.status ?? "UNKNOWN",
+      message: raw?.message ?? raw?.error ?? "Unknown error",
+      details: raw?.details ?? raw?.detail ?? null,
+      hint: raw?.hint ?? null,
+      stack: raw?.stack ?? null,
+    };
+
+    console.error("[authz] Database error in assertServiceAssignment", {
       userId,
       serviceUuid,
-      function: "assertServiceAssignment",
-      route: "/api/care-receivers"
-    }
-    console.error("[authz] Database error in assertServiceAssignment", JSON.stringify(errorLog))
+      ...errorDetails,
+    });
 
-    return jsonError(
-      "Authorization check failed",
-      500,
-      {
-        ok: false,
-        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}`
-      }
-    )
+    throw dbError;
   }
 }
 
