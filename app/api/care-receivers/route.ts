@@ -143,6 +143,21 @@ export async function GET(req: NextRequest) {
     // STEP 4: Verify user has authorization to access this service
     const authzError = await assertServiceAssignment(supabaseAdmin!, user.id, serviceUuid)
     if (authzError) {
+      // If 403, add debug info for troubleshooting
+      if (authzError.status === 403) {
+        const bodyJson = await authzError.json()
+        return NextResponse.json(
+          {
+            ...bodyJson,
+            debug: {
+              user_id: user.id,
+              service_id: serviceUuid,
+              service_slug: serviceSlug
+            }
+          },
+          { status: 403 }
+        )
+      }
       return authzError
     }
 
