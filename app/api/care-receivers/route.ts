@@ -99,7 +99,7 @@ async function canSelectColumn(
  * Authorization flow:
  * 1. requireApiUser() - verify authentication (401 if missing)
  * 2. requireServiceIdFromRequest() - extract serviceId parameter (400 if missing)
- * 3. resolveServiceIdToUuid() - normalize slug/UUID to service UUID (400/404 if invalid)
+ * 3. Query public.services by slug - resolve to service UUID (404 if not found)
  * 4. assertServiceAssignment() - verify user has access to this service (403 if not)
  * 5. DB query scoped by service_id (UUID)
  * 6. auditRead() - log the operation (async, non-blocking)
