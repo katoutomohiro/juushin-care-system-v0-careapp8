@@ -155,18 +155,22 @@ export async function resolveServiceIdToUuid(
     }
 
     // Case 2: Slug format (non-UUID string)
+    console.log(`[authz] Resolving service by slug: ${serviceId}`)
     const { data, error } = await supabase
       .from("services")
       .select("id, slug")
       .eq("slug", serviceId)
       .single()
 
+    console.log(`[authz] Service resolution result:`, { data, error, slug: serviceId })
+
     // PGRST116 = no rows → 404
     if (!data || (error as any)?.code === "PGRST116") {
+      console.error(`[authz] Service not found for slug: ${serviceId}`)
       return jsonError(
         "Service not found",
         404,
-        { ok: false, detail: "The requested service does not exist" }
+        { ok: false, detail: `The requested service does not exist (slug: ${serviceId})` }
       )
     }
 
@@ -184,6 +188,7 @@ export async function resolveServiceIdToUuid(
       throw error
     }
 
+    console.log(`[authz] Resolved service slug '${serviceId}' to UUID: ${data.id}`)
     return {
       serviceUuid: data.id,
       serviceSlug: data.slug

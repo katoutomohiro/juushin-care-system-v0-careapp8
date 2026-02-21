@@ -133,12 +133,15 @@ export async function GET(req: NextRequest) {
     }
 
     // STEP 3: Resolve serviceSlug (slug or UUID) to canonical service UUID
+    console.log(`[care-receivers] Resolving serviceSlug: ${serviceSlug}`)
     const resolveResult = await resolveServiceIdToUuid(supabaseAdmin!, serviceSlug)
     if (resolveResult instanceof NextResponse) {
+      console.log(`[care-receivers] Service resolution failed for: ${serviceSlug}`)
       return resolveResult
     }
 
     const { serviceUuid, serviceSlug: resolvedSlug } = resolveResult
+    console.log(`[care-receivers] Resolved service: slug='${serviceSlug}' -> UUID='${serviceUuid}'`)
 
     // STEP 4: Verify user has authorization to access this service
     const authzError = await assertServiceAssignment(supabaseAdmin!, user.id, serviceUuid)
@@ -146,13 +149,21 @@ export async function GET(req: NextRequest) {
       // If 403, add debug info for troubleshooting
       if (authzError.status === 403) {
         const bodyJson = await authzError.json()
+        console.log(`[care-receivers] 403 Authorization failed:`, {
+          user_id: user.id,
+          service_id: serviceUuid,
+          service_slug: serviceSlug,
+          resolved_slug: resolvedSlug
+        })
         return NextResponse.json(
           {
             ...bodyJson,
             debug: {
               user_id: user.id,
               service_id: serviceUuid,
-              service_slug: serviceSlug
+              service_slug: serviceSlug,
+              resolved_slug: resolvedSlug,
+              requestedUrl: req.url
             }
           },
           { status: 403 }
