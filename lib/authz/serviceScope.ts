@@ -1,13 +1,13 @@
 /**
  * Service-scoped authorization helpers
- * 
+ *
  * Enforces multi-layer authorization:
  * 1. Authentication (user exists)
  * 2. Service ID validation (parameter present)
  * 3. Service ID normalization (slug → UUID)
  * 4. Service assignment (user-service relationship)
  * 5. Role-based checks (optional)
- * 
+ *
  * ⚠️ INTERIM STATE (2026-02-20):
  * - Uses staff_profiles.facility_id for assignment check
  * - Awaiting service_staff table implementation (planned Phase 4, cf. DOMAIN_MODEL.md)
@@ -66,7 +66,7 @@ function pickMessage(raw: any): string {
 
 /**
  * Extract and validate serviceId from request query parameters
- * 
+ *
  * @param req - NextRequest object
  * @returns serviceId (non-empty string)
  * @throws NextResponse with 400 if serviceId missing
@@ -91,9 +91,9 @@ export function requireServiceIdFromRequest(req: NextRequest): string {
 
 /**
  * Resolve serviceId (slug or UUID) to internal service UUID
- * 
+ *
  * Normalizes both slug (e.g., "life-care") and UUID formats to a canonical UUID.
- * 
+ *
  * @param supabase - Supabase admin client
  * @param serviceId - Either UUID (e.g., "550e8400-...") or slug (e.g., "life-care")
  * @returns { serviceUuid, serviceSlug } on success
@@ -136,7 +136,7 @@ export async function resolveServiceIdToUuid(
           .select("id, slug")
           .eq("id", serviceId)
           .single()
-        
+
         data = servicesData
         error = servicesError
       }
@@ -191,7 +191,7 @@ export async function resolveServiceIdToUuid(
         .select("id, slug")
         .eq("slug", serviceId)
         .single()
-      
+
       data = servicesData
       error = servicesError
     }
@@ -236,14 +236,14 @@ export async function resolveServiceIdToUuid(
       function: "resolveServiceIdToUuid",
       route: "/api/care-receivers"
     }
-    console.error("[authz] Database error in resolveServiceIdToUuid", JSON.stringify(errorLog))
+    console.error("[authz] Database error in resolveServiceIdToUuid " + safeJson(errorLog))
 
     return jsonError(
       "Service lookup failed",
       500,
-      { 
-        ok: false, 
-        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` 
+      {
+        ok: false,
+        detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}`
       }
     )
   }
@@ -251,13 +251,13 @@ export async function resolveServiceIdToUuid(
 
 /**
  * Verify that user has a service assignment (is member of the service)
- * 
+ *
  * CRITICAL: Accepts UUID only (call resolveServiceIdToUuid first if needed)
- * 
+ *
  * Assignment logic:
  * - Uses service_staff mapping (user_id + service_id)
  * - No facilities/staff_profiles fallback (Preview has no facilities table)
- * 
+ *
  * @param supabase - Supabase admin client
  * @param userId - auth.users.id (UUID)
  * @param serviceUuid - Service UUID (must be valid UUID, not slug)
@@ -286,15 +286,20 @@ export async function assertServiceAssignment(
   }
 
   try {
-    // Check service_staff table for explicit mapping
+    /**
+     * ✅ IMPORTANT:
+     * head:true + single() は相性が悪く、"UNKNOWN" になりやすい。
+     * 「1件あればOK / 無ければ403」が欲しいので maybeSingle() にする。
+     */
     const { data: serviceStaffAssignment, error: serviceStaffError } = await supabase
       .from("service_staff")
-      .select("id", { count: "exact", head: true })
+      .select("id")
       .eq("user_id", userId)
       .eq("service_id", serviceUuid)
-      .single()
+      .maybeSingle()
 
     if (serviceStaffError) {
+      // テーブルが無い等（42P01）→ ここでは「未割当扱い」で 403 に落とす
       if (
         (serviceStaffError as any).code === "42P01" ||
         (serviceStaffError as any).message?.includes('relation "public.service_staff" does not exist')
@@ -306,23 +311,7 @@ export async function assertServiceAssignment(
         )
       }
 
-      // PGRST116 = "no rows" → user not assigned (403, not 404)
-      if ((serviceStaffError as any).code === "PGRST116") {
-        return jsonError(
-          "Access denied",
-          403,
-          { ok: false, detail: "User not assigned to this service" }
-        )
-      }
-
-      if ((serviceStaffError as any).code?.includes("PGRST")) {
-        return jsonError(
-          "Service not found",
-          404,
-          { ok: false, detail: "The requested service does not exist" }
-        )
-      }
-
+      // それ以外の DB エラーは catch で structured に吐く
       throw serviceStaffError
     }
 
@@ -333,11 +322,11 @@ export async function assertServiceAssignment(
         { ok: false, detail: "User not assigned to this service" }
       )
     }
-    
+
     // ✓ Authorization passed
     return null
   } catch (dbError: any) {
-    const raw = unwrapError(dbError);
+    const raw = unwrapError(dbError)
 
     const errorDetails = {
       code: raw?.code ?? raw?.status ?? raw?.error?.code ?? "UNKNOWN",
@@ -345,18 +334,21 @@ export async function assertServiceAssignment(
       details: raw?.details ?? raw?.detail ?? raw?.error?.details ?? null,
       hint: raw?.hint ?? raw?.error?.hint ?? null,
       stack: raw?.stack ?? dbError?.stack ?? null,
-    };
+    }
 
-    console.error("[authz] Database error in assertServiceAssignment", {
-      userId,
-      serviceUuid,
-      function: "assertServiceAssignment",
-      route: "/api/care-receivers",
-      ...errorDetails,
-      // これが超重要：中身丸ごと確認できる
-      raw: safeJson(raw),
-      original: safeJson(dbError),
-    });
+    // ✅ Vercel の message 欄で潰れにくいよう、文字列で吐く
+    console.error(
+      "[authz] Database error in assertServiceAssignment " +
+      safeJson({
+        userId,
+        serviceUuid,
+        function: "assertServiceAssignment",
+        route: "/api/care-receivers",
+        ...errorDetails,
+        raw,
+        original: dbError,
+      })
+    )
 
     return jsonError(
       "Authorization check failed",
@@ -365,18 +357,18 @@ export async function assertServiceAssignment(
         ok: false,
         detail: `Database error: ${errorDetails.code} - ${errorDetails.message}`,
       }
-    );
+    )
   }
 }
 
 /**
  * Combined check: serviceId resolution + assignment verification
- * 
+ *
  * Convenience wrapper for common pattern:
  * 1. Extract and validate serviceId (query parameter)
  * 2. Resolve serviceId (slug/UUID) to service UUID
  * 3. Check user assignment to service
- * 
+ *
  * @param req - NextRequest
  * @param supabase - Supabase admin client
  * @param userId - auth.users.id
