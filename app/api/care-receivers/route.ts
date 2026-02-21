@@ -12,7 +12,7 @@ import {
   validateRequiredFields,
   jsonError,
 } from "@/lib/api/route-helpers"
-import { requireServiceIdFromRequest, resolveServiceIdToUuid, assertServiceAssignment } from "@/lib/authz/serviceScope"
+import { requireServiceIdFromRequest, assertServiceAssignment } from "@/lib/authz/serviceScope"
 import { auditRead } from "@/lib/audit/writeAuditLog"
 
 export const dynamic = "force-dynamic"
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       return clientError
     }
 
-    // STEP 2: Extract and validate serviceSlug parameter (can be slug or UUID)
+    // STEP 2: Extract and validate serviceSlug parameter
     let serviceSlug: string
     try {
       serviceSlug = requireServiceIdFromRequest(req)
@@ -132,16 +132,26 @@ export async function GET(req: NextRequest) {
       throw err
     }
 
-    // STEP 3: Resolve serviceSlug (slug or UUID) to canonical service UUID
-    console.log(`[care-receivers] Resolving serviceSlug: ${serviceSlug}`)
-    const resolveResult = await resolveServiceIdToUuid(supabaseAdmin!, serviceSlug)
-    if (resolveResult instanceof NextResponse) {
-      console.log(`[care-receivers] Service resolution failed for: ${serviceSlug}`)
-      return resolveResult
+    // STEP 3: Resolve serviceSlug to canonical service UUID by querying public.services directly
+    console.log(`[care-receivers] Resolving serviceSlug from public.services: ${serviceSlug}`)
+    const { data: serviceRow, error: serviceError } = await supabaseAdmin!
+      .from("services")
+      .select("id, slug")
+      .eq("slug", serviceSlug)
+      .single()
+
+    if (serviceError || !serviceRow) {
+      console.error(`[care-receivers] Service not found for slug: ${serviceSlug}`, serviceError)
+      return jsonError(
+        "Service not found",
+        404,
+        { ok: false, detail: `The requested service does not exist (slug: ${serviceSlug})` }
+      )
     }
 
-    const { serviceUuid, serviceSlug: resolvedSlug } = resolveResult
-    console.log(`[care-receivers] Resolved service: slug='${serviceSlug}' -> UUID='${serviceUuid}'`)
+    const serviceUuid = serviceRow.id
+    const resolvedSlug = serviceRow.slug
+    console.log(`[care-receivers] ✅ Resolved service: slug='${serviceSlug}' -> UUID='${serviceUuid}'`)
 
     // STEP 4: Verify user has authorization to access this service
     const authzError = await assertServiceAssignment(supabaseAdmin!, user.id, serviceUuid)
