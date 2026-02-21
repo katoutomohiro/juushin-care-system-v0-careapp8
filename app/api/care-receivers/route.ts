@@ -19,45 +19,58 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**
- * Helper: Check if a column exists in a table
+ * Check if a table can be selected (exists and is accessible)
  * 
- * Uses actual table query (not information_schema) to avoid PostgREST schema cache issues
- * 
+ * @param supabase - Supabase client
  * @param table - Table name
- * @param column - Column name to check
- * @returns true if column exists, false if column doesn't exist
- * @throws Error for unexpected database errors
+ * @returns true if table exists and is accessible, false otherwise
  */
-async function hasColumn(table: string, column: string): Promise<boolean> {
-  try {
-    const { error } = await supabaseAdmin!
-      .from(table)
-      .select(column, { head: true, count: "exact" })
-      .limit(1)
+async function canSelectTable(
+  supabase: any,
+  table: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from(table)
+    .select("*")
+    .limit(1);
+  if (!error) return true;
 
-    if (!error) return true
+  const code = (error as any)?.code;
+  const msg = (error as any)?.message ?? "";
+  // テーブル不存在系（PostgREST）
+  if (code === "PGRST205" || msg.includes("Could not find the table")) return false;
+  // それ以外は「存在はするが別理由」の可能性があるので true 扱いにせず、ログして false
+  console.error("[canSelectTable] unexpected error", { table, code, msg });
+  return false;
+}
 
-    // Check if error indicates missing column
-    const anyError = error as Record<string, any>
-    const msg = (anyError?.message || "").toLowerCase()
-    const code = anyError?.code || ""
+/**
+ * Check if a column can be selected from a table (exists and is accessible)
+ * 
+ * @param supabase - Supabase client
+ * @param table - Table name
+ * @param column - Column name
+ * @returns true if column exists and is accessible, false otherwise
+ */
+async function canSelectColumn(
+  supabase: any,
+  table: string,
+  column: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from(table)
+    .select(column)
+    .limit(1);
+  if (!error) return true;
 
-    // PGRST errors + column-related messages = column doesn't exist
-    if (
-      code.includes("PGRST") ||
-      msg.includes("column") ||
-      msg.includes("does not exist") ||
-      msg.includes("schema cache")
-    ) {
-      return false
-    }
+  const code = (error as any)?.code;
+  const msg = (error as any)?.message ?? "";
+  // カラム不存在/選択不可系（PostgRESTは message に column が出ることが多い）
+  if (msg.includes(`column "${column}"`) || msg.includes("does not exist")) return false;
+  if (code?.startsWith?.("PGRST")) return false;
 
-    // Unexpected error - throw to trigger 500
-    throw error
-  } catch (err) {
-    // Re-throw non-column errors
-    throw err
-  }
+  console.error("[canSelectColumn] unexpected error", { table, column, code, msg });
+  return false;
 }
 
 /**
@@ -116,15 +129,15 @@ export async function GET(req: NextRequest) {
     const allowRealPii = isRealPiiEnabled()
 
     // STEP 5: Check which columns exist in care_receivers table
-    const hasServiceCode = await hasColumn("care_receivers", "service_code")
-    const hasServiceId = await hasColumn("care_receivers", "service_id")
-    const hasIsActive = await hasColumn("care_receivers", "is_active")
+    const hasServiceCode = await canSelectColumn(supabaseAdmin!, "care_receivers", "service_code")
+    const hasServiceId = await canSelectColumn(supabaseAdmin!, "care_receivers", "service_id")
+    const hasIsActive = await canSelectColumn(supabaseAdmin!, "care_receivers", "is_active")
 
     // Fetch services.code for filtering care_receivers
     let serviceCode = resolvedSlug
     if (hasServiceCode) {
       // Check if services table has 'code' column
-      const hasServicesCode = await hasColumn("services", "code")
+      const hasServicesCode = await canSelectColumn(supabaseAdmin!, "services", "code")
 
       const { data: serviceRow, error: serviceRowError } = await supabaseAdmin!
         .from("services")
