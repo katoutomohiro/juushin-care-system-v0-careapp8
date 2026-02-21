@@ -19,6 +19,48 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**
+ * Helper: Check if a column exists in a table
+ * 
+ * Uses actual table query (not information_schema) to avoid PostgREST schema cache issues
+ * 
+ * @param table - Table name
+ * @param column - Column name to check
+ * @returns true if column exists, false if column doesn't exist
+ * @throws Error for unexpected database errors
+ */
+async function hasColumn(table: string, column: string): Promise<boolean> {
+  try {
+    const { error } = await supabaseAdmin!
+      .from(table)
+      .select(column, { head: true, count: "exact" })
+      .limit(1)
+
+    if (!error) return true
+
+    // Check if error indicates missing column
+    const anyError = error as Record<string, any>
+    const msg = (anyError?.message || "").toLowerCase()
+    const code = anyError?.code || ""
+
+    // PGRST errors + column-related messages = column doesn't exist
+    if (
+      code.includes("PGRST") ||
+      msg.includes("column") ||
+      msg.includes("does not exist") ||
+      msg.includes("schema cache")
+    ) {
+      return false
+    }
+
+    // Unexpected error - throw to trigger 500
+    throw error
+  } catch (err) {
+    // Re-throw non-column errors
+    throw err
+  }
+}
+
+/**
  * GET /api/care-receivers?serviceId=life-care
  *
  * Authorization flow:
@@ -73,79 +115,16 @@ export async function GET(req: NextRequest) {
 
     const allowRealPii = isRealPiiEnabled()
 
-    // STEP 5: Query database based on actual care_receivers schema
-    const { data: careReceiverColumns, error: careReceiverColumnsError } = await supabaseAdmin!
-      .from("information_schema.columns")
-      .select("column_name")
-      .eq("table_schema", "public")
-      .eq("table_name", "care_receivers")
-
-    if (careReceiverColumnsError) {
-      const anyError = careReceiverColumnsError as Record<string, any>
-      const errorLog = {
-        code: anyError?.code || "UNKNOWN",
-        message: anyError?.message || "Unknown error",
-        details: anyError?.details || null,
-        hint: anyError?.hint || null,
-        stack: anyError?.stack || null,
-        userId: user.id,
-        serviceUuid,
-        serviceSlug: resolvedSlug,
-        route: "/api/care-receivers",
-        step: "schema-check"
-      }
-      console.error("[api/care-receivers] Schema lookup error", JSON.stringify(errorLog))
-
-      return jsonError(
-        "Failed to fetch care receivers",
-        500,
-        { ok: false, detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` }
-      )
-    }
-
-    const careReceiverColumnSet = new Set(
-      (careReceiverColumns ?? []).map((row: { column_name: string }) => row.column_name)
-    )
-    const hasServiceCode = careReceiverColumnSet.has("service_code")
-    const hasServiceId = careReceiverColumnSet.has("service_id")
-    const hasIsActive = careReceiverColumnSet.has("is_active")
+    // STEP 5: Check which columns exist in care_receivers table
+    const hasServiceCode = await hasColumn("care_receivers", "service_code")
+    const hasServiceId = await hasColumn("care_receivers", "service_id")
+    const hasIsActive = await hasColumn("care_receivers", "is_active")
 
     // Fetch services.code for filtering care_receivers
     let serviceCode = resolvedSlug
     if (hasServiceCode) {
-      const { data: servicesColumns, error: servicesColumnsError } = await supabaseAdmin!
-        .from("information_schema.columns")
-        .select("column_name")
-        .eq("table_schema", "public")
-        .eq("table_name", "services")
-
-      if (servicesColumnsError) {
-        const anyError = servicesColumnsError as Record<string, any>
-        const errorLog = {
-          code: anyError?.code || "UNKNOWN",
-          message: anyError?.message || "Unknown error",
-          details: anyError?.details || null,
-          hint: anyError?.hint || null,
-          stack: anyError?.stack || null,
-          userId: user.id,
-          serviceUuid,
-          serviceSlug: resolvedSlug,
-          route: "/api/care-receivers",
-          step: "services-schema-check"
-        }
-        console.error("[api/care-receivers] Schema lookup error", JSON.stringify(errorLog))
-
-        return jsonError(
-          "Failed to fetch care receivers",
-          500,
-          { ok: false, detail: `Database error: ${anyError?.code || "UNKNOWN"} - ${anyError?.message || "Unknown error"}` }
-        )
-      }
-
-      const servicesColumnSet = new Set(
-        (servicesColumns ?? []).map((row: { column_name: string }) => row.column_name)
-      )
-      const hasServicesCode = servicesColumnSet.has("code")
+      // Check if services table has 'code' column
+      const hasServicesCode = await hasColumn("services", "code")
 
       const { data: serviceRow, error: serviceRowError } = await supabaseAdmin!
         .from("services")
