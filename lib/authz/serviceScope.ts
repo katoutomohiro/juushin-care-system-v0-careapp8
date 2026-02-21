@@ -8,9 +8,10 @@
  * 4. Service assignment (user-service relationship)
  * 5. Role-based checks (optional)
  *
- * ⚠️ INTERIM STATE (2026-02-20):
- * - Uses staff_profiles.facility_id for assignment check
- * - Awaiting service_staff table implementation (planned Phase 4, cf. DOMAIN_MODEL.md)
+ * 🔐 PRODUCTION STATE (2026-02-21):
+ * - Uses public.services table for service lookup (slug → UUID normalization)
+ * - Uses public.service_staff for authorization (user → service mapping)
+ * - No facilities table fallback (facilities removed from architecture)
  * - PII/PHI never logged
  * - serviceId accepts both slug (life-care) and UUID formats
  * - Internally normalizes all to UUID for consistency
@@ -94,6 +95,8 @@ export function requireServiceIdFromRequest(req: NextRequest): string {
  *
  * Normalizes both slug (e.g., "life-care") and UUID formats to a canonical UUID.
  *
+ * Uses only public.services table (no facilities fallback).
+ *
  * @param supabase - Supabase admin client
  * @param serviceId - Either UUID (e.g., "550e8400-...") or slug (e.g., "life-care")
  * @returns { serviceUuid, serviceSlug } on success
@@ -116,30 +119,11 @@ export async function resolveServiceIdToUuid(
   try {
     // Case 1: UUID format
     if (isValidUUID(serviceId)) {
-      // Try facilities table first (primary)
-      let { data, error } = await supabase
-        .from("facilities")
+      const { data, error } = await supabase
+        .from("services")
         .select("id, slug")
         .eq("id", serviceId)
         .single()
-
-      // If facilities table error (not found or doesn't exist), fallback to services table
-      // Check for 42P01 (undefined_table), PGRST errors, and "no rows" errors
-      if (error && (
-        (error as any).code === "42P01" ||
-        (error as any).message?.includes('relation "public.facilities" does not exist') ||
-        (error as any).code?.includes("PGRST") ||
-        (error as any).code === "PGRST116"
-      )) {
-        const { data: servicesData, error: servicesError } = await supabase
-          .from("services")
-          .select("id, slug")
-          .eq("id", serviceId)
-          .single()
-
-        data = servicesData
-        error = servicesError
-      }
 
       // PGRST116 = no rows → 404 (service not found)
       if (!data || (error as any)?.code === "PGRST116") {
@@ -171,30 +155,11 @@ export async function resolveServiceIdToUuid(
     }
 
     // Case 2: Slug format (non-UUID string)
-    // Try facilities table first
-    let { data, error } = await supabase
-      .from("facilities")
+    const { data, error } = await supabase
+      .from("services")
       .select("id, slug")
       .eq("slug", serviceId)
       .single()
-
-    // If facilities table error, fallback to services table
-    // Check for 42P01 (undefined_table), PGRST errors, and "no rows" errors
-    if (error && (
-      (error as any).code === "42P01" ||
-      (error as any).message?.includes('relation "public.facilities" does not exist') ||
-      (error as any).code?.includes("PGRST") ||
-      (error as any).code === "PGRST116"
-    )) {
-      const { data: servicesData, error: servicesError } = await supabase
-        .from("services")
-        .select("id, slug")
-        .eq("slug", serviceId)
-        .single()
-
-      data = servicesData
-      error = servicesError
-    }
 
     // PGRST116 = no rows → 404
     if (!data || (error as any)?.code === "PGRST116") {
@@ -255,8 +220,8 @@ export async function resolveServiceIdToUuid(
  * CRITICAL: Accepts UUID only (call resolveServiceIdToUuid first if needed)
  *
  * Assignment logic:
- * - Uses service_staff mapping (user_id + service_id)
- * - No facilities/staff_profiles fallback (Preview has no facilities table)
+ * - Uses public.service_staff mapping (user_id + service_id)
+ * - If service_staff table does not exist (42P01), returns 403
  *
  * @param supabase - Supabase admin client
  * @param userId - auth.users.id (UUID)
