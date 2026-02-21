@@ -23,25 +23,34 @@ export const runtime = "nodejs"
  * 
  * @param supabase - Supabase client
  * @param table - Table name
- * @returns true if table exists and is accessible, false otherwise
+ * @returns true if table exists and is accessible, false if table doesn't exist
+ * @throws Error for unexpected database errors
  */
 async function canSelectTable(
   supabase: any,
   table: string
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from(table)
-    .select("*")
-    .limit(1);
-  if (!error) return true;
+  try {
+    const { error } = await supabase
+      .from(table)
+      .select("*")
+      .limit(1);
+    
+    if (!error) return true;
 
-  const code = (error as any)?.code;
-  const msg = (error as any)?.message ?? "";
-  // テーブル不存在系（PostgREST）
-  if (code === "PGRST205" || msg.includes("Could not find the table")) return false;
-  // それ以外は「存在はするが別理由」の可能性があるので true 扱いにせず、ログして false
-  console.error("[canSelectTable] unexpected error", { table, code, msg });
-  return false;
+    const code = (error as any)?.code ?? "";
+    const msg = (error as any)?.message ?? "";
+    
+    // テーブル不存在系（PostgREST）
+    if (code === "PGRST205" || code === "42P01") return false;
+    if (msg.includes("Could not find the table")) return false;
+    if (msg.includes("does not exist")) return false;
+    
+    // それ以外は想定外エラー → throw
+    throw error;
+  } catch (err) {
+    throw err;
+  }
 }
 
 /**
@@ -50,27 +59,38 @@ async function canSelectTable(
  * @param supabase - Supabase client
  * @param table - Table name
  * @param column - Column name
- * @returns true if column exists and is accessible, false otherwise
+ * @returns true if column exists and is accessible, false if column doesn't exist
+ * @throws Error for unexpected database errors
  */
 async function canSelectColumn(
   supabase: any,
   table: string,
   column: string
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from(table)
-    .select(column)
-    .limit(1);
-  if (!error) return true;
+  try {
+    const { error } = await supabase
+      .from(table)
+      .select(column)
+      .limit(1);
+    
+    if (!error) return true;
 
-  const code = (error as any)?.code;
-  const msg = (error as any)?.message ?? "";
-  // カラム不存在/選択不可系（PostgRESTは message に column が出ることが多い）
-  if (msg.includes(`column "${column}"`) || msg.includes("does not exist")) return false;
-  if (code?.startsWith?.("PGRST")) return false;
-
-  console.error("[canSelectColumn] unexpected error", { table, column, code, msg });
-  return false;
+    const code = (error as any)?.code ?? "";
+    const msg = (error as any)?.message ?? "";
+    
+    // 列が無い判定
+    if (code === "PGRST205" || code === "PGRST204") return false;
+    if (msg.includes("Could not find the column")) return false;
+    
+    // テーブルが無い判定も false 扱い
+    if (code === "42P01") return false;
+    if (msg.includes("does not exist")) return false;
+    
+    // それ以外は想定外エラー → throw
+    throw error;
+  } catch (err) {
+    throw err;
+  }
 }
 
 /**
@@ -131,6 +151,7 @@ export async function GET(req: NextRequest) {
     // STEP 5: Check which columns exist in care_receivers table
     const hasServiceCode = await canSelectColumn(supabaseAdmin!, "care_receivers", "service_code")
     const hasServiceId = await canSelectColumn(supabaseAdmin!, "care_receivers", "service_id")
+    const hasFacilityId = await canSelectColumn(supabaseAdmin!, "care_receivers", "facility_id")
     const hasIsActive = await canSelectColumn(supabaseAdmin!, "care_receivers", "is_active")
 
     // Fetch services.code for filtering care_receivers
@@ -189,7 +210,7 @@ export async function GET(req: NextRequest) {
         ?? resolvedSlug
     }
 
-    // Build select fields list (no facility_id)
+    // Build select fields list - include optional columns if they exist
     const selectFields = ["id", "code", "name", "created_at"]
     if (hasServiceCode) {
       selectFields.push("service_code")
@@ -197,11 +218,14 @@ export async function GET(req: NextRequest) {
     if (hasServiceId) {
       selectFields.push("service_id")
     }
+    if (hasFacilityId) {
+      selectFields.push("facility_id")
+    }
     if (hasIsActive) {
       selectFields.push("is_active")
     }
 
-    // Query care_receivers filtered by service_code or service_id
+    // Query care_receivers filtered by service_code, service_id, or facility_id
     let careReceiversQuery = supabaseAdmin!
       .from("care_receivers")
       .select(selectFields.join(", "))
@@ -212,11 +236,13 @@ export async function GET(req: NextRequest) {
       careReceiversQuery = careReceiversQuery.eq("service_code", serviceCode)
     } else if (hasServiceId) {
       careReceiversQuery = careReceiversQuery.eq("service_id", serviceUuid)
+    } else if (hasFacilityId) {
+      careReceiversQuery = careReceiversQuery.eq("facility_id", serviceUuid)
     } else {
       return jsonError(
         "Failed to fetch care receivers",
         500,
-        { ok: false, detail: "Schema mismatch: no service_code or service_id column" }
+        { ok: false, detail: "Schema mismatch: no service_code, service_id, or facility_id column" }
       )
     }
 
