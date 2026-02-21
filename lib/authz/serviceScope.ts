@@ -21,6 +21,50 @@ import { SupabaseClient } from "@supabase/supabase-js"
 import { jsonError, isValidUUID } from "@/lib/api/route-helpers"
 
 /**
+ * Safe JSON serialization that handles BigInt and unstringifiable values
+ */
+function safeJson(value: any): string {
+  try {
+    return JSON.stringify(
+      value,
+      (_k, v) => (typeof v === "bigint" ? v.toString() : v),
+      2
+    )
+  } catch {
+    try {
+      return String(value)
+    } catch {
+      return "[unstringifiable]"
+    }
+  }
+}
+
+/**
+ * Unwrap commonly nested error structures
+ */
+function unwrapError(e: any) {
+  // よくある包み方をほどく
+  return e?.error ?? e?.cause ?? e
+}
+
+/**
+ * Extract message from error object, with fallback to stringification
+ */
+function pickMessage(raw: any): string {
+  const msg =
+    raw?.message ??
+    raw?.msg ??
+    raw?.error_description ??
+    raw?.error?.message
+
+  if (typeof msg === "string" && msg.trim().length > 0) return msg
+
+  // 最後の保険：空なら stringify/文字列化
+  const s = safeJson(raw)
+  return s && s !== "{}" ? s : String(raw)
+}
+
+/**
  * Extract and validate serviceId from request query parameters
  * 
  * @param req - NextRequest object
@@ -293,23 +337,35 @@ export async function assertServiceAssignment(
     // ✓ Authorization passed
     return null
   } catch (dbError: any) {
-    const raw = dbError?.error ?? dbError?.cause ?? dbError;
+    const raw = unwrapError(dbError);
 
     const errorDetails = {
-      code: raw?.code ?? raw?.status ?? "UNKNOWN",
-      message: raw?.message ?? raw?.error ?? "Unknown error",
-      details: raw?.details ?? raw?.detail ?? null,
-      hint: raw?.hint ?? null,
-      stack: raw?.stack ?? null,
+      code: raw?.code ?? raw?.status ?? raw?.error?.code ?? "UNKNOWN",
+      message: pickMessage(raw),
+      details: raw?.details ?? raw?.detail ?? raw?.error?.details ?? null,
+      hint: raw?.hint ?? raw?.error?.hint ?? null,
+      stack: raw?.stack ?? dbError?.stack ?? null,
     };
 
     console.error("[authz] Database error in assertServiceAssignment", {
       userId,
       serviceUuid,
+      function: "assertServiceAssignment",
+      route: "/api/care-receivers",
       ...errorDetails,
+      // これが超重要：中身丸ごと確認できる
+      raw: safeJson(raw),
+      original: safeJson(dbError),
     });
 
-    throw dbError;
+    return jsonError(
+      "Authorization check failed",
+      500,
+      {
+        ok: false,
+        detail: `Database error: ${errorDetails.code} - ${errorDetails.message}`,
+      }
+    );
   }
 }
 
