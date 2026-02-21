@@ -256,6 +256,18 @@ export async function assertServiceAssignment(
   }
 
   try {
+    // Prepare debug info
+    const hasServiceRoleKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    let supabaseUrlHost = "unknown"
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (supabaseUrl) {
+      try {
+        supabaseUrlHost = new URL(supabaseUrl).host
+      } catch {
+        supabaseUrlHost = "invalid-url"
+      }
+    }
+
     /**
      * ✅ IMPORTANT:
      * head:true + single() は相性が悪く、"UNKNOWN" になりやすい。
@@ -277,7 +289,20 @@ export async function assertServiceAssignment(
         return jsonError(
           "Access denied",
           403,
-          { ok: false, detail: "User not assigned to this service" }
+          { 
+            ok: false, 
+            detail: "User not assigned to this service",
+            extra: {
+              debug: {
+                adminKeyPresent: hasServiceRoleKey,
+                service_staff_count: 0,
+                service_staff_rows: [],
+                supabaseUrlHost,
+                error_code: (serviceStaffError as any).code,
+                error_message: (serviceStaffError as any).message
+              }
+            }
+          }
         )
       }
 
@@ -286,10 +311,36 @@ export async function assertServiceAssignment(
     }
 
     if (!serviceStaffAssignment) {
+      // Fetch all service_staff records for this service to get count
+      const { data: allRecords, error: countError } = await supabase
+        .from("service_staff")
+        .select("id, user_id")
+        .eq("service_id", serviceUuid)
+        .limit(3)
+
+      const staffCount = countError ? 0 : (allRecords?.length ?? 0)
+      const staffRows = (allRecords?.slice(0, 3) ?? []).map((row: any) => ({
+        user_id: row.user_id,
+        id: row.id
+      }))
+
       return jsonError(
         "Access denied",
         403,
-        { ok: false, detail: "User not assigned to this service" }
+        { 
+          ok: false, 
+          detail: "User not assigned to this service",
+          extra: {
+            debug: {
+              adminKeyPresent: hasServiceRoleKey,
+              service_staff_count: staffCount,
+              service_staff_rows: staffRows,
+              supabaseUrlHost,
+              requested_user_id: userId,
+              requested_service_id: serviceUuid
+            }
+          }
+        }
       )
     }
 

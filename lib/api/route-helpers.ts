@@ -66,14 +66,40 @@ export function piiDisabledResponse(): NextResponse {
   return jsonError("PII is disabled", 400, { ok: false })
 }
 /**
- * Supabase admin client availability check
+ * Supabase admin client availability check with detailed logging
  * @returns NextResponse on error, null if client is valid
  */
 export function ensureSupabaseAdmin(client: any, detail?: string): NextResponse | null {
   if (!client) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+    const hasServiceRoleKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    let urlHost = "unknown"
+    if (supabaseUrl) {
+      try {
+        const url = new URL(supabaseUrl)
+        urlHost = url.host
+      } catch {
+        urlHost = "invalid-url"
+      }
+    }
+    
+    const errorLog = {
+      reason: "Supabase admin client not initialized",
+      supabaseUrlHost: urlHost,
+      serviceRoleKeyPresent: hasServiceRoleKey,
+      envStatus: {
+        NEXT_PUBLIC_SUPABASE_URL: supabaseUrl ? "set" : "missing",
+        SUPABASE_SERVICE_ROLE_KEY: hasServiceRoleKey ? "set" : "missing"
+      }
+    }
+    
+    console.error("[ensureSupabaseAdmin] Admin client not available:", JSON.stringify(errorLog))
+    
     return jsonError("Database not available", 503, { 
       ok: false,
-      detail: detail || "Supabase admin client not initialized"
+      detail: detail || "Supabase admin client not initialized",
+      extra: { debug: errorLog }
     })
   }
   return null
