@@ -1,4 +1,4 @@
-﻿name: ai-dispatch
+name: ai-dispatch
 on:
   issue_comment:
     types: [created]
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Gate trusted sender
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const sender = context.payload.comment.user.login;
@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Gate trusted sender
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const sender = context.payload.comment.user.login;
@@ -100,7 +100,7 @@ jobs:
               core.setFailed(`not trusted: ${sender}`);
             }
       - name: Post design brief as comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const issue_number = context.payload.issue.number;
@@ -129,7 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Gate trusted sender
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const sender = context.payload.comment.user.login;
