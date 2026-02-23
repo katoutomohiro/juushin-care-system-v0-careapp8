@@ -153,26 +153,37 @@ export async function GET(req: NextRequest) {
     const resolvedSlug = serviceRow.slug
     console.log(`[care-receivers] ✅ Resolved service: slug='${serviceSlug}' -> UUID='${serviceUuid}'`)
 
+    // Check for debug flag in query params
+    const url = new URL(req.url)
+    const debugMode = url.searchParams.get("debug") === "1"
+
     // STEP 4: Verify user has authorization to access this service
-    const authzError = await assertServiceAssignment(supabaseAdmin!, user.id, serviceUuid)
+    const authzError = await assertServiceAssignment(
+      supabaseAdmin!, 
+      user.id, 
+      serviceUuid,
+      resolvedSlug
+    )
     if (authzError) {
-      // If 403, add debug info for troubleshooting
+      // If 403, add route-level context to the debug info from assertServiceAssignment
       if (authzError.status === 403) {
         const bodyJson = await authzError.json()
+        const existingDebug = (bodyJson as any).debug || {}
+        
         console.log(`[care-receivers] 403 Authorization failed:`, {
-          user_id: user.id,
-          service_id: serviceUuid,
-          service_slug: serviceSlug,
-          resolved_slug: resolvedSlug
+          requested_slug: serviceSlug,
+          resolved_slug: resolvedSlug,
+          resolved_id: serviceUuid,
+          auth_user_id: user.id
         })
+        
         return NextResponse.json(
           {
             ...bodyJson,
             debug: {
-              user_id: user.id,
-              service_id: serviceUuid,
-              service_slug: serviceSlug,
-              resolved_slug: resolvedSlug,
+              ...existingDebug,
+              request_service_slug: serviceSlug,
+              resolved_service_slug: resolvedSlug,
               requestedUrl: req.url
             }
           },
@@ -348,6 +359,14 @@ export async function GET(req: NextRequest) {
         count,
         serviceSlug: resolvedSlug,
         serviceCode,
+        ...(debugMode && {
+          debug: {
+            auth_user_id: user.id,
+            resolved_service_id: serviceUuid,
+            resolved_service_slug: resolvedSlug,
+            request_service_slug: serviceSlug
+          }
+        })
       },
       { status: 200 }
     )

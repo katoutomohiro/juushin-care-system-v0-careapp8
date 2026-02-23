@@ -231,13 +231,15 @@ export async function resolveServiceIdToUuid(
  * @param supabase - Supabase admin client
  * @param userId - auth.users.id (UUID)
  * @param serviceUuid - Service UUID (must be valid UUID, not slug)
+ * @param resolvedSlug - Service slug for debug info (optional)
  * @returns null on success, NextResponse with 403 if unauthorized
  * @returns NextResponse with 500 on database error
  */
 export async function assertServiceAssignment(
   supabase: SupabaseClient<any, "public", any>,
   userId: string,
-  serviceUuid: string
+  serviceUuid: string,
+  resolvedSlug?: string
 ): Promise<NextResponse | null> {
   if (!userId) {
     return jsonError(
@@ -256,29 +258,16 @@ export async function assertServiceAssignment(
   }
 
   try {
-    // Prepare debug info
-    const hasServiceRoleKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
-    let supabaseUrlHost = "unknown"
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    if (supabaseUrl) {
-      try {
-        supabaseUrlHost = new URL(supabaseUrl).host
-      } catch {
-        supabaseUrlHost = "invalid-url"
-      }
-    }
-
     /**
-     * ✅ IMPORTANT:
-     * head:true + single() は相性が悪く、"UNKNOWN" になりやすい。
-     * 「1件あればOK / 無ければ403」が欲しいので maybeSingle() にする。
+     * ✅ Query service_staff with full debug info
+     * Select user_id, service_id, role to understand assignment details
      */
-    const { data: serviceStaffAssignment, error: serviceStaffError } = await supabase
+    const { data: staffRecords, error: serviceStaffError } = await supabase
       .from("service_staff")
-      .select("id")
+      .select("user_id, service_id, role")
       .eq("user_id", userId)
       .eq("service_id", serviceUuid)
-      .maybeSingle()
+      .limit(5)
 
     if (serviceStaffError) {
       // テーブルが無い等（42P01）→ ここでは「未割当扱い」で 403 に落とす
@@ -294,12 +283,12 @@ export async function assertServiceAssignment(
             detail: "User not assigned to this service",
             extra: {
               debug: {
-                adminKeyPresent: hasServiceRoleKey,
-                service_staff_count: 0,
-                service_staff_rows: [],
-                supabaseUrlHost,
-                error_code: (serviceStaffError as any).code,
-                error_message: (serviceStaffError as any).message
+                auth_user_id: userId,
+                resolved_service_id: serviceUuid,
+                resolved_service_slug: resolvedSlug,
+                staff_rows: null,
+                staff_count: 0,
+                error: "service_staff table not found"
               }
             }
           }
@@ -310,20 +299,8 @@ export async function assertServiceAssignment(
       throw serviceStaffError
     }
 
-    if (!serviceStaffAssignment) {
-      // Fetch all service_staff records for this service to get count
-      const { data: allRecords, error: countError } = await supabase
-        .from("service_staff")
-        .select("id, user_id")
-        .eq("service_id", serviceUuid)
-        .limit(3)
-
-      const staffCount = countError ? 0 : (allRecords?.length ?? 0)
-      const staffRows = (allRecords?.slice(0, 3) ?? []).map((row: any) => ({
-        user_id: row.user_id,
-        id: row.id
-      }))
-
+    // 該当ユーザーとサービスの割り当てが無い場合 → 403
+    if (!staffRecords || staffRecords.length === 0) {
       return jsonError(
         "Access denied",
         403,
@@ -332,12 +309,11 @@ export async function assertServiceAssignment(
           detail: "User not assigned to this service",
           extra: {
             debug: {
-              adminKeyPresent: hasServiceRoleKey,
-              service_staff_count: staffCount,
-              service_staff_rows: staffRows,
-              supabaseUrlHost,
-              requested_user_id: userId,
-              requested_service_id: serviceUuid
+              auth_user_id: userId,
+              resolved_service_id: serviceUuid,
+              resolved_service_slug: resolvedSlug,
+              staff_rows: [],
+              staff_count: 0
             }
           }
         }
@@ -418,8 +394,8 @@ export async function requireServiceIdAndAssignment(
 
   const { serviceUuid, serviceSlug } = resolveResult
 
-  // Check authorization
-  const authzError = await assertServiceAssignment(supabase, userId, serviceUuid)
+  // Check authorization (pass serviceSlug for debug info)
+  const authzError = await assertServiceAssignment(supabase, userId, serviceUuid, serviceSlug)
   if (authzError) {
     return [null, null, authzError]
   }
