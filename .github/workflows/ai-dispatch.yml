@@ -1,4 +1,4 @@
-﻿name: ai-dispatch
+name: ai-dispatch
 on:
   issue_comment:
     types: [created]
@@ -54,7 +54,7 @@ jobs:
           mkdir -p .chore/ci_touch
           echo ok > ".chore/ci_touch/e2e_smoke_${ts}.txt"
       - name: Create PR for smoke
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore(ci-touch): trigger e2e smoke"
           title: "chore: e2e smoke via /agent"
@@ -290,7 +290,7 @@ jobs:
           EOF
 
       - name: Create PR for diary feature
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "feat(diary): minimal diary feature scaffold (schemas/hooks/pages/e2e)"
           title: "feat: diary extended (scaffold)"
