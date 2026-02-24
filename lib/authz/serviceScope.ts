@@ -259,6 +259,23 @@ export async function assertServiceAssignment(
 
   try {
     /**
+     * 🔍 DIAGNOSTIC: Log Supabase connection details
+     */
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+    const hasServiceRoleKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    const urlHost = supabaseUrl.replace(/^https?:\/\//, "").split("/")[0]
+    
+    console.log(`[assertServiceAssignment] 🔍 DIAGNOSTIC INFO:`, {
+      supabase_host: urlHost,
+      has_service_role_key: hasServiceRoleKey,
+      query_user_id: userId,
+      query_service_id: serviceUuid,
+      query_service_slug: resolvedSlug,
+      table: "public.service_staff",
+      filter: `user_id=${userId} AND service_id=${serviceUuid}`
+    })
+
+    /**
      * ✅ Query service_staff with full debug info
      * Select user_id, service_id, role to understand assignment details
      */
@@ -268,6 +285,16 @@ export async function assertServiceAssignment(
       .eq("user_id", userId)
       .eq("service_id", serviceUuid)
       .limit(5)
+
+    console.log(`[assertServiceAssignment] 🔍 QUERY RESULT:`, {
+      error: serviceStaffError ? {
+        code: (serviceStaffError as any).code,
+        message: (serviceStaffError as any).message,
+        details: (serviceStaffError as any).details
+      } : null,
+      records_count: staffRecords ? staffRecords.length : 0,
+      records: staffRecords || []
+    })
 
     if (serviceStaffError) {
       // テーブルが無い等（42P01）→ ここでは「未割当扱い」で 403 に落とす
@@ -301,6 +328,13 @@ export async function assertServiceAssignment(
 
     // 該当ユーザーとサービスの割り当てが無い場合 → 403
     if (!staffRecords || staffRecords.length === 0) {
+      console.error(`[assertServiceAssignment] ❌ NO RECORDS FOUND:`, {
+        reason: "staff_records is empty",
+        expected_match: `user_id=${userId} AND service_id=${serviceUuid}`,
+        hint: "Check if: (1) UUIDs are correct, (2) RLS is blocking, (3) DB connection is to the right project",
+        supabase_host: urlHost
+      })
+      
       return jsonError(
         "Access denied",
         403,
@@ -313,12 +347,19 @@ export async function assertServiceAssignment(
               resolved_service_id: serviceUuid,
               resolved_service_slug: resolvedSlug,
               staff_rows: [],
-              staff_count: 0
+              staff_count: 0,
+              supabase_host: urlHost,
+              has_service_role_key: hasServiceRoleKey
             }
           }
         }
       )
     }
+
+    console.log(`[assertServiceAssignment] ✅ AUTHORIZATION PASSED:`, {
+      matched_records: staffRecords.length,
+      records: staffRecords
+    })
 
     // ✓ Authorization passed
     return null
